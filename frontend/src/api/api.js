@@ -1,0 +1,76 @@
+/**
+ * Client API centralisé pour la communication avec le backend
+ */
+import axios from 'axios';
+
+// En développement, Vite relaie /api vers http://localhost:5000
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  timeout: 10000,
+});
+
+// Intercepteur pour injecter automatiquement le token JWT s'il existe
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('fiscal_api_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+/**
+ * Extrait un message d'erreur lisible d'une exception Axios
+ * @param {Error} error
+ * @returns {string}
+ */
+export const getErrorMessage = (error) => {
+  return (
+    error.response?.data?.message ||
+    error.message ||
+    'Une erreur réseau est survenue. Veuillez vérifier votre connexion.'
+  );
+};
+
+// ==================== DÉCLARATIONS ====================
+export const getDeclarations = (params = {}) =>
+  api.get('/declarations', { params: { limit: 250, ...params } }).then((res) => res.data.data);
+
+export const getDeclarationById = (id) =>
+  api.get(`/declarations/${id}`).then((res) => res.data.data);
+
+export const getDeclarationStats = () =>
+  api.get('/declarations/stats').then((res) => res.data.data);
+
+export const createDeclaration = (payload) =>
+  api.post('/declarations', payload).then((res) => res.data.data);
+
+// ==================== ENTREPRISES ====================
+export const getEntreprises = (params = {}) =>
+  api.get('/entreprises', { params }).then((res) => res.data.data);
+
+export const getEntrepriseById = (id) =>
+  api.get(`/entreprises/${id}`).then((res) => res.data.data);
+
+export const getEntrepriseByNif = async (nif) => {
+  const result = await api.get('/entreprises', { params: { search: nif, limit: 20 } });
+  return result.data?.data?.data?.find((item) => item.nif === nif);
+};
+
+export const createEntreprise = (payload) =>
+  api.post('/entreprises', payload).then((res) => res.data.data);
+
+// ==================== RECOUPEMENTS ====================
+export const createRecoupement = (payload) =>
+  api.post('/recoupements', payload).then((res) => res.data.data);
+
+export const getRecoupementsByEntreprise = (idEntreprise) =>
+  api.get(`/recoupements/entreprise/${idEntreprise}`).then((res) => res.data.data);
+
+// ==================== CONTRÔLES ====================
+export const effectuerControle = (idDeclaration, payload = {}) =>
+  api.post(`/controles/${idDeclaration}`, payload).then((res) => res.data.data);
+
+export const getControlesDeclaration = (idDeclaration) =>
+  api.get(`/controles/declaration/${idDeclaration}`).then((res) => res.data.data);
+
+export default api;
