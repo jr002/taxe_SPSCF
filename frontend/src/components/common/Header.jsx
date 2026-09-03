@@ -1,4 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
+import logoDgi from '../../assets/logodgi.jpg';
 
 const NAVIGATION_LINKS = [
   { to: '/', label: 'Accueil' },
@@ -30,7 +31,11 @@ export default function Header({
   return (
     <header className="topbar">
       <Link to="/" className="brand">
-        <span>T</span>
+        <img
+          className="brand-logo"
+          src={logoDgi}
+          alt="Logo de la Direction Générale des Impôts"
+        />
         <div>
           <strong>
             TVA<span className="brand-dot">•</span>SSIF

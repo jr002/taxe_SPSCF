@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useLocation, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { getDeclarations, getErrorMessage } from '../api/api';
 import { getContribuables } from '../utils/contribuables.utils';
 import { getRegime } from '../utils/decisionnel.utils';
@@ -14,6 +14,7 @@ import {
  */
 export default function ContribuableDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const location = useLocation();
   const [declarations, setDeclarations] = useState(
     location.state?.contribuable?.declarations || []
@@ -171,7 +172,16 @@ export default function ContribuableDetail() {
           </thead>
           <tbody>
             {declarations.map((declaration) => (
-              <tr key={declaration.id_declaration}>
+              <tr
+                key={declaration.id_declaration}
+                className="clickable-row"
+                title="Voir le détail de cette déclaration"
+                onClick={() =>
+                  navigate(`/suivi/${declaration.id_declaration}`, {
+                    state: { declaration },
+                  })
+                }
+              >
                 <td>
                   <strong>{declaration.annee}</strong>
                 </td>
