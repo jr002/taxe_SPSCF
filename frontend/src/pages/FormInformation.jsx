@@ -1,7 +1,7 @@
 import { useState } from 'react';
 // eslint-disable-next-line no-unused-vars
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { createEntreprise, getErrorMessage } from '../api/api';
+import { createContribuable, getErrorMessage } from '../api/api';
 
 /**
  * Étape 2 : Formulaire de création et d'immatriculation d'un contribuable
@@ -103,7 +103,7 @@ export default function FormInformation() {
       setIsSubmitting(true);
 
       try {
-        await createEntreprise({
+        await createContribuable({
           nif: formData.nif.trim(),
           raison_sociale: [formData.companyName.trim(), formData.socialReason.trim()].filter(Boolean).join(' / '),
           secteur_activite: formData.legalStatus.trim(),

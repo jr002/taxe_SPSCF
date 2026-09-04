@@ -8,7 +8,7 @@
  * @returns {string}
  */
 export const getContribuableKey = (declaration) => String(
-  declaration.id_entreprise || declaration.nif || declaration.raison_sociale || 'inconnu'
+  declaration.id_contribuable || declaration.nif || declaration.raison_sociale || 'inconnu'
 );
 
 /**
@@ -26,7 +26,7 @@ export const getContribuables = (declarations = []) => {
     if (!current) {
       contribuablesMap.set(key, {
         key,
-        id_entreprise: declaration.id_entreprise,
+        id_contribuable: declaration.id_contribuable,
         nif: declaration.nif,
         raison_sociale: declaration.raison_sociale,
         secteur_activite: declaration.secteur_activite,

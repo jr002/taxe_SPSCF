@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { createEntreprise, createDeclaration, getErrorMessage } from '../../api/api';
+import { createContribuable, createDeclaration, getErrorMessage } from '../../api/api';
 import { formatAriary } from '../../utils/formatters';
 
 /**
@@ -239,7 +239,7 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
       const row = validRows[i];
       try {
         // 1. Créer ou mettre à jour l'entreprise
-        const createdEntreprise = await createEntreprise({
+        const createdContribuable = await createContribuable({
           nif: row.nif,
           raison_sociale: row.raison_sociale,
           secteur_activite: row.secteur_activite,
@@ -249,14 +249,14 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
           email: row.email || null,
         });
 
-        const entrepriseId =
-          createdEntreprise?.id_entreprise || createdEntreprise?.data?.id_entreprise;
+        const contribuableId =
+          createdContribuable?.id_contribuable || createdContribuable?.data?.id_contribuable;
 
         // 2. Si des données de déclaration sont renseignées, créer la déclaration associée
-        if (entrepriseId && row.annee && row.ca) {
+        if (contribuableId && row.annee && row.ca) {
           try {
             await createDeclaration({
-              id_entreprise: Number(entrepriseId),
+              id_contribuable: Number(contribuableId),
               annee: Number(row.annee) || new Date().getFullYear(),
               ca: Number(row.ca) || 0,
               benefice: Number(row.benefice) || 0,

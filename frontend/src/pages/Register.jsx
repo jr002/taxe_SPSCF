@@ -42,7 +42,7 @@ export default function Register() {
 
     declarations.forEach((declaration) => {
       const companyKey =
-        declaration.id_entreprise || declaration.nif || declaration.raison_sociale;
+        declaration.id_contribuable || declaration.nif || declaration.raison_sociale;
       const previous = latestByCompany.get(companyKey);
 
       if (!previous || Number(declaration.annee) > Number(previous.annee)) {
@@ -93,7 +93,7 @@ export default function Register() {
                     {items.map((declaration) => (
                       <div
                         className="registry-row"
-                        key={`${declaration.id_entreprise || declaration.nif}-${declaration.annee}`}
+                        key={`${declaration.id_contribuable || declaration.nif}-${declaration.annee}`}
                       >
                         <span>
                           <strong>

@@ -44,33 +44,33 @@ export const getDeclarationStats = () =>
 export const createDeclaration = (payload) =>
   api.post('/declarations', payload).then((res) => res.data.data);
 
-// ==================== ENTREPRISES ====================
-export const getEntreprises = (params = {}) =>
-  api.get('/entreprises', { params }).then((res) => res.data.data);
+// ==================== CONTRIBUABLES ====================
+export const getContribuables = (params = {}) =>
+  api.get('/contribuables', { params }).then((res) => res.data.data);
 
-export const getEntrepriseById = (id) =>
-  api.get(`/entreprises/${id}`).then((res) => res.data.data);
+export const getContribuableById = (id) =>
+  api.get(`/contribuables/${id}`).then((res) => res.data.data);
 
-export const getEntrepriseByNif = async (nif) => {
-  const result = await api.get('/entreprises', { params: { search: nif, limit: 20 } });
+export const getContribuableByNif = async (nif) => {
+  const result = await api.get('/contribuables', { params: { search: nif, limit: 20 } });
   return result.data?.data?.data?.find((item) => item.nif === nif);
 };
 
-export const createEntreprise = (payload) =>
-  api.post('/entreprises', payload).then((res) => res.data.data);
+export const createContribuable = (payload) =>
+  api.post('/contribuables', payload).then((res) => res.data.data);
 
 // ==================== RECOUPEMENTS ====================
 export const createRecoupement = (payload) =>
   api.post('/recoupements', payload).then((res) => res.data.data);
 
-export const getRecoupementsByEntreprise = (idEntreprise) =>
-  api.get(`/recoupements/entreprise/${idEntreprise}`).then((res) => res.data.data);
+export const getRecoupementsByContribuable = (idContribuable) =>
+  api.get(`/recoupements/${idContribuable}/analyser`).then((res) => res.data.data);
 
 // ==================== CONTRÔLES ====================
 export const effectuerControle = (idDeclaration, payload = {}) =>
-  api.post(`/controles/${idDeclaration}`, payload).then((res) => res.data.data);
+  api.post(`/controles/${idDeclaration}/effectuer`, payload).then((res) => res.data.data);
 
 export const getControlesDeclaration = (idDeclaration) =>
-  api.get(`/controles/declaration/${idDeclaration}`).then((res) => res.data.data);
+  api.get(`/controles/${idDeclaration}/historique`).then((res) => res.data.data);
 
 export default api;

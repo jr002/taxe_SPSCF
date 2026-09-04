@@ -15,7 +15,7 @@ Ce dossier regroupe les fonctions utilitaires pures, les formateurs et les algor
 
 ### 2. [`contribuables.utils.js`](file:///c:/Users/PC/Desktop/ssif/rendu/version4/frontend/src/utils/contribuables.utils.js)
 * `getContribuableKey(declaration)` : Génère la clé d'identification unique d'un contribuable.
-* `getContribuables(declarations)` : Agrège les déclarations par entreprise, conserve les métadonnées les plus récentes et trie les déclarations par ordre antéchronologique.
+* `getContribuables(declarations)` : Agrège les déclarations par contribuable, conserve les métadonnées les plus récentes et trie les déclarations par ordre antéchronologique.
 
 ### 3. [`decisionnel.utils.js`](file:///c:/Users/PC/Desktop/ssif/rendu/version4/frontend/src/utils/decisionnel.utils.js)
 * `getRegime(declaration)` : Détermine le régime fiscal selon le seuil de 400M Ar (`IS` ou `IR`).

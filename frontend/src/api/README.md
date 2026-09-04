@@ -11,8 +11,8 @@ Ce dossier centralise la configuration du client HTTP et toutes les fonctions de
   * Intercepteur d'authentification pour attacher automatiquement le token JWT (`Bearer <token>`) stocké dans le `localStorage`.
   * Fonctions de mapping d'API :
     * **Déclarations** : `getDeclarations`, `getDeclarationById`, `getDeclarationStats`, `createDeclaration`
-    * **Entreprises** : `getEntreprises`, `getEntrepriseById`, `getEntrepriseByNif`, `createEntreprise`
-    * **Recoupements** : `createRecoupement`, `getRecoupementsByEntreprise`
+    * **Contribuables** : `getContribuables`, `getContribuableById`, `getContribuableByNif`, `createContribuable`
+    * **Recoupements** : `createRecoupement`, `getRecoupementsByContribuable`
     * **Contrôles** : `effectuerControle`, `getControlesDeclaration`
     * **Gestion d'erreurs** : `getErrorMessage(error)` pour formater un message lisible utilisateur.
 
@@ -21,7 +21,7 @@ Ce dossier centralise la configuration du client HTTP et toutes les fonctions de
 ## 💡 Exemple d'utilisation
 
 ```javascript
-import { getDeclarations, createEntreprise, getErrorMessage } from '../api/api';
+import { getDeclarations, createContribuable, getErrorMessage } from '../api/api';
 
 // Récupérer la liste des déclarations
 try {
