@@ -67,8 +67,8 @@ Le backend écoute par défaut sur le port `5000` (`http://localhost:5000`). En 
 
 | Méthode | Endpoint | Description | Paramètres / Body | Code HTTP |
 | :--- | :--- | :--- | :--- | :--- |
-| **`POST`** | `/api/controles/:id_declaration` | Lancer un contrôle fiscal sur une déclaration | **Param :** `id_declaration`<br>**Body :** `{ "id_agent": 1 }` (optionnel) | `200 OK` |
-| **`GET`** | `/api/controles/declaration/:id_declaration` | Historique des contrôles d'une déclaration | **Param :** `id_declaration` | `200 OK` |
+| **`POST`** | `/api/controles/:id_declaration/effectuer` | Lancer un contrôle fiscal sur une déclaration | **Param :** `id_declaration`<br>**Body :** `{ "id_agent": 1 }` (optionnel) | `200 OK` |
+| **`GET`** | `/api/controles/:id_declaration/historique` | Historique des contrôles d'une déclaration | **Param :** `id_declaration` | `200 OK` |
 | **`GET`** | `/api/controles/stats` | Statistiques globales de contrôle | - | `200 OK` |
 
 ---
@@ -78,7 +78,7 @@ Le backend écoute par défaut sur le port `5000` (`http://localhost:5000`). En 
 | Méthode | Endpoint | Description | Paramètres / Body | Code HTTP |
 | :--- | :--- | :--- | :--- | :--- |
 | **`POST`** | `/api/recoupements` | Enregistrer une collecte de recoupement tiers | **Body JSON :**<br>• `id_entreprise` *(number, requis)*<br>• `source` *(string, défaut: 'tiers_declarant')*<br>• `merchandise_sold` *(number)*<br>• `goods_purchased` *(number)*<br>• `services_purchased` *(number)*<br>• `third_party_payments` *(number)*<br>• `local_products` *(number)*<br>• `import_expenses` *(number)*<br>• `ca_declare` *(number, optionnel)* | `201 Created` |
-| **`GET`** | `/api/recoupements/entreprise/:id_entreprise` | Analyser la cohérence des recoupements d'une entreprise | **Param :** `id_entreprise` | `200 OK` |
+| **`GET`** | `/api/recoupements/:id_entreprise/analyser` | Analyser la cohérence des recoupements d'un contribuable | **Param :** `id_entreprise` | `200 OK` |
 | **`GET`** | `/api/recoupements/stats/sources` | Statistiques groupées par source de recoupement | - | `200 OK` |
 
 ---
@@ -91,12 +91,12 @@ Le backend écoute par défaut sur le port `5000` (`http://localhost:5000`). En 
 | `getDeclarationById(id)` | `GET /api/declarations/:id` | Récupère une déclaration spécifique |
 | `getDeclarationStats()` | `GET /api/declarations/stats` | Récupère les agrégats de statistiques pour le tableau décisionnel |
 | `createDeclaration(payload)` | `POST /api/declarations` | Enregistre une nouvelle déclaration fiscale |
-| `getEntreprises(params)` | `GET /api/entreprises` | Récupère la liste des contribuables |
-| `getEntrepriseById(id)` | `GET /api/entreprises/:id` | Récupère les informations d'un contribuable |
-| `getEntrepriseByNif(nif)` | `GET /api/entreprises?search=nif` | Recherche et sélectionne un contribuable par son NIF |
-| `createEntreprise(payload)` | `POST /api/entreprises` | Crée un nouveau contribuable dans la base |
+| `getContribuables(params)` | `GET /api/entreprises` | Récupère la liste des contribuables |
+| `getContribuableById(id)` | `GET /api/entreprises/:id` | Récupère les informations d'un contribuable |
+| `getContribuableByNif(nif)` | `GET /api/entreprises?search=nif` | Recherche et sélectionne un contribuable par son NIF |
+| `createContribuable(payload)` | `POST /api/entreprises` | Crée un nouveau contribuable dans la base |
 | `createRecoupement(payload)` | `POST /api/recoupements` | Enregistre les données financières de recoupement |
-| `getRecoupementsByEntreprise(id)` | `GET /api/recoupements/entreprise/:id` | Récupère les recoupements et l'analyse de cohérence |
-| `effectuerControle(idDecl, payload)` | `POST /api/controles/:id_declaration` | Déclenche un contrôle fiscal formel |
-| `getControlesDeclaration(idDecl)` | `GET /api/controles/declaration/:id_declaration` | Historique des contrôles |
+| `getRecoupementsByContribuable(id)` | `GET /api/recoupements/:id/analyser` | Récupère les recoupements et l'analyse de cohérence |
+| `effectuerControle(idDecl, payload)` | `POST /api/controles/:id_declaration/effectuer` | Déclenche un contrôle fiscal formel |
+| `getControlesDeclaration(idDecl)` | `GET /api/controles/:id_declaration/historique` | Historique des contrôles |
 | `getErrorMessage(error)` | *(Utilitaire local)* | Formate le message d'erreur d'une requête Axios |

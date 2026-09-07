@@ -1,168 +1,185 @@
-const db = require('../config/database');
+const prisma = require('../config/prisma');
 
 class DeclarationModel {
   // Créer une déclaration
   static async create(data) {
     const { 
-      id_entreprise, annee, ca, benefice, 
+      id_contribuable, annee, ca, benefice, 
       tva_collectee, tva_deductible, tva_payee,
       tva_theorique, statut 
     } = data;
     
-    const query = `
-      INSERT INTO declarations (
-        id_entreprise, annee, ca, benefice, 
-        tva_collectee, tva_deductible, tva_payee,
-        tva_theorique, statut, date_creation
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
-      RETURNING *
-    `;
-    
-    const values = [id_entreprise, annee, ca, benefice, tva_collectee, tva_deductible, tva_payee, tva_theorique, statut];
-    const result = await db.query(query, values);
-    return result.rows[0];
+    return await prisma.declarations.create({
+      data: {
+        id_contribuable: id_contribuable ? parseInt(id_contribuable, 10) : null,
+        annee: parseInt(annee, 10),
+        ca: ca !== undefined ? ca : 0,
+        benefice: benefice !== undefined ? benefice : 0,
+        tva_collectee: tva_collectee !== undefined ? tva_collectee : 0,
+        tva_deductible: tva_deductible !== undefined ? tva_deductible : 0,
+        tva_payee: tva_payee !== undefined ? tva_payee : 0,
+        tva_theorique: tva_theorique !== undefined ? tva_theorique : 0,
+        statut: statut || 'conforme',
+        date_creation: new Date(),
+      },
+    });
   }
 
-  // Trouver par ID
+  // Trouver par ID avec informations du contribuable
   static async findById(id) {
-    const query = `
-      SELECT d.*, e.nif, e.raison_sociale, e.secteur_activite
-      FROM declarations d
-      JOIN entreprises e ON d.id_entreprise = e.id_entreprise
-      WHERE d.id_declaration = $1
-    `;
-    const result = await db.query(query, [id]);
-    return result.rows[0];
-  }
+    const numericId = parseInt(id, 10);
+    if (isNaN(numericId)) return null;
 
-  // Déclarations d'une entreprise
-  static async findByEntreprise(id_entreprise) {
-    const query = `
-      SELECT * FROM declarations 
-      WHERE id_entreprise = $1 
-      ORDER BY annee DESC
-    `;
-    const result = await db.query(query, [id_entreprise]);
-    return result.rows;
-  }
+    const declaration = await prisma.declarations.findUnique({
+      where: { id_declaration: numericId },
+      include: {
+        contribuables: {
+          select: {
+            nif: true,
+            raison_sociale: true,
+            secteur_activite: true,
+          },
+        },
+      },
+    });
 
-  // Liste avec filtres
-  static async findAll({ page = 1, limit = 20, search = '', statut = '', annee = '' } = {}) {
-    const offset = (page - 1) * limit;
-    let query = `
-      SELECT d.*, e.nif, e.raison_sociale, e.secteur_activite
-      FROM declarations d
-      JOIN entreprises e ON d.id_entreprise = e.id_entreprise
-      WHERE 1=1
-    `;
-    
-    const values = [];
-    let paramIndex = 1;
+    if (!declaration) return null;
 
-    if (search) {
-      query += ` AND (e.nif ILIKE $${paramIndex} OR e.raison_sociale ILIKE $${paramIndex})`;
-      values.push(`%${search}%`);
-      paramIndex++;
-    }
-    
-    if (statut) {
-      query += ` AND d.statut = $${paramIndex}`;
-      values.push(statut);
-      paramIndex++;
-    }
-    
-    if (annee) {
-      query += ` AND d.annee = $${paramIndex}`;
-      values.push(parseInt(annee));
-      paramIndex++;
-    }
-    
-    query += ` ORDER BY d.date_creation DESC LIMIT $${paramIndex} OFFSET $${paramIndex + 1}`;
-    values.push(limit, offset);
-    
-    const result = await db.query(query, values);
-    
-    // Total
-    let countQuery = `
-      SELECT COUNT(*) 
-      FROM declarations d
-      JOIN entreprises e ON d.id_entreprise = e.id_entreprise
-      WHERE 1=1
-    `;
-    const countValues = [];
-    let countIndex = 1;
-    
-    if (search) {
-      countQuery += ` AND (e.nif ILIKE $${countIndex} OR e.raison_sociale ILIKE $${countIndex})`;
-      countValues.push(`%${search}%`);
-      countIndex++;
-    }
-    if (statut) {
-      countQuery += ` AND d.statut = $${countIndex}`;
-      countValues.push(statut);
-      countIndex++;
-    }
-    if (annee) {
-      countQuery += ` AND d.annee = $${countIndex}`;
-      countValues.push(parseInt(annee));
-    }
-    
-    const countResult = await db.query(countQuery, countValues);
-    
+    const { contribuables, ...fields } = declaration;
     return {
-      data: result.rows,
+      ...fields,
+      nif: contribuables?.nif || null,
+      raison_sociale: contribuables?.raison_sociale || null,
+      secteur_activite: contribuables?.secteur_activite || null,
+    };
+  }
+
+  // Déclarations d'un contribuable
+  static async findByContribuable(id_contribuable) {
+    const numericId = parseInt(id_contribuable, 10);
+    if (isNaN(numericId)) return [];
+
+    return await prisma.declarations.findMany({
+      where: { id_contribuable: numericId },
+      orderBy: { annee: 'desc' },
+    });
+  }
+
+  // Liste avec filtres et pagination
+  static async findAll({ page = 1, limit = 20, search = '', statut = '', annee = '' } = {}) {
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, parseInt(limit, 10) || 20);
+    const offset = (pageNum - 1) * limitNum;
+
+    const where = {};
+    if (statut) {
+      where.statut = statut;
+    }
+    if (annee) {
+      where.annee = parseInt(annee, 10);
+    }
+    if (search) {
+      where.contribuables = {
+        OR: [
+          { nif: { contains: search, mode: 'insensitive' } },
+          { raison_sociale: { contains: search, mode: 'insensitive' } },
+        ],
+      };
+    }
+
+    const [total, rows] = await Promise.all([
+      prisma.declarations.count({ where }),
+      prisma.declarations.findMany({
+        where,
+        skip: offset,
+        take: limitNum,
+        orderBy: { date_creation: 'desc' },
+        include: {
+          contribuables: {
+            select: {
+              nif: true,
+              raison_sociale: true,
+              secteur_activite: true,
+            },
+          },
+        },
+      }),
+    ]);
+
+    const data = rows.map((row) => {
+      const { contribuables, ...fields } = row;
+      return {
+        ...fields,
+        nif: contribuables?.nif || null,
+        raison_sociale: contribuables?.raison_sociale || null,
+        secteur_activite: contribuables?.secteur_activite || null,
+      };
+    });
+
+    return {
+      data,
       pagination: {
-        page,
-        limit,
-        total: parseInt(countResult.rows[0].count),
-        pages: Math.ceil(parseInt(countResult.rows[0].count) / limit)
-      }
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
     };
   }
 
   // Mettre à jour
   static async update(id, data) {
-    const fields = [];
-    const values = [];
-    let index = 1;
+    const numericId = parseInt(id, 10);
+    if (isNaN(numericId)) return null;
 
+    const updateData = {};
     const allowedFields = ['ca', 'benefice', 'tva_collectee', 'tva_deductible', 'tva_payee', 'tva_theorique', 'statut'];
     for (const field of allowedFields) {
       if (data[field] !== undefined) {
-        fields.push(`${field} = $${index++}`);
-        values.push(data[field]);
+        updateData[field] = data[field];
       }
     }
+    updateData.date_modification = new Date();
 
-    values.push(id);
-    const query = `
-      UPDATE declarations 
-      SET ${fields.join(', ')}, date_modification = NOW()
-      WHERE id_declaration = $${index}
-      RETURNING *
-    `;
-    
-    const result = await db.query(query, values);
-    return result.rows[0];
+    try {
+      return await prisma.declarations.update({
+        where: { id_declaration: numericId },
+        data: updateData,
+      });
+    } catch (err) {
+      if (err.code === 'P2025') return null;
+      throw err;
+    }
   }
 
   // Statistiques
   static async getStats() {
-    const query = `
-      SELECT 
-        COUNT(*) as total,
-        COUNT(CASE WHEN statut = 'conforme' THEN 1 END) as conformes,
-        COUNT(CASE WHEN statut = 'alerte' THEN 1 END) as alertes,
-        COUNT(CASE WHEN statut = 'critique' THEN 1 END) as critiques,
-        AVG(ca) as ca_moyen,
-        SUM(tva_payee) as tva_totale,
-        SUM(tva_theorique) as tva_theorique_totale,
-        SUM(tva_theorique - tva_payee) as ecart_total
-      FROM declarations
-    `;
-    const result = await db.query(query);
-    return result.rows[0];
+    const [total, conformes, alertes, critiques, aggregations] = await Promise.all([
+      prisma.declarations.count(),
+      prisma.declarations.count({ where: { statut: 'conforme' } }),
+      prisma.declarations.count({ where: { statut: 'alerte' } }),
+      prisma.declarations.count({ where: { statut: 'critique' } }),
+      prisma.declarations.aggregate({
+        _avg: { ca: true },
+        _sum: { tva_payee: true, tva_theorique: true },
+      }),
+    ]);
+
+    const caMoyen = aggregations._avg.ca ? Number(aggregations._avg.ca) : 0;
+    const tvaTotale = aggregations._sum.tva_payee ? Number(aggregations._sum.tva_payee) : 0;
+    const tvaTheoriqueTotale = aggregations._sum.tva_theorique ? Number(aggregations._sum.tva_theorique) : 0;
+    const ecartTotal = tvaTheoriqueTotale - tvaTotale;
+
+    return {
+      total: String(total),
+      conformes: String(conformes),
+      alertes: String(alertes),
+      critiques: String(critiques),
+      ca_moyen: String(caMoyen),
+      tva_totale: String(tvaTotale),
+      tva_theorique_totale: String(tvaTheoriqueTotale),
+      ecart_total: String(ecartTotal),
+    };
   }
 }
 

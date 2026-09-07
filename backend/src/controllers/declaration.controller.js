@@ -5,7 +5,7 @@ class DeclarationController {
   // Créer une déclaration avec calcul auto
   static async create(req, res) {
     try {
-      const { id_entreprise, annee, ca, benefice, tva_collectee, tva_deductible, tva_payee, regime_fiscal } = req.body;
+      const { id_contribuable, annee, ca, benefice, tva_collectee, tva_deductible, tva_payee, regime_fiscal } = req.body;
       
       // Calculer la TVA théorique
       const tvaTheorique = FiscalService.calculerTVATheorique(ca, benefice, regime_fiscal);
@@ -16,7 +16,7 @@ class DeclarationController {
       const statut = FiscalService.determinerStatut(pourcentageEcart);
       
       const declaration = await DeclarationModel.create({
-        id_entreprise,
+        id_contribuable,
         annee,
         ca,
         benefice,

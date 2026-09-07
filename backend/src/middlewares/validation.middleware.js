@@ -21,7 +21,7 @@ const validate = (validations) => {
 };
 
 // Validateurs
-const entrepriseValidators = [
+const contribuableValidators = [
   body('nif')
     .notEmpty().withMessage('Le NIF est obligatoire')
     .isLength({ min: 10 }).withMessage('Le NIF doit contenir au moins 10 chiffres')
@@ -45,8 +45,8 @@ const entrepriseValidators = [
 ];
 
 const declarationValidators = [
-  body('id_entreprise')
-    .isInt().withMessage('ID entreprise invalide'),
+  body('id_contribuable')
+    .isInt().withMessage('ID contribuable invalide'),
   body('annee')
     .isInt({ min: 2000, max: 2100 })
     .withMessage('Année invalide'),
@@ -64,6 +64,6 @@ const declarationValidators = [
 
 module.exports = {
   validate,
-  entrepriseValidators,
+  contribuableValidators,
   declarationValidators
 };

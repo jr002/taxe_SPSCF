@@ -1,44 +1,44 @@
-const EntrepriseModel = require('../models/entreprise.model');
+const ContribuableModel = require('../models/contribuable.model');
 
-class EntrepriseController {
-  // Créer une entreprise
+class ContribuableController {
+  // Créer un contribuable
   static async create(req, res) {
     try {
       const { nif, raison_sociale, secteur_activite, adresse, telephone, email, regime_fiscal } = req.body;
       
       // Vérifier si le NIF existe déjà
-      const existing = await EntrepriseModel.findByNif(nif);
+      const existing = await ContribuableModel.findByNif(nif);
       if (existing) {
         return res.status(400).json({
           success: false,
-          message: 'Une entreprise avec ce NIF existe déjà'
+          message: 'Un contribuable avec ce NIF existe déjà'
         });
       }
       
-      const entreprise = await EntrepriseModel.create({
+      const contribuable = await ContribuableModel.create({
         nif, raison_sociale, secteur_activite, adresse, telephone, email, regime_fiscal
       });
       
       res.status(201).json({
         success: true,
-        data: entreprise,
-        message: 'Entreprise créée avec succès'
+        data: contribuable,
+        message: 'Contribuable créé avec succès'
       });
     } catch (error) {
-      console.error('Erreur création entreprise:', error);
+      console.error('Erreur création contribuable:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la création de l\'entreprise',
+        message: 'Erreur lors de la création du contribuable',
         error: error.message
       });
     }
   }
 
-  // Liste des entreprises
+  // Liste des contribuables
   static async findAll(req, res) {
     try {
       const { page, limit, search } = req.query;
-      const result = await EntrepriseModel.findAll({
+      const result = await ContribuableModel.findAll({
         page: parseInt(page) || 1,
         limit: parseInt(limit) || 20,
         search: search || ''
@@ -49,37 +49,37 @@ class EntrepriseController {
         data: result
       });
     } catch (error) {
-      console.error('Erreur liste entreprises:', error);
+      console.error('Erreur liste contribuables:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération des entreprises',
+        message: 'Erreur lors de la récupération des contribuables',
         error: error.message
       });
     }
   }
 
-  // Détails d'une entreprise
+  // Détails d'un contribuable
   static async findById(req, res) {
     try {
       const { id } = req.params;
-      const entreprise = await EntrepriseModel.findById(id);
+      const contribuable = await ContribuableModel.findById(id);
       
-      if (!entreprise) {
+      if (!contribuable) {
         return res.status(404).json({
           success: false,
-          message: 'Entreprise non trouvée'
+          message: 'Contribuable non trouvé'
         });
       }
       
       res.json({
         success: true,
-        data: entreprise
+        data: contribuable
       });
     } catch (error) {
-      console.error('Erreur détail entreprise:', error);
+      console.error('Erreur détail contribuable:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération de l\'entreprise',
+        message: 'Erreur lors de la récupération du contribuable',
         error: error.message
       });
     }
@@ -89,29 +89,29 @@ class EntrepriseController {
   static async update(req, res) {
     try {
       const { id } = req.params;
-      const entreprise = await EntrepriseModel.update(id, req.body);
+      const contribuable = await ContribuableModel.update(id, req.body);
       
-      if (!entreprise) {
+      if (!contribuable) {
         return res.status(404).json({
           success: false,
-          message: 'Entreprise non trouvée'
+          message: 'Contribuable non trouvé'
         });
       }
       
       res.json({
         success: true,
-        data: entreprise,
-        message: 'Entreprise mise à jour avec succès'
+        data: contribuable,
+        message: 'Contribuable mis à jour avec succès'
       });
     } catch (error) {
-      console.error('Erreur mise à jour entreprise:', error);
+      console.error('Erreur mise à jour contribuable:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la mise à jour de l\'entreprise',
+        message: 'Erreur lors de la mise à jour du contribuable',
         error: error.message
       });
     }
   }
 }
 
-module.exports = EntrepriseController;
+module.exports = ContribuableController;

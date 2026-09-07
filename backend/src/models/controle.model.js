@@ -1,4 +1,4 @@
-const db = require('../config/database');
+const prisma = require('../config/prisma');
 
 class ControleModel {
   // Créer un contrôle
@@ -8,73 +8,124 @@ class ControleModel {
       ecart, pourcentage_ecart, commentaire 
     } = data;
     
-    const query = `
-      INSERT INTO controles (
-        id_declaration, id_agent, type, resultat,
-        ecart, pourcentage_ecart, commentaire, date_controle
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
-      RETURNING *
-    `;
-    
-    const values = [id_declaration, id_agent, type, resultat, ecart, pourcentage_ecart, commentaire];
-    const result = await db.query(query, values);
-    return result.rows[0];
+    return await prisma.controles.create({
+      data: {
+        id_declaration: id_declaration ? parseInt(id_declaration, 10) : null,
+        id_agent: id_agent ? parseInt(id_agent, 10) : null,
+        type,
+        resultat,
+        ecart: ecart !== undefined ? ecart : 0,
+        pourcentage_ecart: pourcentage_ecart !== undefined ? pourcentage_ecart : 0,
+        commentaire: commentaire || null,
+        date_controle: new Date(),
+      },
+    });
   }
 
   // Trouver par ID
   static async findById(id) {
-    const query = `
-      SELECT c.*, d.annee, e.nif, e.raison_sociale,
-        a.nom as agent_nom, a.prenom as agent_prenom
-      FROM controles c
-      JOIN declarations d ON c.id_declaration = d.id_declaration
-      JOIN entreprises e ON d.id_entreprise = e.id_entreprise
-      JOIN agents a ON c.id_agent = a.id_agent
-      WHERE c.id_controle = $1
-    `;
-    const result = await db.query(query, [id]);
-    return result.rows[0];
+    const numericId = parseInt(id, 10);
+    if (isNaN(numericId)) return null;
+
+    const controle = await prisma.controles.findUnique({
+      where: { id_controle: numericId },
+      include: {
+        declarations: {
+          include: {
+            contribuables: {
+              select: {
+                nif: true,
+                raison_sociale: true,
+              },
+            },
+          },
+        },
+        agents: {
+          select: {
+            nom: true,
+            prenom: true,
+          },
+        },
+      },
+    });
+
+    if (!controle) return null;
+
+    const { declarations, agents, ...fields } = controle;
+    return {
+      ...fields,
+      annee: declarations?.annee || null,
+      nif: declarations?.contribuables?.nif || null,
+      raison_sociale: declarations?.contribuables?.raison_sociale || null,
+      agent_nom: agents?.nom || null,
+      agent_prenom: agents?.prenom || null,
+    };
   }
 
   // Contrôles d'une déclaration
   static async findByDeclaration(id_declaration) {
-    const query = `
-      SELECT c.*, a.nom as agent_nom, a.prenom as agent_prenom
-      FROM controles c
-      JOIN agents a ON c.id_agent = a.id_agent
-      WHERE c.id_declaration = $1
-      ORDER BY c.date_controle DESC
-    `;
-    const result = await db.query(query, [id_declaration]);
-    return result.rows;
+    const numericId = parseInt(id_declaration, 10);
+    if (isNaN(numericId)) return [];
+
+    const controles = await prisma.controles.findMany({
+      where: { id_declaration: numericId },
+      include: {
+        agents: {
+          select: {
+            nom: true,
+            prenom: true,
+          },
+        },
+      },
+      orderBy: { date_controle: 'desc' },
+    });
+
+    return controles.map((c) => {
+      const { agents, ...fields } = c;
+      return {
+        ...fields,
+        agent_nom: agents?.nom || null,
+        agent_prenom: agents?.prenom || null,
+      };
+    });
   }
 
   // Statistiques de contrôle
   static async getStats() {
-    const query = `
-      SELECT 
-        COUNT(*) as total,
-        COUNT(CASE WHEN resultat = 'conforme' THEN 1 END) as conformes,
-        COUNT(CASE WHEN resultat = 'alerte' THEN 1 END) as alertes,
-        COUNT(CASE WHEN resultat = 'critique' THEN 1 END) as critiques,
-        AVG(ecart) as ecart_moyen,
-        MAX(ecart) as ecart_max
-      FROM controles
-    `;
-    const result = await db.query(query);
-    return result.rows[0];
+    const [total, conformes, alertes, critiques, aggregations] = await Promise.all([
+      prisma.controles.count(),
+      prisma.controles.count({ where: { resultat: 'conforme' } }),
+      prisma.controles.count({ where: { resultat: 'alerte' } }),
+      prisma.controles.count({ where: { resultat: 'critique' } }),
+      prisma.controles.aggregate({
+        _avg: { ecart: true },
+        _max: { ecart: true },
+      }),
+    ]);
+
+    return {
+      total: String(total),
+      conformes: String(conformes),
+      alertes: String(alertes),
+      critiques: String(critiques),
+      ecart_moyen: aggregations._avg.ecart ? Number(aggregations._avg.ecart) : 0,
+      ecart_max: aggregations._max.ecart ? Number(aggregations._max.ecart) : 0,
+    };
   }
 
   // Contrôles par type
   static async getByType() {
-    const query = `
-      SELECT type, COUNT(*) as total, AVG(pourcentage_ecart) as ecart_moyen
-      FROM controles
-      GROUP BY type
-    `;
-    const result = await db.query(query);
-    return result.rows;
+    const grouped = await prisma.controles.groupBy({
+      by: ['type'],
+      _count: { _all: true },
+      _avg: { pourcentage_ecart: true },
+    });
+
+    return grouped.map((g) => ({
+      type: g.type,
+      total: String(g._count._all),
+      ecart_moyen: g._avg.pourcentage_ecart ? Number(g._avg.pourcentage_ecart) : 0,
+    }));
   }
 }
 

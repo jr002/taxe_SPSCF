@@ -1,11 +1,11 @@
-const db = require('../config/database');
+const prisma = require('../config/prisma');
 
 class RecoupementModel {
   // Créer un recoupement avec source par défaut
   static async create(data) {
     const { 
-      id_entreprise, 
-      source = 'tiers_declarant', // Valeur par défaut
+      id_contribuable, 
+      source = 'tiers_declarant',
       merchandise_sold, 
       goods_purchased,
       services_purchased, 
@@ -13,118 +13,117 @@ class RecoupementModel {
       local_products,
       import_expenses, 
       somme_recoupee,
-      reference_periode,
-      ca_declare
     } = data;
     
-    const query = `
-      INSERT INTO recoupements (
-        id_entreprise, source, merchandise_sold, goods_purchased,
-        services_purchased, third_party_payments, local_products,
-        import_expenses, somme_recoupee, reference_periode, ca_declare, date_creation
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
-      RETURNING *
-    `;
-    
-    const values = [
-      id_entreprise, 
-      source, 
-      merchandise_sold || 0, 
-      goods_purchased || 0,
-      services_purchased || 0, 
-      third_party_payments || 0, 
-      local_products || 0,
-      import_expenses || 0, 
-      somme_recoupee || 0,
-      reference_periode || null,
-      ca_declare || 0
-    ];
-    
-    const result = await db.query(query, values);
-    return result.rows[0];
+    return await prisma.recoupements.create({
+      data: {
+        id_contribuable: id_contribuable ? parseInt(id_contribuable, 10) : null,
+        source,
+        merchandise_sold: merchandise_sold !== undefined ? merchandise_sold : 0,
+        goods_purchased: goods_purchased !== undefined ? goods_purchased : 0,
+        services_purchased: services_purchased !== undefined ? services_purchased : 0,
+        third_party_payments: third_party_payments !== undefined ? third_party_payments : 0,
+        local_products: local_products !== undefined ? local_products : 0,
+        import_expenses: import_expenses !== undefined ? import_expenses : 0,
+        somme_recoupee: somme_recoupee !== undefined ? somme_recoupee : 0,
+        date_creation: new Date(),
+      },
+    });
   }
 
-  // Trouver par ID
+  // Trouver par ID avec informations du contribuable
   static async findById(id) {
-    const query = `
-      SELECT r.*, e.nif, e.raison_sociale
-      FROM recoupements r
-      JOIN entreprises e ON r.id_entreprise = e.id_entreprise
-      WHERE r.id_recoupement = $1
-    `;
-    const result = await db.query(query, [id]);
-    return result.rows[0];
+    const numericId = parseInt(id, 10);
+    if (isNaN(numericId)) return null;
+
+    const recoupement = await prisma.recoupements.findUnique({
+      where: { id_recoupement: numericId },
+      include: {
+        contribuables: {
+          select: {
+            nif: true,
+            raison_sociale: true,
+          },
+        },
+      },
+    });
+
+    if (!recoupement) return null;
+
+    const { contribuables, ...fields } = recoupement;
+    return {
+      ...fields,
+      nif: contribuables?.nif || null,
+      raison_sociale: contribuables?.raison_sociale || null,
+    };
   }
 
-  // Recoupements d'une entreprise
-  static async findByEntreprise(id_entreprise) {
-    const query = `
-      SELECT * FROM recoupements 
-      WHERE id_entreprise = $1 
-      ORDER BY date_creation DESC
-    `;
-    const result = await db.query(query, [id_entreprise]);
-    return result.rows;
+  // Recoupements d'un contribuable
+  static async findByContribuable(id_contribuable) {
+    const numericId = parseInt(id_contribuable, 10);
+    if (isNaN(numericId)) return [];
+
+    return await prisma.recoupements.findMany({
+      where: { id_contribuable: numericId },
+      orderBy: { date_creation: 'desc' },
+    });
   }
 
   // Dernier recoupement
-  static async findLastByEntreprise(id_entreprise) {
-    const query = `
-      SELECT * FROM recoupements 
-      WHERE id_entreprise = $1 
-      ORDER BY date_creation DESC 
-      LIMIT 1
-    `;
-    const result = await db.query(query, [id_entreprise]);
-    return result.rows[0];
+  static async findLastByContribuable(id_contribuable) {
+    const numericId = parseInt(id_contribuable, 10);
+    if (isNaN(numericId)) return null;
+
+    return await prisma.recoupements.findFirst({
+      where: { id_contribuable: numericId },
+      orderBy: { date_creation: 'desc' },
+    });
   }
 
   // Mettre à jour
   static async update(id, data) {
-    const fields = [];
-    const values = [];
-    let index = 1;
+    const numericId = parseInt(id, 10);
+    if (isNaN(numericId)) return null;
 
+    const updateData = {};
     const allowedFields = [
       'source', 'merchandise_sold', 'goods_purchased', 
       'services_purchased', 'third_party_payments', 
       'local_products', 'import_expenses', 'somme_recoupee',
-      'reference_periode', 'ca_declare'
     ];
     
     for (const field of allowedFields) {
       if (data[field] !== undefined) {
-        fields.push(`${field} = $${index++}`);
-        values.push(data[field]);
+        updateData[field] = data[field];
       }
     }
 
-    values.push(id);
-    const query = `
-      UPDATE recoupements 
-      SET ${fields.join(', ')}, date_modification = NOW()
-      WHERE id_recoupement = $${index}
-      RETURNING *
-    `;
-    
-    const result = await db.query(query, values);
-    return result.rows[0];
+    try {
+      return await prisma.recoupements.update({
+        where: { id_recoupement: numericId },
+        data: updateData,
+      });
+    } catch (err) {
+      if (err.code === 'P2025') return null;
+      throw err;
+    }
   }
 
   // Statistiques des sources
   static async getSourceStats() {
-    const query = `
-      SELECT 
-        source,
-        COUNT(*) as total,
-        AVG(somme_recoupee) as moyenne_recoupee
-      FROM recoupements
-      GROUP BY source
-      ORDER BY total DESC
-    `;
-    const result = await db.query(query);
-    return result.rows;
+    const grouped = await prisma.recoupements.groupBy({
+      by: ['source'],
+      _count: { _all: true },
+      _avg: { somme_recoupee: true },
+    });
+
+    return grouped
+      .map((g) => ({
+        source: g.source,
+        total: String(g._count._all),
+        moyenne_recoupee: g._avg.somme_recoupee ? Number(g._avg.somme_recoupee) : 0,
+      }))
+      .sort((a, b) => Number(b.total) - Number(a.total));
   }
 }
 

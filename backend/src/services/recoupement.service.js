@@ -30,9 +30,9 @@ class RecoupementService {
     return recoupement;
   }
 
-  // Analyser les recoupements d'une entreprise
-  static async analyserRecoupements(id_entreprise, declarations) {
-    const recoupements = await RecoupementModel.findByEntreprise(id_entreprise);
+  // Analyser les recoupements d'une contribuable
+  static async analyserRecoupements(id_contribuable, declarations) {
+    const recoupements = await RecoupementModel.findByContribuable(id_contribuable);
     
     if (recoupements.length === 0) {
       return { 

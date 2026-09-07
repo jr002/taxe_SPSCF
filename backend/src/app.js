@@ -6,13 +6,14 @@ const path = require('path');
 const config = require('./config/env');
 
 // Routes
-const entrepriseRoutes = require('./routes/entreprise.routes');
+const contribuableRoutes = require('./routes/contribuable.routes');
 const declarationRoutes = require('./routes/declaration.routes');
 const controleRoutes = require('./routes/controle.routes');
 const recoupementRoutes = require('./routes/recoupement.routes');
 
 // Middleware d'erreur
 const errorHandler = require('./middlewares/error.middleware');
+const { swaggerSpec, swaggerUi } = require('./config/swagger');
 
 const app = express();
 const allowedOrigins = [
@@ -49,10 +50,14 @@ app.use(morgan('dev'));
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
-app.use('/api/entreprises', entrepriseRoutes);
+app.use('/api/contribuables', contribuableRoutes);
 app.use('/api/declarations', declarationRoutes);
 app.use('/api/controles', controleRoutes);
 app.use('/api/recoupements', recoupementRoutes);
+app.get('/api-docs/swagger.json', (req, res) => {
+  res.json(swaggerSpec);
+});
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Route santé
 app.get('/health', (req, res) => {

@@ -6,7 +6,7 @@ class RecoupementController {
   static async create(req, res) {
     try {
       const { 
-        id_entreprise, 
+        id_contribuable, 
         source = 'tiers_declarant', // Valeur par défaut
         merchandise_sold, 
         goods_purchased, 
@@ -19,15 +19,15 @@ class RecoupementController {
       } = req.body;
       
       // Validation
-      if (!id_entreprise) {
+      if (!id_contribuable) {
         return res.status(400).json({
           success: false,
-          message: 'L\'ID de l\'entreprise est obligatoire'
+          message: 'L\'ID de l\'contribuable est obligatoire'
         });
       }
       
       const recoupement = await RecoupementService.createRecoupement({
-        id_entreprise,
+        id_contribuable,
         source,
         merchandise_sold,
         goods_purchased,
@@ -55,13 +55,13 @@ class RecoupementController {
     }
   }
 
-  // Analyser les recoupements d'une entreprise
+  // Analyser les recoupements d'une contribuable
   static async analyser(req, res) {
     try {
-      const { id_entreprise } = req.params;
-      const declarations = await DeclarationModel.findByEntreprise(id_entreprise);
+      const { id_contribuable } = req.params;
+      const declarations = await DeclarationModel.findByContribuable(id_contribuable);
       
-      const analyse = await RecoupementService.analyserRecoupements(id_entreprise, declarations);
+      const analyse = await RecoupementService.analyserRecoupements(id_contribuable, declarations);
       
       res.json({
         success: true,
