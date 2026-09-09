@@ -35,10 +35,7 @@ class ContribuableModel {
       where: { id_contribuable: numericId },
       include: {
         declarations: {
-          select: {
-            id_declaration: true,
-            ca: true,
-          },
+          orderBy: { annee: 'desc' },
         },
       },
     });
@@ -52,9 +49,8 @@ class ContribuableModel {
     );
     const ca_moyen = nb_declarations > 0 ? (totalCa / nb_declarations).toFixed(2) : null;
 
-    const { declarations, ...fields } = contribuable;
     return {
-      ...fields,
+      ...contribuable,
       nb_declarations: String(nb_declarations),
       ca_moyen: ca_moyen !== null ? String(ca_moyen) : null,
     };
@@ -71,6 +67,7 @@ class ContribuableModel {
           OR: [
             { nif: { contains: search, mode: 'insensitive' } },
             { raison_sociale: { contains: search, mode: 'insensitive' } },
+            { secteur_activite: { contains: search, mode: 'insensitive' } },
           ],
         }
       : {};
@@ -83,6 +80,9 @@ class ContribuableModel {
         take: limitNum,
         orderBy: { date_creation: 'desc' },
         include: {
+          declarations: {
+            orderBy: { annee: 'desc' },
+          },
           _count: {
             select: { declarations: true },
           },

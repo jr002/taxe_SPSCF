@@ -1,41 +1,180 @@
-# Backend
+# Backend SSIF
 
-API REST du SSIF, construite avec Node.js et Express. Le serveur démarre depuis [`server.js`](server.js) et l'application Express est assemblée dans [`src/app.js`](src/app.js).
+API REST du **Système de suivi et de contrôle fiscal (SSIF)**. Le backend
+utilise Node.js, Express, PostgreSQL et Prisma.
 
-## Organisation
+## 1. Prérequis
 
-- [`src/config/`](src/config/) : configuration de l'environnement et de la base de données.
-- [`src/routes/`](src/routes/) : routes HTTP `/api`.
-- [`src/controllers/`](src/controllers/) : réception des requêtes et réponses.
-- [`src/services/`](src/services/) : calculs et orchestration de la logique métier.
-- [`src/models/`](src/models/) : accès aux données PostgreSQL.
-- [`src/middlewares/`](src/middlewares/) : validation et gestion des erreurs.
-- [`src/utils/`](src/utils/) : fonctions techniques partagées.
-- [`src/config/prisma.js`](src/config/prisma.js) : instance Prisma ORM pour PostgreSQL.
+- Node.js 18 ou une version plus récente ;
+- npm ;
+- PostgreSQL 14 ou une version plus récente ;
+- une base de données PostgreSQL créée pour le projet.
 
-## Commandes
+## 2. Installation
+
+Depuis ce dossier :
 
 ```bash
 npm install
-npm run prisma:generate # régénérer le client Prisma
-npm run dev             # développement avec nodemon
-npm start               # démarrage normal
+npm run prisma:generate
 ```
 
-Le fichier `.env` contient les paramètres locaux et ne doit pas être versionné (notamment `DATABASE_URL`).
+Le fichier `.env` doit se trouver directement dans `backend/`. Il contient les
+paramètres locaux de la base de données et ne doit pas être partagé ou
+committé.
 
-## Migration de la base
+Exemple de configuration :
 
-Exécuter [`migrations/001-rename-contribuables.sql`](migrations/001-rename-contribuables.sql) une seule fois sur la base existante avant de démarrer l'API renommée.
+```env
+PORT=5000
+NODE_ENV=development
 
-Les modèles utilisent l'instance Prisma exportée par `src/config/prisma.js`.
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=taxe_verification
+DB_USER=postgres
+DB_PASSWORD=<mot_de_passe_postgresql>
+DATABASE_URL="postgresql://postgres:<mot_de_passe_postgresql>@localhost:5432/taxe_verification?schema=public"
 
-## Documentation Swagger
+CORS_ORIGIN=http://localhost:5173
+```
 
-Après le démarrage du serveur, l'interface interactive est disponible à l'adresse :
+La base indiquée par `DATABASE_URL` doit exister avant le démarrage de l'API.
+Le projet fournit une migration SQL historique à appliquer uniquement si votre
+base ne contient pas encore le renommage attendu :
+[`migrations/001-rename-contribuables.sql`](migrations/001-rename-contribuables.sql)
+Ne l'exécutez qu'une seule fois et vérifiez son contenu avant de l'appliquer.
+
+## 3. Démarrer le serveur
+
+```bash
+# Développement : redémarre automatiquement après une modification
+npm run dev
+
+# Démarrage normal
+npm start
+```
+
+Par défaut, l'API écoute sur `http://localhost:5000`.
+
+Vérifier que le serveur fonctionne :
 
 ```text
-http://localhost:5000/api-docs
+GET http://localhost:5000/health
 ```
 
-La spécification OpenAPI JSON est disponible sur `http://localhost:5000/api-docs/swagger.json`.
+Une réponse correcte contient notamment `"status": "OK"`.
+
+## 4. Documentation de l'API
+
+La documentation interactive Swagger est disponible après le démarrage :
+
+- interface : `http://localhost:5000/api-docs`
+- spécification JSON : `http://localhost:5000/api-docs/swagger.json`
+
+Les exemples et le détail des paramètres sont également regroupés dans
+[`../ROUTES_AND_API.md`](../ROUTES_AND_API.md).
+
+### Routes principales
+
+| Préfixe | Rôle |
+| --- | --- |
+| `/api/contribuables` | créer, consulter et modifier les contribuables |
+| `/api/declarations` | gérer les déclarations et leurs statistiques |
+| `/api/controles` | effectuer un contrôle et consulter son historique |
+| `/api/recoupements` | enregistrer et analyser des données de recoupement |
+
+Exemples :
+
+```text
+GET  /api/contribuables
+GET  /api/contribuables/:id
+POST /api/contribuables
+PUT  /api/contribuables/:id
+
+GET  /api/declarations
+GET  /api/declarations/stats
+GET  /api/declarations/:id
+POST /api/declarations
+
+GET  /api/controles/stats
+POST /api/controles/:id_declaration/effectuer
+GET  /api/controles/:id_declaration/historique
+
+POST /api/recoupements
+GET  /api/recoupements/:id_contribuable/analyser
+GET  /api/recoupements/stats/sources
+```
+
+## 5. Organisation du code
+
+Le traitement d'une requête suit généralement le chemin :
+**route → controller → service/model → PostgreSQL**.
+
+```text
+backend/
+├── server.js                 # démarre le serveur HTTP
+├── src/
+│   ├── app.js                # Express, middlewares et routes
+│   ├── config/
+│   │   ├── env.js            # variables d'environnement
+│   │   ├── prisma.js         # client Prisma
+│   │   └── swagger.js        # documentation OpenAPI
+│   ├── routes/               # définition des URL de l'API
+│   ├── controllers/          # lecture de la requête et réponse HTTP
+│   ├── services/             # logique métier et calculs fiscaux
+│   ├── models/               # accès aux données
+│   ├── middlewares/          # validation et gestion des erreurs
+│   └── utils/                # fonctions communes
+├── prisma/schema.prisma      # modèles et relations de la base
+└── migrations/               # scripts SQL ponctuels
+```
+
+Pour ajouter une fonctionnalité, créer ou modifier les éléments dans cet ordre :
+
+1. définir la route ;
+2. ajouter la validation nécessaire ;
+3. implémenter le controller ;
+4. placer la logique métier dans un service ;
+5. utiliser le modèle Prisma pour accéder à PostgreSQL.
+
+## 6. Modèle de données
+
+Les principaux modèles Prisma sont :
+
+- `contribuables` : entreprises ou personnes suivies ;
+- `declarations` : données fiscales annuelles ;
+- `controles` : contrôles réalisés sur les déclarations ;
+- `agents` : agents qui réalisent les contrôles ;
+- `recoupements` : données provenant de sources externes.
+
+Les relations et contraintes sont détaillées dans
+[`prisma/schema.prisma`](prisma/schema.prisma). Après une modification du
+schéma, régénérer le client :
+
+```bash
+npm run prisma:generate
+```
+
+## 7. Sécurité et dépannage
+
+- Ne jamais exposer `DB_PASSWORD`, `DATABASE_URL` ou les mots de passe des
+  agents dans le code, les logs ou les réponses JSON.
+- Le CORS est limité aux origines locales configurées dans `src/app.js`.
+- Une erreur `ECONNREFUSED` indique généralement que PostgreSQL n'est pas
+  démarré ou que `DB_HOST`/`DB_PORT` sont incorrects.
+- Une erreur Prisma de connexion indique généralement une `DATABASE_URL`
+  incorrecte ou une base inexistante.
+- Une erreur CORS signifie que l'adresse du frontend n'est pas autorisée ;
+  vérifiez l'origine utilisée par Vite et la liste `allowedOrigins`.
+- `npm test` est encore un script placeholder : aucun test automatisé n'est
+  actuellement configuré dans le backend.
+
+## Scripts npm
+
+| Commande | Utilité |
+| --- | --- |
+| `npm install` | installe les dépendances |
+| `npm run prisma:generate` | génère le client Prisma |
+| `npm run dev` | lance le serveur avec nodemon |
+| `npm start` | lance le serveur en mode normal |

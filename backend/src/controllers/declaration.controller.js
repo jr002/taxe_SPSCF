@@ -120,6 +120,111 @@ class DeclarationController {
       });
     }
   }
+
+  // Émettre la Notification Primitive (Proposition)
+  static async emettreNotificationPrimitive(req, res) {
+    try {
+      const { id } = req.params;
+      const { date_emission, prorogation_jours, montant_redressement, credit_impot, observations_agent } = req.body;
+
+      const updated = await DeclarationModel.emettreNotificationPrimitive(id, {
+        date_emission,
+        prorogation_jours,
+        montant_redressement,
+        credit_impot,
+        observations_agent,
+      });
+
+      if (!updated) {
+        return res.status(404).json({
+          success: false,
+          message: 'Déclaration non trouvée',
+        });
+      }
+
+      res.json({
+        success: true,
+        data: updated,
+        message: 'Notification primitive émise avec succès (délai de réponse fixé à 30 jours)',
+      });
+    } catch (error) {
+      console.error('Erreur émission notification primitive:', error);
+      res.status(500).json({
+        success: false,
+        message: "Erreur lors de l'émission de la notification primitive",
+        error: error.message,
+      });
+    }
+  }
+
+  // Émettre la Notification Définitive (Validation des montants par l'agent)
+  static async emettreNotificationDefinitive(req, res) {
+    try {
+      const { id } = req.params;
+      const { date_emission, montant_valide, credit_impot, observations_agent } = req.body;
+
+      const updated = await DeclarationModel.emettreNotificationDefinitive(id, {
+        date_emission,
+        montant_valide,
+        credit_impot,
+        observations_agent,
+      });
+
+      if (!updated) {
+        return res.status(404).json({
+          success: false,
+          message: 'Déclaration non trouvée',
+        });
+      }
+
+      res.json({
+        success: true,
+        data: updated,
+        message: 'Notification définitive émise avec succès (statut DÉFINITIVE_ENVOYÉE, imputation débloquée)',
+      });
+    } catch (error) {
+      console.error('Erreur émission notification définitive:', error);
+      res.status(500).json({
+        success: false,
+        message: "Erreur lors de l'émission de la notification définitive",
+        error: error.message,
+      });
+    }
+  }
+
+  // Imputer le crédit d'impôt (Articles 01.01.15 et 01.02.06 CGI 2026)
+  static async imputerCreditImpot(req, res) {
+    try {
+      const { id } = req.params;
+      const { credit_impot, montant_a_imputer, observations_agent } = req.body;
+
+      const updated = await DeclarationModel.imputerCreditImpot(id, {
+        credit_impot,
+        montant_a_imputer,
+        observations_agent,
+      });
+
+      if (!updated) {
+        return res.status(404).json({
+          success: false,
+          message: 'Déclaration non trouvée',
+        });
+      }
+
+      res.json({
+        success: true,
+        data: updated,
+        message: "Crédit d'impôt imputé avec succès sur le redressement définitif",
+      });
+    } catch (error) {
+      console.error('Erreur imputation crédit impôt:', error);
+      res.status(400).json({
+        success: false,
+        message: error.message || "Erreur lors de l'imputation du crédit d'impôt",
+        error: error.message,
+      });
+    }
+  }
 }
 
 module.exports = DeclarationController;

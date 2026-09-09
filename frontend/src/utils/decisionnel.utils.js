@@ -5,13 +5,16 @@ import { toNumber } from './formatters';
 
 /**
  * Détermine le régime fiscal selon le chiffre d'affaires
- * IS : CA < 400 000 000 Ar
- * IR : CA >= 400 000 000 Ar
+ * IS : régime appliqué par défaut et obligatoire lorsque le CA atteint
+ *      400 000 000 Ar
+ * IR : optionnel lorsque le CA est inférieur à 400 000 000 Ar
  * @param {Object} declaration
  * @returns {'IS' | 'IR'}
  */
 export const getRegime = (declaration) => {
-  return toNumber(declaration.ca) < 400000000 ? 'IS' : 'IR';
+  return toNumber(declaration.ca) < 400000000 && declaration.regime_fiscal === 'IR'
+    ? 'IR'
+    : 'IS';
 };
 
 // Alias pour compatibilité

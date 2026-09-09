@@ -132,8 +132,12 @@ class DeclarationModel {
     const numericId = parseInt(id, 10);
     if (isNaN(numericId)) return null;
 
-    const updateData = {};
-    const allowedFields = ['ca', 'benefice', 'tva_collectee', 'tva_deductible', 'tva_payee', 'tva_theorique', 'statut'];
+    const allowedFields = [
+      'ca', 'benefice', 'tva_collectee', 'tva_deductible', 'tva_payee', 'tva_theorique', 'statut',
+      'date_notification_primitive', 'date_limite_reponse', 'prorogation_jours',
+      'date_notification_definitive', 'montant_redressement', 'credit_impot',
+      'montant_impute', 'montant_net_a_payer', 'observations_agent'
+    ];
     for (const field of allowedFields) {
       if (data[field] !== undefined) {
         updateData[field] = data[field];
@@ -150,6 +154,118 @@ class DeclarationModel {
       if (err.code === 'P2025') return null;
       throw err;
     }
+  }
+
+  // Émettre la Notification Primitive (Proposition - CPF V-19)
+  static async emettreNotificationPrimitive(id, options = {}) {
+    const numericId = parseInt(id, 10);
+    if (isNaN(numericId)) return null;
+
+    const declaration = await this.findById(numericId);
+    if (!declaration) return null;
+
+    const dateEmission = options.date_emission ? new Date(options.date_emission) : new Date();
+    const prorogation = parseInt(options.prorogation_jours, 10) || 0;
+    
+    // Délai légal de 30 jours + prorogation éventuelle DGI
+    const dateLimite = new Date(dateEmission);
+    dateLimite.setDate(dateLimite.getDate() + 30 + prorogation);
+
+    // Calcul ou affectation du redressement proposé
+    const tvaPayee = Number(declaration.tva_payee) || 0;
+    const tvaTheorique = Number(declaration.tva_theorique) || 0;
+    const ecart = Math.max(0, tvaTheorique - tvaPayee);
+    const montantRedressement = options.montant_redressement !== undefined 
+      ? Number(options.montant_redressement) 
+      : ecart;
+
+    const creditImpot = options.credit_impot !== undefined 
+      ? Number(options.credit_impot) 
+      : (Number(declaration.credit_impot) || 0);
+
+    return await prisma.declarations.update({
+      where: { id_declaration: numericId },
+      data: {
+        date_notification_primitive: dateEmission,
+        date_limite_reponse: dateLimite,
+        prorogation_jours: prorogation,
+        montant_redressement: montantRedressement,
+        credit_impot: creditImpot,
+        montant_impute: 0, // Non imputable à ce stade (droits non encore arrêtés)
+        montant_net_a_payer: montantRedressement,
+        statut: 'PRIMITIVE_ENVOYÉE',
+        observations_agent: options.observations_agent || declaration.observations_agent,
+        date_modification: new Date(),
+      },
+    });
+  }
+
+  // Émettre la Notification Définitive (Décision finale - CGI 2026 Art. 01.01.15 & 01.02.06)
+  static async emettreNotificationDefinitive(id, options = {}) {
+    const numericId = parseInt(id, 10);
+    if (isNaN(numericId)) return null;
+
+    const declaration = await this.findById(numericId);
+    if (!declaration) return null;
+
+    const dateEmission = options.date_emission ? new Date(options.date_emission) : new Date();
+    const montantValide = options.montant_valide !== undefined 
+      ? Number(options.montant_valide) 
+      : (Number(declaration.montant_redressement) || 0);
+
+    const creditImpot = options.credit_impot !== undefined
+      ? Number(options.credit_impot)
+      : (Number(declaration.credit_impot) || 0);
+
+    return await prisma.declarations.update({
+      where: { id_declaration: numericId },
+      data: {
+        date_notification_definitive: dateEmission,
+        montant_redressement: montantValide,
+        credit_impot: creditImpot,
+        montant_net_a_payer: montantValide,
+        statut: 'DÉFINITIVE_ENVOYÉE',
+        observations_agent: options.observations_agent || declaration.observations_agent,
+        date_modification: new Date(),
+      },
+    });
+  }
+
+  // Imputer le crédit d'impôt (autorisé UNIQUEMENT après Notification Définitive)
+  static async imputerCreditImpot(id, options = {}) {
+    const numericId = parseInt(id, 10);
+    if (isNaN(numericId)) return null;
+
+    const declaration = await this.findById(numericId);
+    if (!declaration) return null;
+
+    if (declaration.statut !== 'DÉFINITIVE_ENVOYÉE') {
+      throw new Error(
+        "L'imputation du crédit d'impôt n'est autorisée qu'après l'émission de la Notification Définitive (statut DÉFINITIVE_ENVOYÉE) selon les articles 01.01.15 et 01.02.06 du CGI."
+      );
+    }
+
+    const redressement = Number(declaration.montant_redressement) || 0;
+    const creditDisponible = options.credit_impot !== undefined 
+      ? Number(options.credit_impot) 
+      : (Number(declaration.credit_impot) || 0);
+
+    const montantAImputer = options.montant_a_imputer !== undefined
+      ? Math.min(Number(options.montant_a_imputer), creditDisponible, redressement)
+      : Math.min(creditDisponible, redressement);
+
+    const netAPayer = Math.max(0, redressement - montantAImputer);
+
+    return await prisma.declarations.update({
+      where: { id_declaration: numericId },
+      data: {
+        credit_impot: creditDisponible,
+        montant_impute: montantAImputer,
+        montant_net_a_payer: netAPayer,
+        observations_agent: options.observations_agent || declaration.observations_agent,
+        date_modification: new Date(),
+      },
+    });
   }
 
   // Statistiques

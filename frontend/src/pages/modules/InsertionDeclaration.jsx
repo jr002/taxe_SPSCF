@@ -48,7 +48,7 @@ export default function InsertionDeclaration({ surCollecte }) {
   const tauxApparent = ca > 0 ? (impotsPayes / ca) * 100 : 0;
 
   // Régime fiscal selon seuil DGI Madagascar
-  const regimeFiscal = ca >= 400_000_000 ? 'IR' : 'IS';
+  const regimeFiscal = 'IS';
 
   // Charge fiscale totale déclarée
   const chargeFiscaleTotale = impotsPayes + tvaDeclaree + autresCharges;
@@ -180,8 +180,10 @@ export default function InsertionDeclaration({ surCollecte }) {
           <strong>Régime fiscal détecté : {ca > 0 ? regimeFiscal : '—'}</strong>
           <span>
             {regimeFiscal === 'IS'
-              ? 'IS · CA < 400 000 000 Ar — Taux appliqué : 5 % du CA'
-              : 'IR · CA ≥ 400 000 000 Ar — MAX(320 000 + 20 % CA ; 20 % Bénéfice)'}
+              ? ca >= 400_000_000
+                ? 'IS · régime appliqué automatiquement au-dessus de 400 000 000 Ar'
+                : 'IS · régime par défaut — Taux appliqué : 5 % du CA'
+              : 'IR · option disponible sous 400 000 000 Ar'}
           </span>
         </div>
 

@@ -60,6 +60,9 @@ Le backend écoute par défaut sur le port `5000` (`http://localhost:5000`). En 
 | **`GET`** | `/api/declarations/stats` | Statistiques globales & KPIs | **Réponse :** total, conformes, alertes, critiques, ca_moyen, tva_totale, tva_theorique_totale, ecart_total | `200 OK` |
 | **`GET`** | `/api/declarations/:id` | Fiche détaillée d'une déclaration | **Param :** `id` (ID Déclaration) | `200 OK` / `404 Not Found` |
 | **`POST`** | `/api/declarations` | Enregistrer une déclaration (Calcul automatique TVA théorique, écart et statut) | **Body JSON :**<br>• `id_entreprise` *(number, requis)*<br>• `annee` *(number, requis)*<br>• `ca` *(number, requis)*<br>• `benefice` *(number, requis)*<br>• `tva_collectee` *(number)*<br>• `tva_deductible` *(number)*<br>• `tva_payee` *(number)*<br>• `regime_fiscal` *('IS' \| 'IR')* | `201 Created` |
+| **`POST`** | `/api/declarations/:id/notification-primitive` | Émettre la **Notification Primitive** (délai 30j, statut `PRIMITIVE_ENVOYÉE`) | **Param :** `id`<br>**Body :** `date_emission`, `prorogation_jours`, `montant_redressement`, `credit_impot`, `observations_agent` | `200 OK` |
+| **`POST`** | `/api/declarations/:id/notification-definitive` | Émettre la **Notification Définitive** (validation agent, dette arrêtée, statut `DÉFINITIVE_ENVOYÉE`, déblocage imputation) | **Param :** `id`<br>**Body :** `date_emission`, `montant_valide`, `credit_impot`, `observations_agent` | `200 OK` |
+| **`POST`** | `/api/declarations/:id/imputer-credit` | **Imputer le Crédit d'Impôt** (Articles 01.01.15 et 01.02.06 CGI LFI 2026, autorisé uniquement si `DÉFINITIVE_ENVOYÉE`) | **Param :** `id`<br>**Body :** `credit_impot`, `montant_a_imputer`, `observations_agent` | `200 OK` / `400 Bad Request` |
 
 ---
 

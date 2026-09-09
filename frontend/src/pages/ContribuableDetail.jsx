@@ -1,39 +1,36 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { getDeclarations, getErrorMessage } from '../api/api';
-import { getContribuables } from '../utils/contribuables.utils';
+import { getContribuableById, getErrorMessage } from '../api/api';
 import { getRegime } from '../utils/decisionnel.utils';
 import { formatAriary, toNumber } from '../utils/formatters';
+import { getCategorie, getFicheCategorie } from '../utils/contribuable.utils';
 import {
   ContribVolumeChart,
   ContribComparisonChart,
 } from '../components/charts/Diagrammes';
 
 /**
- * Fiche détaillée d'un contribuable : historique des paiements et analyse graphique sur 5 ans
+ * Fiche détaillée d'un contribuable : classification, régime, pénalités,
+ * historique des paiements et analyse graphique sur 5 ans
  */
 export default function ContribuableDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+  const [contribuable, setContribuable] = useState(location.state?.contribuable || null);
   const [declarations, setDeclarations] = useState(
     location.state?.contribuable?.declarations || []
   );
-  const [loading, setLoading] = useState(!declarations.length);
+  const [loading, setLoading] = useState(!location.state?.contribuable);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const loadHistory = async () => {
       setLoading(true);
       try {
-        const result = await getDeclarations({ limit: 10000 });
-        const list = result.data || result;
-        const found = getContribuables(list).find((item) => item.key === id);
-        setDeclarations(found?.declarations || []);
-
-        if (!found) {
-          setError('Ce contribuable est introuvable.');
-        }
+        const result = await getContribuableById(id);
+        setContribuable(result);
+        setDeclarations(result.declarations || []);
       } catch (requestError) {
         setError(getErrorMessage(requestError));
       } finally {
@@ -41,17 +38,20 @@ export default function ContribuableDetail() {
       }
     };
 
-    if (!location.state?.contribuable?.declarations?.length) {
+    if (!location.state?.contribuable) {
       loadHistory();
     }
-  }, [id, location.state]);
+  }, [id, location.state?.contribuable]);
 
-  const contribuable = useMemo(() => declarations[0], [declarations]);
   const currentRegime = contribuable ? getRegime(contribuable) : 'IS';
   const totalPaid = declarations.reduce(
     (total, row) => total + toNumber(row.tva_payee),
     0
   );
+
+  /* ---- Classification ---- */
+  const categorie = contribuable ? getCategorie(contribuable) : 'Petit';
+  const fiche = getFicheCategorie(categorie);
 
   const chartYears = useMemo(
     () =>
@@ -121,7 +121,15 @@ export default function ContribuableDetail() {
 
       <div className="page-heading declaration-page-heading">
         <p className="eyebrow">Fiche contribuable</p>
-        <h1>{contribuable.raison_sociale || 'Contribuable'}</h1>
+        <h1>
+          {contribuable.raison_sociale || 'Contribuable'}
+          <span
+            className="categorie-badge-inline"
+            style={{ background: fiche.background, color: fiche.couleur }}
+          >
+            {fiche.label}
+          </span>
+        </h1>
         <p>
           NIF : {contribuable.nif || 'N/A'} · {declarations.length} année(s) suivie(s)
         </p>
@@ -135,6 +143,52 @@ export default function ContribuableDetail() {
         <div>
           <span>Dernière déclaration enregistrée</span>
           <strong>{declarations[0]?.annee || 'N/A'}</strong>
+        </div>
+      </div>
+
+      {/* ========== PANNEAU CLASSIFICATION ========== */}
+      <div
+        className="classification-panel"
+        style={{ borderLeftColor: fiche.couleur }}
+      >
+        <div className="classification-panel-header">
+          <span
+            className="classification-panel-badge"
+            style={{ background: fiche.background, color: fiche.couleur }}
+          >
+            {fiche.label}
+          </span>
+          <span className="classification-panel-seuil">{fiche.seuil}</span>
+        </div>
+
+        {/* Régime fiscal */}
+        <div className="classification-panel-section">
+          <h3>📋 Régime fiscal &amp; comptable</h3>
+          <p>{fiche.regime}</p>
+        </div>
+
+        {/* Pénalités de retard */}
+        <div className="classification-panel-section">
+          <h3>⏱️ Pénalités de retard de paiement <small>({fiche.refArticle})</small></h3>
+          <ul>
+            {fiche.penaliteRetard.map((p, i) => (
+              <li key={i}>{p}</li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Amendes */}
+        <div className="classification-panel-section">
+          <h3>⚠️ Amendes administratives</h3>
+          <div className="amendes-grid">
+            {fiche.amendes.map((a, i) => (
+              <div key={i} className="amende-card">
+                <span className="amende-motif">{a.motif}</span>
+                <strong className="amende-montant">{formatAriary(a.montant)}</strong>
+                {a.unite && <small className="amende-unite">{a.unite}</small>}
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -163,6 +217,7 @@ export default function ContribuableDetail() {
             <tr>
               <th>Année</th>
               <th>Chiffre d'affaires</th>
+              <th>Catégorie</th>
               <th>TVA collectée</th>
               <th>TVA déductible</th>
               <th>TVA payée</th>
@@ -171,30 +226,49 @@ export default function ContribuableDetail() {
             </tr>
           </thead>
           <tbody>
-            {declarations.map((declaration) => (
-              <tr
-                key={declaration.id_declaration}
-                className="clickable-row"
-                title="Voir le détail de cette déclaration"
-                onClick={() =>
-                  navigate(`/suivi/${declaration.id_declaration}`, {
-                    state: { declaration },
-                  })
-                }
-              >
-                <td>
-                  <strong>{declaration.annee}</strong>
-                </td>
-                <td>{formatAriary(declaration.ca)}</td>
-                <td>{formatAriary(declaration.tva_collectee)}</td>
-                <td>{formatAriary(declaration.tva_deductible)}</td>
-                <td>
-                  <strong>{formatAriary(declaration.tva_payee)}</strong>
-                </td>
-                <td>{formatAriary(declaration.tva_theorique)}</td>
-                <td>{declaration.statut || 'Conforme'}</td>
-              </tr>
-            ))}
+            {declarations.map((declaration) => {
+              const declCa = toNumber(declaration.ca);
+              const declCat =
+                declCa >= 400_000_000
+                  ? 'Grand'
+                  : declCa >= 100_000_000
+                    ? 'Moyen'
+                    : 'Petit';
+              const declBadge =
+                declCat === 'Grand'
+                  ? 'badge critique'
+                  : declCat === 'Moyen'
+                    ? 'badge surveillance'
+                    : 'badge conforme';
+
+              return (
+                <tr
+                  key={declaration.id_declaration}
+                  className="clickable-row"
+                  title="Voir le détail de cette déclaration"
+                  onClick={() =>
+                    navigate(`/suivi/${declaration.id_declaration}`, {
+                      state: { declaration },
+                    })
+                  }
+                >
+                  <td>
+                    <strong>{declaration.annee}</strong>
+                  </td>
+                  <td>{formatAriary(declaration.ca)}</td>
+                  <td>
+                    <span className={declBadge}>{declCat}</span>
+                  </td>
+                  <td>{formatAriary(declaration.tva_collectee)}</td>
+                  <td>{formatAriary(declaration.tva_deductible)}</td>
+                  <td>
+                    <strong>{formatAriary(declaration.tva_payee)}</strong>
+                  </td>
+                  <td>{formatAriary(declaration.tva_theorique)}</td>
+                  <td>{declaration.statut || 'Conforme'}</td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

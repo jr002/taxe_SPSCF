@@ -73,4 +73,14 @@ export const effectuerControle = (idDeclaration, payload = {}) =>
 export const getControlesDeclaration = (idDeclaration) =>
   api.get(`/controles/${idDeclaration}/historique`).then((res) => res.data.data);
 
+// ==================== PROCÉDURE CONTRADICTOIRE & REDRESSEMENTS (CGI 2026) ====================
+export const emettreNotificationPrimitive = (idDeclaration, payload = {}) =>
+  api.post(`/declarations/${idDeclaration}/notification-primitive`, payload).then((res) => res.data.data);
+
+export const emettreNotificationDefinitive = (idDeclaration, payload = {}) =>
+  api.post(`/declarations/${idDeclaration}/notification-definitive`, payload).then((res) => res.data.data);
+
+export const imputerCreditImpot = (idDeclaration, payload = {}) =>
+  api.post(`/declarations/${idDeclaration}/imputer-credit`, payload).then((res) => res.data.data);
+
 export default api;

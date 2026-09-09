@@ -5,9 +5,20 @@ import { getDeclarations, getErrorMessage } from '../api/api';
 import { formatAriary, formatNumber, toNumber } from '../utils/formatters';
 
 /**
- * Détermine le statut de contrôle en fonction de la TVA payée et de la TVA théorique
+ * Détermine le statut de contrôle en fonction du statut juridique et de l'écart constaté
  */
-const getControleStatus = (tvaPayee, tvaTheorique) => {
+const getControleStatus = (row) => {
+  const statutUpper = String(row.statut || '').toUpperCase();
+  if (statutUpper === 'PRIMITIVE_ENVOYÉE') {
+    return { label: 'Primitive envoyée (30j)', className: 'primitive' };
+  }
+  if (statutUpper === 'DÉFINITIVE_ENVOYÉE') {
+    return { label: 'Définitive envoyée', className: 'definitive' };
+  }
+
+  const tvaPayee = toNumber(row.tva_payee);
+  const tvaTheorique = toNumber(row.tva_theorique);
+
   if (tvaTheorique <= 0 || tvaPayee >= tvaTheorique) {
     return { label: 'Conforme', className: 'conforme' };
   }
@@ -186,7 +197,7 @@ export default function SuiviFiscal() {
                 {paginatedRows.map((row) => {
                   const tvaPayee = toNumber(row.tva_payee);
                   const tvaTheorique = toNumber(row.tva_theorique);
-                  const controleStatus = getControleStatus(tvaPayee, tvaTheorique);
+                  const controleStatus = getControleStatus(row);
                   const ecart = tvaTheorique - tvaPayee;
 
                   return (

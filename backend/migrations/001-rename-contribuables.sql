@@ -1,4 +1,4 @@
-BEGIN;
+  BEGIN;
 
 ALTER TABLE IF EXISTS entreprises RENAME TO contribuables;
 

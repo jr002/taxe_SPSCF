@@ -1,17 +1,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getDeclarations, getErrorMessage } from '../api/api';
-import { getContribuables } from '../utils/contribuables.utils';
+import { getContribuables as fetchContribuables, getErrorMessage } from '../api/api';
 import { formatAriary, toNumber } from '../utils/formatters';
+import { getCategorie } from '../utils/contribuable.utils';
 import ExcelImportModal from '../components/forms/ExcelImportModal';
 
 /**
- * Page du registre des contribuables avec synthèse annuelle et import Excel
+ * Page du registre des contribuables avec synthèse annuelle, import Excel,
+ * et filtre par catégorie (Grand / Moyen / Petit contribuable).
  */
 export default function Contribuables() {
   const navigate = useNavigate();
-  const [declarations, setDeclarations] = useState([]);
+  const [contribuables, setContribuables] = useState([]);
   const [filter, setFilter] = useState('');
+  const [categorieFilter, setCategorieFilter] = useState('Tous');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
@@ -20,8 +22,8 @@ export default function Contribuables() {
     setLoading(true);
     setError('');
     try {
-      const result = await getDeclarations({ limit: 10000 });
-      setDeclarations(result.data || result);
+      const result = await fetchContribuables({ limit: 10000 });
+      setContribuables(result.data || result);
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
@@ -34,23 +36,52 @@ export default function Contribuables() {
     loadData();
   }, []);
 
-  const allContribuables = useMemo(() => getContribuables(declarations), [declarations]);
+  const allContribuables = useMemo(
+    () => contribuables.map((contribuable) => ({
+      ...contribuable,
+      key: String(contribuable.id_contribuable),
+      declarations: contribuable.declarations || [],
+      categorie: getCategorie(contribuable),
+    })),
+    [contribuables]
+  );
 
+  /* ---------- compteurs par catégorie ---------- */
+  const counts = useMemo(() => {
+    const c = { Grand: 0, Moyen: 0, Petit: 0 };
+    allContribuables.forEach((ct) => { c[ct.categorie] = (c[ct.categorie] || 0) + 1; });
+    return c;
+  }, [allContribuables]);
+
+  /* ---------- filtre combiné (texte + catégorie) ---------- */
   const contribuablesFiltres = useMemo(() => {
     const normalized = filter.trim().toLowerCase();
-    if (!normalized) return allContribuables;
 
-    return allContribuables.filter((c) =>
-      [c.nif, c.raison_sociale, c.secteur_activite].some((val) =>
-        String(val || '').toLowerCase().includes(normalized)
-      )
-    );
-  }, [allContribuables, filter]);
+    return allContribuables.filter((c) => {
+      // filtre catégorie
+      if (categorieFilter !== 'Tous' && c.categorie !== categorieFilter) return false;
+
+      // filtre texte
+      if (normalized) {
+        return [c.nif, c.raison_sociale, c.secteur_activite].some((val) =>
+          String(val || '').toLowerCase().includes(normalized)
+        );
+      }
+      return true;
+    });
+  }, [allContribuables, filter, categorieFilter]);
 
   const openDetail = (contribuable) => {
     navigate(`/contribuables/${encodeURIComponent(contribuable.key)}`, {
       state: { contribuable },
     });
+  };
+
+  /** Classe CSS du badge catégorie */
+  const badgeClass = (cat) => {
+    if (cat === 'Grand') return 'badge critique';
+    if (cat === 'Moyen') return 'badge surveillance';
+    return 'badge conforme';
   };
 
   return (
@@ -59,6 +90,24 @@ export default function Contribuables() {
         <p className="eyebrow">Registre fiscal</p>
         <h1>Contribuables</h1>
         <p>Retrouvez chaque contribuable et consultez ses déclarations et paiements cumulés.</p>
+      </div>
+
+      {/* ---- Onglets de filtrage par catégorie ---- */}
+      <div className="categorie-tabs">
+        {['Tous', 'Grand', 'Moyen', 'Petit'].map((cat) => (
+          <button
+            key={cat}
+            type="button"
+            className={`categorie-tab${categorieFilter === cat ? ' active' : ''}${
+              cat !== 'Tous' ? ` tab-${cat.toLowerCase()}` : ''
+            }`}
+            onClick={() => setCategorieFilter(cat)}
+          >
+            {cat === 'Tous'
+              ? `Tous (${allContribuables.length})`
+              : `${cat}s (${counts[cat] || 0})`}
+          </button>
+        ))}
       </div>
 
       <div className="datatable-toolbar contribuables-toolbar flex-wrap gap-2">
@@ -127,6 +176,7 @@ export default function Contribuables() {
                       <strong>{contribuable.raison_sociale || 'Contribuable non renseigné'}</strong>
                       <small>{contribuable.nif || 'NIF non renseigné'}</small>
                     </td>
+
                     <td>{latest?.annee || 'N/A'}</td>
                     <td>{contribuable.declarations.length} déclaration(s)</td>
                     <td>{formatAriary(totalPaid)}</td>
