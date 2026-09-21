@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getDeclarations, getErrorMessage } from '../api/api';
-// eslint-disable-next-line no-unused-vars
-import { formatAriary, formatNumber, toNumber } from '../utils/formatters';
+import { getDeclarations, getErrorMessage } from '../../api/api';
+import { formatAriary, toNumber } from '../../utils/formatters';
 
 /**
  * Détermine le statut de contrôle en fonction du statut juridique et de l'écart constaté

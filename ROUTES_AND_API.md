@@ -39,6 +39,21 @@ Le backend écoute par défaut sur le port `5000` (`http://localhost:5000`). En 
     }
     ```
 
+### 🏢 Module Centres (`/api/centres`)
+
+| Méthode | Endpoint | Description |
+| :--- | :--- | :--- |
+| **`GET`** | `/api/centres` | Liste les centres avec le nombre de contribuables rattachés |
+| **`GET`** | `/api/centres/:id` | Récupère un centre |
+| **`POST`** | `/api/centres` | Crée un centre (`nom_centre`, `type_centre`, `numero_centre`, `email_centre`) |
+| **`PUT`** | `/api/centres/:id` | Modifie un centre |
+| **`DELETE`** | `/api/centres/:id` | Supprime un centre ; ses contribuables deviennent non affectés |
+
+Les valeurs acceptées pour `type_centre` sont `Centre Fiscal`, `SRE`, `DGE` et `autre`.
+Un contribuable est rattaché avec le champ `id_centre` dans les requêtes
+`POST` ou `PUT /api/contribuables`. Le centre associé est inclus dans les
+réponses de liste et de détail des contribuables.
+
 ---
 
 ### 🏢 Module Entreprises (`/api/entreprises`)

@@ -3,7 +3,7 @@ const prisma = require('../config/prisma');
 class ContribuableModel {
   // Créer un contribuable
   static async create(data) {
-    const { nif, raison_sociale, secteur_activite, adresse, telephone, email, regime_fiscal } = data;
+    const { nif, raison_sociale, secteur_activite, adresse, telephone, email, regime_fiscal, id_centre } = data;
     
     return await prisma.contribuables.create({
       data: {
@@ -14,6 +14,7 @@ class ContribuableModel {
         telephone: telephone || null,
         email: email || null,
         regime_fiscal: regime_fiscal || null,
+        id_centre: id_centre ? Number(id_centre) : null,
         date_creation: new Date(),
       },
     });
@@ -37,6 +38,7 @@ class ContribuableModel {
         declarations: {
           orderBy: { annee: 'desc' },
         },
+        centres: true,
       },
     });
 
@@ -86,6 +88,7 @@ class ContribuableModel {
           _count: {
             select: { declarations: true },
           },
+          centres: true,
         },
       }),
     ]);
@@ -115,10 +118,12 @@ class ContribuableModel {
     if (isNaN(numericId)) return null;
 
     const updateData = {};
-    const allowedFields = ['raison_sociale', 'secteur_activite', 'adresse', 'telephone', 'email', 'regime_fiscal'];
+    const allowedFields = ['raison_sociale', 'secteur_activite', 'adresse', 'telephone', 'email', 'regime_fiscal', 'id_centre'];
     for (const field of allowedFields) {
       if (data[field] !== undefined) {
-        updateData[field] = data[field];
+        updateData[field] = field === 'id_centre'
+          ? (data[field] ? Number(data[field]) : null)
+          : data[field];
       }
     }
     updateData.date_modification = new Date();

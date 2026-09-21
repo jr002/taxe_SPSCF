@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import IdentityFields from '../../components/forms/IdentityFields';
-import AmountField from '../../components/forms/AmountField';
-import ControlResult from '../../components/forms/ControlResult';
-import { formatAriary, formatNumber, toNumber } from '../../utils/formatters';
-import NotificationModal from '../../components/common/NotificationModal';
+import IdentityFields from '../../../components/forms/IdentityFields';
+import AmountField from '../../../components/forms/AmountField';
+import ControlResult from '../../../components/forms/ControlResult';
+import { formatAriary, toNumber } from '../../../utils/formatters';
+import NotificationModal from '../../../components/common/NotificationModal';
 
 /**
  * Module B : Formulaire de calcul et simulation de la TVA Théorique et des redressements
@@ -311,7 +311,7 @@ export default function TheoreticalForm({ surCollecte }) {
             </div>
           </div>
 
-          {/* Matrice comparative fonctionnelle (PDF page 2) */}
+          {/* Matrice comparative fonctionnelle */}
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>

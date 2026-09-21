@@ -50,7 +50,7 @@ export function getFicheCategorie(categorie) {
         '1 % par mois supplémentaire',
       ],
       amendes: [
-        { motif: 'Infraction e-Facturation', montant: 20_000_000 },
+        { motif: 'Infraction a la facturation', montant: 20_000_000 },
         {
           motif: 'Défaut de conservation des factures',
           montant: 2_000_000,
@@ -72,7 +72,7 @@ export function getFicheCategorie(categorie) {
         '1 % par mois supplémentaire',
       ],
       amendes: [
-        { motif: 'Infraction e-Facturation', montant: 10_000_000 },
+        { motif: 'Infraction a la facturation', montant: 10_000_000 },
         {
           motif: 'Défaut de conservation des factures',
           montant: 1_000_000,
@@ -91,7 +91,7 @@ export function getFicheCategorie(categorie) {
         'Libératoire de l\'IR et de la TVA. Journal de recettes/dépenses. Conservation : 3 ans.',
       penaliteRetard: ['1 % par mois de retard'],
       amendes: [
-        { motif: 'Infraction e-Facturation', montant: 1_000_000 },
+        { motif: 'Infraction a la facturation', montant: 1_000_000 },
         {
           motif: 'Défaut de conservation des factures',
           montant: 100_000,

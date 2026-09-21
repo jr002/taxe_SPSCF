@@ -2,6 +2,7 @@ import CollecterDeductible from './modules/CollecterDeductible';
 import TheoreticalForm from './modules/TheoreticalForm';
 import ReconciliationForm from './modules/ReconciliationForm';
 import InsertionDeclaration from './modules/InsertionDeclaration';
+
 /**
  * Page de simulation et de collecte des déclarations de TVA (Module dynamique)
  */

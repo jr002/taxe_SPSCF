@@ -5,17 +5,20 @@ import './App.css';
 // Composants communs
 import Header from './components/common/Header';
 
-// Pages principales
-import Accueil from './pages/Accueil';
-import Collecte from './pages/Collecte';
-import PhaseClassement from './pages/PhaseClassement';
-import FormInformation from './pages/FormInformation';
-import TableauDecisionnel from './pages/TableauDecisionnel';
-import SuiviFiscal from './pages/SuiviFiscal';
-import DeclarationDetail from './pages/DeclarationDetail';
-import Contribuables from './pages/Contribuables';
-import ContribuableDetail from './pages/ContribuableDetail';
-import Register from './pages/Register';
+// Pages principales (organisation modulaire par domaine)
+import {
+  Accueil,
+  Collecte,
+  PhaseClassement,
+  FormInformation,
+  TableauDecisionnel,
+  SuiviFiscal,
+  DeclarationDetail,
+  Contribuables,
+  ContribuableDetail,
+  Register,
+  CentreDetail,
+} from './pages';
 
 /**
  * Composant racine de l'application SP2CF / TVA•SSIF
@@ -55,6 +58,7 @@ export default function App() {
           <Route path="/entreprises/nouveau/form" element={<FormInformation />} />
           <Route path="/decisionnel" element={<TableauDecisionnel />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/centres/:id" element={<CentreDetail />} />
           <Route path="/suivi" element={<SuiviFiscal />} />
           <Route path="/suivi/:id" element={<DeclarationDetail />} />
           <Route path="/contribuables" element={<Contribuables />} />

@@ -4,7 +4,7 @@ class ContribuableController {
   // Créer un contribuable
   static async create(req, res) {
     try {
-      const { nif, raison_sociale, secteur_activite, adresse, telephone, email, regime_fiscal } = req.body;
+      const { nif, raison_sociale, secteur_activite, adresse, telephone, email, regime_fiscal, id_centre } = req.body;
       
       // Vérifier si le NIF existe déjà
       const existing = await ContribuableModel.findByNif(nif);
@@ -16,7 +16,7 @@ class ContribuableController {
       }
       
       const contribuable = await ContribuableModel.create({
-        nif, raison_sociale, secteur_activite, adresse, telephone, email, regime_fiscal
+        nif, raison_sociale, secteur_activite, adresse, telephone, email, regime_fiscal, id_centre
       });
       
       res.status(201).json({
@@ -26,6 +26,9 @@ class ContribuableController {
       });
     } catch (error) {
       console.error('Erreur création contribuable:', error);
+      if (error.code === 'P2003') {
+        return res.status(400).json({ success: false, message: 'Le centre indiqué n’existe pas' });
+      }
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la création du contribuable',
@@ -105,6 +108,9 @@ class ContribuableController {
       });
     } catch (error) {
       console.error('Erreur mise à jour contribuable:', error);
+      if (error.code === 'P2003') {
+        return res.status(400).json({ success: false, message: 'Le centre indiqué n’existe pas' });
+      }
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la mise à jour du contribuable',

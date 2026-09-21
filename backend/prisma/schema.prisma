@@ -88,6 +88,7 @@ model recoupements {
 // contribuables model represents the taxpayers or companies in the system. It contains fields for unique identification, contact information, and relationships to declarations and recoupements. The model includes indexes for efficient querying based on the NIF (tax identification number).
 model contribuables {
   id_contribuable   Int            @id(map: "entreprises_pkey") @default(autoincrement())
+  id_centre         Int?
   nif               String         @unique(map: "entreprises_nif_key") @db.VarChar(50)
   raison_sociale    String         @db.VarChar(255)
   secteur_activite  String         @db.VarChar(100)
@@ -99,6 +100,22 @@ model contribuables {
   date_modification DateTime?      @db.Timestamp(6)
   declarations      declarations[]
   recoupements      recoupements[]
+  centres           centres?       @relation(fields: [id_centre], references: [id_centre], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([nif], map: "idx_entreprises_nif")
+  @@index([id_centre], map: "idx_contribuables_centre")
+}
+
+model centres {
+  id_centre      Int            @id @default(autoincrement())
+  nom_centre     String         @db.VarChar(255)
+  type_centre    String         @db.VarChar(30)
+  numero_centre  String         @unique @db.VarChar(50)
+  email_centre   String?        @db.VarChar(255)
+  telephone_centre String?      @db.VarChar(30)
+  date_creation  DateTime?      @default(now()) @db.Timestamp(6)
+  date_modification DateTime?  @db.Timestamp(6)
+  contribuables  contribuables[]
+
+  @@index([type_centre], map: "idx_centres_type")
 }

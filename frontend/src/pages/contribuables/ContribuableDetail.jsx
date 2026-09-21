@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
-import { getContribuableById, getErrorMessage } from '../api/api';
-import { getRegime } from '../utils/decisionnel.utils';
-import { formatAriary, toNumber } from '../utils/formatters';
-import { getCategorie, getFicheCategorie } from '../utils/contribuable.utils';
+import { createDeclaration, getContribuableById, getErrorMessage } from '../../api/api';
+import { getRegime } from '../../utils/decisionnel.utils';
+import { formatAriary, toNumber } from '../../utils/formatters';
+import { getCategorie, getFicheCategorie } from '../../utils/contribuable.utils';
 import {
   ContribVolumeChart,
   ContribComparisonChart,
-} from '../components/charts/Diagrammes';
+} from '../../components/charts/Diagrammes';
 
 /**
  * Fiche détaillée d'un contribuable : classification, régime, pénalités,
@@ -23,6 +23,18 @@ export default function ContribuableDetail() {
   );
   const [loading, setLoading] = useState(!location.state?.contribuable);
   const [error, setError] = useState('');
+  const [showDeclarationForm, setShowDeclarationForm] = useState(false);
+  const [declarationForm, setDeclarationForm] = useState({
+    annee: String(new Date().getFullYear()),
+    ca: '',
+    benefice: '',
+    tva_collectee: '',
+    tva_deductible: '',
+    tva_payee: '',
+  });
+  const [declarationError, setDeclarationError] = useState('');
+  const [declarationSuccess, setDeclarationSuccess] = useState('');
+  const [declarationSubmitting, setDeclarationSubmitting] = useState(false);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -97,6 +109,62 @@ export default function ContribuableDetail() {
   const curveValues = curveData.flatMap((item) => [item.paid, item.theoretical]);
   const curveMax = Math.max(...curveValues, 1);
 
+  const handleDeclarationInputChange = (event) => {
+    const { name, value } = event.target;
+    setDeclarationForm((previous) => ({ ...previous, [name]: value }));
+    setDeclarationError('');
+    setDeclarationSuccess('');
+  };
+
+  const handleDeclarationSubmit = async (event) => {
+    event.preventDefault();
+    setDeclarationError('');
+    setDeclarationSuccess('');
+
+    const requiredFields = ['annee', 'ca', 'benefice', 'tva_collectee', 'tva_deductible', 'tva_payee'];
+    if (
+      requiredFields.some((field) => declarationForm[field] === '' || Number(declarationForm[field]) < 0) ||
+      !Number.isInteger(Number(declarationForm.annee)) ||
+      Number(declarationForm.annee) < 2000 ||
+      Number(declarationForm.annee) > 2100
+    ) {
+      setDeclarationError('Veuillez renseigner une année entre 2000 et 2100 et des montants positifs.');
+      return;
+    }
+
+    setDeclarationSubmitting(true);
+    try {
+      const result = await createDeclaration({
+        id_contribuable: Number(id),
+        annee: Number(declarationForm.annee),
+        ca: Number(declarationForm.ca),
+        benefice: Number(declarationForm.benefice),
+        tva_collectee: Number(declarationForm.tva_collectee),
+        tva_deductible: Number(declarationForm.tva_deductible),
+        tva_payee: Number(declarationForm.tva_payee),
+        regime_fiscal: contribuable.regime_fiscal || currentRegime,
+      });
+      const createdDeclaration = result.declaration || result;
+      setDeclarations((previous) =>
+        [createdDeclaration, ...previous].sort((first, second) => Number(second.annee) - Number(first.annee))
+      );
+      setDeclarationForm({
+        annee: String(new Date().getFullYear()),
+        ca: '',
+        benefice: '',
+        tva_collectee: '',
+        tva_deductible: '',
+        tva_payee: '',
+      });
+      setDeclarationSuccess('La déclaration a été ajoutée au contribuable.');
+      setShowDeclarationForm(false);
+    } catch (requestError) {
+      setDeclarationError(getErrorMessage(requestError));
+    } finally {
+      setDeclarationSubmitting(false);
+    }
+  };
+
   if (loading) {
     return <p className="page status">Chargement de l'historique du contribuable...</p>;
   }
@@ -121,19 +189,84 @@ export default function ContribuableDetail() {
 
       <div className="page-heading declaration-page-heading">
         <p className="eyebrow">Fiche contribuable</p>
-        <h1>
-          {contribuable.raison_sociale || 'Contribuable'}
-          <span
-            className="categorie-badge-inline"
-            style={{ background: fiche.background, color: fiche.couleur }}
+        <div className="contribuable-heading-row">
+          <h1>
+            {contribuable.raison_sociale || 'Contribuable'}
+            <span
+              className="categorie-badge-inline"
+              style={{ background: fiche.background, color: fiche.couleur }}
+            >
+              {fiche.label}
+            </span>
+          </h1>
+          <button
+            type="button"
+            className="primary add-declaration-button"
+            onClick={() => {
+              setShowDeclarationForm((previous) => !previous);
+              setDeclarationError('');
+              setDeclarationSuccess('');
+            }}
           >
-            {fiche.label}
-          </span>
-        </h1>
+            {showDeclarationForm ? 'Annuler' : '+ Ajouter une déclaration'}
+          </button>
+        </div>
         <p>
           NIF : {contribuable.nif || 'N/A'} · {declarations.length} année(s) suivie(s)
         </p>
       </div>
+
+      {declarationSuccess && (
+        <p className="success form-submit-message" role="status">
+          {declarationSuccess}
+        </p>
+      )}
+
+      {showDeclarationForm && (
+        <form className="declaration-create-form" onSubmit={handleDeclarationSubmit}>
+          <div className="declaration-create-form-heading">
+            <div>
+              <p className="eyebrow">Nouvelle déclaration</p>
+              <h2>Ajouter une déclaration fiscale</h2>
+            </div>
+            <span>Contribuable : {contribuable.raison_sociale}</span>
+          </div>
+          {declarationError && (
+            <p className="error form-submit-message" role="alert">
+              {declarationError}
+            </p>
+          )}
+          <div className="declaration-create-grid">
+            {[
+              ['annee', 'Année', 'number'],
+              ['ca', "Chiffre d'affaires", 'number'],
+              ['benefice', 'Bénéfice', 'number'],
+              ['tva_collectee', 'TVA collectée', 'number'],
+              ['tva_deductible', 'TVA déductible', 'number'],
+              ['tva_payee', 'TVA payée', 'number'],
+            ].map(([name, label, type]) => (
+              <label className="field" htmlFor={`declaration-${name}`} key={name}>
+                {label}
+                <input
+                  id={`declaration-${name}`}
+                  name={name}
+                  type={type}
+                  min="0"
+                  step={name === 'annee' ? '1' : '0.01'}
+                  value={declarationForm[name]}
+                  onChange={handleDeclarationInputChange}
+                  required
+                />
+              </label>
+            ))}
+          </div>
+          <div className="form-actions">
+            <button className="primary" type="submit" disabled={declarationSubmitting}>
+              {declarationSubmitting ? 'Enregistrement...' : 'Enregistrer la déclaration'}
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="declaration-summary">
         <div>

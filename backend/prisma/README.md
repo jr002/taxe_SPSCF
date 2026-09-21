@@ -56,22 +56,23 @@ npm run prisma:generate
 Relancez `npm run prisma:generate` après chaque modification de
 [`schema.prisma`](schema.prisma), avant de démarrer l'API.
 
-## Migration SQL existante
+## Migrations Prisma
 
-Ce projet ne contient pas de dossier `prisma/migrations`. La base existante
-peut nécessiter le script SQL ponctuel
-[`../migrations/001-rename-contribuables.sql`](../migrations/001-rename-contribuables.sql).
+Le dossier [`migrations/0_init/migration.sql`](migrations/0_init/migration.sql) contient la migration initiale (baseline) correspondant à l'ensemble du schéma actuel (`agents`, `controles`, `declarations`, `recoupements`, `contribuables`, `centres`).
 
-Avant de l'exécuter :
+- **Si la base PostgreSQL est déjà existante et à jour**, marquez la migration comme déjà appliquée sans réexécuter le SQL :
+  ```bash
+  npx prisma migrate resolve --applied 0_init
+  ```
 
-1. sauvegardez la base ;
-2. lisez et vérifiez le script ;
-3. confirmez qu'il n'a pas déjà été appliqué ;
-4. exécutez-le une seule fois avec un outil PostgreSQL.
+- **Si vous partez d'une base vide**, appliquez les migrations directement :
+  ```bash
+  npx prisma migrate deploy
+  # ou pour le développement
+  npx prisma migrate dev
+  ```
 
-Ce script n'est pas un remplacement de `prisma migrate` pour de nouvelles
-évolutions de schéma. Toute modification future doit être validée avec l'équipe
-et synchronisée avec la base de développement.
+Des scripts SQL historiques ponctuels sont également conservés dans [`../migrations/`](../migrations/) pour référence.
 
 ## Sécurité
 

@@ -30,7 +30,36 @@ export default function useDecisionnelData() {
   };
 
   useEffect(() => {
-    reloadData();
+    let isMounted = true;
+
+    const initData = async () => {
+      setLoading(true);
+      setError('');
+      try {
+        const [statsResult, declarationsResult] = await Promise.all([
+          getDeclarationStats(),
+          getDeclarations({ limit: 10000 }),
+        ]);
+        if (isMounted) {
+          setStats(statsResult);
+          setDeclarations(declarationsResult.data || declarationsResult);
+        }
+      } catch (requestError) {
+        if (isMounted) {
+          setError(getErrorMessage(requestError));
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    void initData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return { stats, declarations, error, loading, reloadData };

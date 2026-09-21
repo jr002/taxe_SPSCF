@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
-import { VolumeChart, RegimeChart, CurveChart } from '../components/charts/Diagrammes';
-import useDecisionnelData from '../hooks/useDecisionnelData';
-import { buildYears, buildCurves } from '../utils/decisionnel.utils';
-import { formatCompact, formatNumber, toNumber } from '../utils/formatters';
+import { VolumeChart, RegimeChart, CurveChart } from '../../components/charts/Diagrammes';
+import useDecisionnelData from '../../hooks/useDecisionnelData';
+import { buildYears, buildCurves } from '../../utils/decisionnel.utils';
+import { formatCompact, formatNumber, toNumber } from '../../utils/formatters';
 
 /**
  * Tableau de bord décisionnel : Synthèse statistique, KPIs et graphiques de pilotage

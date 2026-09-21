@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getContribuables as fetchContribuables, getErrorMessage } from '../api/api';
-import { formatAriary, toNumber } from '../utils/formatters';
-import { getCategorie } from '../utils/contribuable.utils';
-import ExcelImportModal from '../components/forms/ExcelImportModal';
+import { getContribuables as fetchContribuables, getErrorMessage } from '../../api/api';
+import { formatAriary, toNumber } from '../../utils/formatters';
+import { getCategorie } from '../../utils/contribuable.utils';
+import ExcelImportModal from '../../components/forms/ExcelImportModal';
 
 /**
  * Page du registre des contribuables avec synthèse annuelle, import Excel,
@@ -77,13 +77,6 @@ export default function Contribuables() {
     });
   };
 
-  /** Classe CSS du badge catégorie */
-  const badgeClass = (cat) => {
-    if (cat === 'Grand') return 'badge critique';
-    if (cat === 'Moyen') return 'badge surveillance';
-    return 'badge conforme';
-  };
-
   return (
     <section className="page">
       <div className="page-heading">
@@ -94,13 +87,12 @@ export default function Contribuables() {
 
       {/* ---- Onglets de filtrage par catégorie ---- */}
       <div className="categorie-tabs">
-        {['Tous', 'Grand', 'Moyen', 'Petit'].map((cat) => (
+        {['Tous', 'Grand Contribuable', 'Moyen Contribuable', 'Petit Contribuable'].map((cat) => (
           <button
             key={cat}
             type="button"
-            className={`categorie-tab${categorieFilter === cat ? ' active' : ''}${
-              cat !== 'Tous' ? ` tab-${cat.toLowerCase()}` : ''
-            }`}
+            className={`categorie-tab${categorieFilter === cat ? ' active' : ''}${cat !== 'Tous' ? ` tab-${cat.toLowerCase()}` : ''
+              }`}
             onClick={() => setCategorieFilter(cat)}
           >
             {cat === 'Tous'

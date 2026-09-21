@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import IdentityFields from '../../components/forms/IdentityFields';
-import AmountField from '../../components/forms/AmountField';
-import ControlResult from '../../components/forms/ControlResult';
-import { formatAriary, toNumber } from '../../utils/formatters';
+import IdentityFields from '../../../components/forms/IdentityFields';
+import AmountField from '../../../components/forms/AmountField';
+import ControlResult from '../../../components/forms/ControlResult';
+import { formatAriary, toNumber } from '../../../utils/formatters';
 
 /**
  * Module C : Formulaire de collecte des données de recoupement fiscal avec les tiers

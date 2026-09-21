@@ -41,7 +41,10 @@ const contribuableValidators = [
     .isEmail().withMessage('Email invalide'),
   body('regime_fiscal')
     .optional()
-    .isIn(['IS', 'IR']).withMessage('Régime fiscal invalide')
+    .isIn(['IS', 'IR']).withMessage('Régime fiscal invalide'),
+  body('id_centre')
+    .optional({ values: 'falsy' })
+    .isInt({ min: 1 }).withMessage('Centre invalide')
 ];
 
 const declarationValidators = [

@@ -1,7 +1,6 @@
-import { useState } from 'react';
-// eslint-disable-next-line no-unused-vars
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { createContribuable, getErrorMessage } from '../api/api';
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { createContribuable, getCentres, getErrorMessage } from '../../api/api';
 
 /**
  * Étape 2 : Formulaire de création et d'immatriculation d'un contribuable
@@ -20,13 +19,21 @@ export default function FormInformation() {
     phone: '',
     email: '',
     address: '',
+    id_centre: '',
   });
 
+  const [centres, setCentres] = useState([]);
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    getCentres()
+      .then(setCentres)
+      .catch((requestError) => setSubmitError(getErrorMessage(requestError)));
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -108,6 +115,7 @@ export default function FormInformation() {
           raison_sociale: [formData.companyName.trim(), formData.socialReason.trim()].filter(Boolean).join(' / '),
           secteur_activite: formData.legalStatus.trim(),
           regime_fiscal: Number(formData.revenue) < 400000000 ? 'IS' : 'IR',
+          id_centre: formData.id_centre ? Number(formData.id_centre) : undefined,
           telephone: formData.phone.trim(),
           email: formData.email.trim(),
           adresse: formData.address.trim(),
@@ -134,6 +142,7 @@ export default function FormInformation() {
       phone: '',
       email: '',
       address: '',
+      id_centre: '',
     });
     setErrors({});
     setSubmitError('');
@@ -301,9 +310,32 @@ export default function FormInformation() {
           {errors.fiscalStructure && (
             <span className="text-red-600 text-xs block mt-1">{errors.fiscalStructure}</span>
           )}
-          {/* <Link className="classification-change-link inline-block mt-2" to="/entreprises/nouveau">
-            ← Modifier le choix de structure fiscale
-          </Link> */}
+        </div>
+
+        {/* Centre de rattachement */}
+        <div className="space-y-1">
+          <label htmlFor="id_centre" className="block font-semibold text-gray-700 text-sm">
+            Centre de rattachement
+          </label>
+          <select
+            id="id_centre"
+            name="id_centre"
+            value={formData.id_centre}
+            onChange={handleInputChange}
+            className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-50"
+          >
+            <option value="">Sélectionner un centre</option>
+            {centres.map((centre) => (
+              <option key={centre.id_centre} value={centre.id_centre}>
+                {centre.nom_centre} - {centre.type_centre} ({centre.numero_centre})
+              </option>
+            ))}
+          </select>
+          {!centres.length && (
+            <span className="text-gray-500 text-xs block mt-1">
+              Aucun centre n'est encore enregistré. Vous pourrez affecter le contribuable via l'API.
+            </span>
+          )}
         </div>
 
         {/* Téléphone */}
@@ -353,7 +385,7 @@ export default function FormInformation() {
         {/* Adresse */}
         <div className="space-y-1">
           <label htmlFor="address" className="block font-semibold text-gray-700 text-sm">
-            Adresse physique+ <span className="text-red-600">*</span>
+            Adresse physique <span className="text-red-600">*</span>
           </label>
           <textarea
             id="address"
