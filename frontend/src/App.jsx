@@ -18,6 +18,7 @@ import {
   ContribuableDetail,
   Register,
   CentreDetail,
+  RelanceFiscale,
 } from './pages';
 
 /**
@@ -63,6 +64,10 @@ export default function App() {
           <Route path="/suivi/:id" element={<DeclarationDetail />} />
           <Route path="/contribuables" element={<Contribuables />} />
           <Route path="/contribuables/:id" element={<ContribuableDetail />} />
+          <Route path="/contribuables/:id/classification" element={<ContribuableDetail />} />
+          <Route path="/contribuables/:id/declarations" element={<ContribuableDetail />} />
+          <Route path="/contribuables/:id/relances" element={<ContribuableDetail />} />
+          <Route path="/relance" element={<RelanceFiscale />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

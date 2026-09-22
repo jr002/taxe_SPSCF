@@ -7,6 +7,7 @@ const NAVIGATION_LINKS = [
   { to: '/decisionnel', label: 'Tableau décisionnel' },
   { to: '/suivi', label: 'Suivi fiscal' },
   { to: '/contribuables', label: 'Contribuables' },
+  { to: '/relance', label: 'Relance fiscale' },
 ];
 
 /**
@@ -24,6 +25,9 @@ export default function Header({
   const isLinkActive = (link) => {
     if (link.to === '/contribuables') {
       return pathname.startsWith('/contribuables');
+    }
+    if (link.to === '/relance') {
+      return pathname.startsWith('/relance');
     }
     return pathname === link.to;
   };

@@ -31,3 +31,6 @@ export { default as CentreDetail } from './centres/CentreDetail';
 
 // Tableau de bord décisionnel & KPIs
 export { default as TableauDecisionnel } from './decisionnel/TableauDecisionnel';
+
+// Relance Fiscale & Recouvrement
+export { default as RelanceFiscale } from './relance/RelanceFiscale';

@@ -1,42 +1,53 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { createDeclaration, getContribuableById, getErrorMessage } from '../../api/api';
+import RappelOrdreModal from '../relance/components/RappelOrdreModal';
+import ClassificationPanel from './components/ClassificationPanel';
+import ContribuableHeader from './components/ContribuableHeader';
+import ContribuableOverview from './components/ContribuableOverview';
+import DeclarationForm from './components/DeclarationForm';
+import DeclarationHistory from './components/DeclarationHistory';
+import RelancePanel from './components/RelancePanel';
 import { getRegime } from '../../utils/decisionnel.utils';
-import { formatAriary, toNumber } from '../../utils/formatters';
+import { toNumber } from '../../utils/formatters';
 import { getCategorie, getFicheCategorie } from '../../utils/contribuable.utils';
-import {
-  ContribVolumeChart,
-  ContribComparisonChart,
-} from '../../components/charts/Diagrammes';
 
-/**
- * Fiche détaillée d'un contribuable : classification, régime, pénalités,
- * historique des paiements et analyse graphique sur 5 ans
- */
+const HISTORY_KEY = 'relance_historique';
+const initialDeclarationForm = () => ({ annee: String(new Date().getFullYear()), ca: '', benefice: '', tva_collectee: '', tva_deductible: '', tva_payee: '' });
+
+function getActiveTab(pathname) {
+  if (pathname.endsWith('/classification')) return 'classification';
+  if (pathname.endsWith('/declarations')) return 'declarations';
+  if (pathname.endsWith('/relances')) return 'relances';
+  return 'overview';
+}
+
 export default function ContribuableDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const location = useLocation();
-  const [contribuable, setContribuable] = useState(location.state?.contribuable || null);
-  const [declarations, setDeclarations] = useState(
-    location.state?.contribuable?.declarations || []
-  );
-  const [loading, setLoading] = useState(!location.state?.contribuable);
+  const navigate = useNavigate();
+  const sourceContribuable = location.state?.contribuable;
+  const [contribuable, setContribuable] = useState(sourceContribuable || null);
+  const [declarations, setDeclarations] = useState(sourceContribuable?.declarations || []);
+  const [loading, setLoading] = useState(!sourceContribuable);
   const [error, setError] = useState('');
   const [showDeclarationForm, setShowDeclarationForm] = useState(false);
-  const [declarationForm, setDeclarationForm] = useState({
-    annee: String(new Date().getFullYear()),
-    ca: '',
-    benefice: '',
-    tva_collectee: '',
-    tva_deductible: '',
-    tva_payee: '',
-  });
+  const [declarationForm, setDeclarationForm] = useState(initialDeclarationForm);
   const [declarationError, setDeclarationError] = useState('');
   const [declarationSuccess, setDeclarationSuccess] = useState('');
   const [declarationSubmitting, setDeclarationSubmitting] = useState(false);
+  const [relanceHistory, setRelanceHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); } catch { return []; }
+  });
+  const [rappelModalOpen, setRappelModalOpen] = useState(false);
+  const [rappelModalType, setRappelModalType] = useState('rappel1');
+  const [rappelDossier, setRappelDossier] = useState(null);
+  const [relanceSuccess, setRelanceSuccess] = useState('');
+  const [currentTimestamp] = useState(() => Date.now());
+  const activeTab = getActiveTab(location.pathname);
 
   useEffect(() => {
+    if (sourceContribuable) return;
     const loadHistory = async () => {
       setLoading(true);
       try {
@@ -49,362 +60,84 @@ export default function ContribuableDetail() {
         setLoading(false);
       }
     };
-
-    if (!location.state?.contribuable) {
-      loadHistory();
-    }
-  }, [id, location.state?.contribuable]);
+    loadHistory();
+  }, [id, sourceContribuable]);
 
   const currentRegime = contribuable ? getRegime(contribuable) : 'IS';
-  const totalPaid = declarations.reduce(
-    (total, row) => total + toNumber(row.tva_payee),
-    0
-  );
+  const totalPaid = declarations.reduce((total, row) => total + toNumber(row.tva_payee), 0);
+  const fiche = getFicheCategorie(contribuable ? getCategorie(contribuable) : 'Petit');
+  const chartYears = useMemo(() => [...new Set(declarations.map((row) => Number(row.annee)).filter(Boolean))].sort((a, b) => a - b).slice(-5), [declarations]);
+  const annualData = useMemo(() => chartYears.map((year) => {
+    const yearDeclarations = declarations.filter((row) => Number(row.annee) === year);
+    return { year, tva: yearDeclarations.length, regimeCount: yearDeclarations.filter((row) => getRegime(row) === currentRegime).length };
+  }), [chartYears, currentRegime, declarations]);
+  const curveData = useMemo(() => chartYears.slice(-2).map((year) => {
+    const yearDeclarations = declarations.filter((row) => Number(row.annee) === year);
+    return { year, paid: yearDeclarations.reduce((total, row) => total + toNumber(row.tva_payee), 0), theoretical: yearDeclarations.reduce((total, row) => total + toNumber(row.tva_theorique), 0) };
+  }), [chartYears, declarations]);
+  const maxBars = Math.max(...annualData.flatMap((item) => [item.tva, item.regimeCount]), 1);
+  const curveMax = Math.max(...curveData.flatMap((item) => [item.paid, item.theoretical]), 1);
 
-  /* ---- Classification ---- */
-  const categorie = contribuable ? getCategorie(contribuable) : 'Petit';
-  const fiche = getFicheCategorie(categorie);
-
-  const chartYears = useMemo(
-    () =>
-      [...new Set(declarations.map((row) => Number(row.annee)).filter(Boolean))]
-        .sort((a, b) => a - b)
-        .slice(-5),
-    [declarations]
-  );
-
-  const annualData = useMemo(
-    () =>
-      chartYears.map((year) => {
-        const yearDeclarations = declarations.filter((row) => Number(row.annee) === year);
-        return {
-          year,
-          tva: yearDeclarations.length,
-          regimeCount: yearDeclarations.filter((row) => getRegime(row) === currentRegime).length,
-        };
-      }),
-    [chartYears, currentRegime, declarations]
-  );
-
-  const curveData = useMemo(
-    () =>
-      chartYears.slice(-2).map((year) => {
-        const yearDeclarations = declarations.filter((row) => Number(row.annee) === year);
-        return {
-          year,
-          paid: yearDeclarations.reduce((total, row) => total + toNumber(row.tva_payee), 0),
-          theoretical: yearDeclarations.reduce(
-            (total, row) => total + toNumber(row.tva_theorique),
-            0
-          ),
-        };
-      }),
-    [chartYears, declarations]
-  );
-
-  const maxBars = Math.max(
-    ...annualData.flatMap((item) => [item.tva, item.regimeCount]),
-    1
-  );
-  const curveValues = curveData.flatMap((item) => [item.paid, item.theoretical]);
-  const curveMax = Math.max(...curveValues, 1);
-
-  const handleDeclarationInputChange = (event) => {
-    const { name, value } = event.target;
+  const handleDeclarationInputChange = ({ target: { name, value } }) => {
     setDeclarationForm((previous) => ({ ...previous, [name]: value }));
     setDeclarationError('');
     setDeclarationSuccess('');
   };
-
   const handleDeclarationSubmit = async (event) => {
-    event.preventDefault();
-    setDeclarationError('');
-    setDeclarationSuccess('');
-
+    event.preventDefault(); setDeclarationError(''); setDeclarationSuccess('');
     const requiredFields = ['annee', 'ca', 'benefice', 'tva_collectee', 'tva_deductible', 'tva_payee'];
-    if (
-      requiredFields.some((field) => declarationForm[field] === '' || Number(declarationForm[field]) < 0) ||
-      !Number.isInteger(Number(declarationForm.annee)) ||
-      Number(declarationForm.annee) < 2000 ||
-      Number(declarationForm.annee) > 2100
-    ) {
-      setDeclarationError('Veuillez renseigner une année entre 2000 et 2100 et des montants positifs.');
-      return;
+    if (requiredFields.some((field) => declarationForm[field] === '' || Number(declarationForm[field]) < 0) || !Number.isInteger(Number(declarationForm.annee)) || Number(declarationForm.annee) < 2000 || Number(declarationForm.annee) > 2100) {
+      setDeclarationError('Veuillez renseigner une année entre 2000 et 2100 et des montants positifs.'); return;
     }
-
     setDeclarationSubmitting(true);
     try {
-      const result = await createDeclaration({
-        id_contribuable: Number(id),
-        annee: Number(declarationForm.annee),
-        ca: Number(declarationForm.ca),
-        benefice: Number(declarationForm.benefice),
-        tva_collectee: Number(declarationForm.tva_collectee),
-        tva_deductible: Number(declarationForm.tva_deductible),
-        tva_payee: Number(declarationForm.tva_payee),
-        regime_fiscal: contribuable.regime_fiscal || currentRegime,
-      });
-      const createdDeclaration = result.declaration || result;
-      setDeclarations((previous) =>
-        [createdDeclaration, ...previous].sort((first, second) => Number(second.annee) - Number(first.annee))
-      );
-      setDeclarationForm({
-        annee: String(new Date().getFullYear()),
-        ca: '',
-        benefice: '',
-        tva_collectee: '',
-        tva_deductible: '',
-        tva_payee: '',
-      });
-      setDeclarationSuccess('La déclaration a été ajoutée au contribuable.');
-      setShowDeclarationForm(false);
-    } catch (requestError) {
-      setDeclarationError(getErrorMessage(requestError));
-    } finally {
-      setDeclarationSubmitting(false);
-    }
+      const result = await createDeclaration({ id_contribuable: Number(id), annee: Number(declarationForm.annee), ca: Number(declarationForm.ca), benefice: Number(declarationForm.benefice), tva_collectee: Number(declarationForm.tva_collectee), tva_deductible: Number(declarationForm.tva_deductible), tva_payee: Number(declarationForm.tva_payee), regime_fiscal: contribuable.regime_fiscal || currentRegime });
+      setDeclarations((previous) => [result.declaration || result, ...previous].sort((first, second) => Number(second.annee) - Number(first.annee)));
+      setDeclarationForm(initialDeclarationForm()); setDeclarationSuccess('La déclaration a été ajoutée au contribuable.'); setShowDeclarationForm(false);
+    } catch (requestError) { setDeclarationError(getErrorMessage(requestError)); } finally { setDeclarationSubmitting(false); }
   };
 
-  if (loading) {
-    return <p className="page status">Chargement de l'historique du contribuable...</p>;
-  }
+  const lastDeclaration = declarations[0];
+  const totalDuRelance = declarations.reduce((total, declaration) => total + (toNumber(declaration.montant_net_a_payer) || Math.max(0, toNumber(declaration.tva_theorique) - toNumber(declaration.tva_payee))), 0);
+  const referenceDate = lastDeclaration?.date_limite_reponse || lastDeclaration?.date_notification_primitive || lastDeclaration?.date_creation;
+  const dossierRelance = contribuable ? { nif: contribuable.nif, raisonSociale: contribuable.raison_sociale, secteur: contribuable.secteur_activite, annee: lastDeclaration?.annee || new Date(currentTimestamp).getFullYear(), montantDu: totalDuRelance, joursRetard: referenceDate ? Math.max(0, Math.floor((currentTimestamp - new Date(referenceDate).getTime()) / 86_400_000)) : 0 } : null;
+  const addRelanceHistory = (type, typeLabel, statut) => {
+    if (!dossierRelance) return;
+    const entry = { id: Date.now(), date: new Date().toLocaleDateString('fr-FR'), nif: dossierRelance.nif, raisonSociale: dossierRelance.raisonSociale, annee: dossierRelance.annee, type, typeLabel, montant: dossierRelance.montantDu, statut };
+    const updated = [entry, ...relanceHistory]; setRelanceHistory(updated); localStorage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    return entry;
+  };
+  const issueRelance = (type) => {
+    const labels = { rappel1: '1er Rappel', rappel2: '2e Rappel', miseEnDemeure: 'Mise en Demeure' };
+    const entry = addRelanceHistory(type, labels[type], 'Emis');
+    if (!entry) return;
+    setRappelDossier(dossierRelance); setRappelModalType(type); setRappelModalOpen(true); setRelanceSuccess(`${entry.typeLabel} émis avec succès le ${entry.date}.`);
+  };
+  const regularize = () => {
+    const entry = addRelanceHistory('regularise', 'Régularisé', 'Régularisé');
+    if (entry) setRelanceSuccess(`Dossier marqué comme régularisé le ${entry.date}. ✅`);
+  };
+  const openHistoryEntry = (entry) => {
+    if (!dossierRelance || entry.type === 'regularise') return;
+    setRappelDossier({ ...dossierRelance, annee: entry.annee, montantDu: entry.montant });
+    setRappelModalType(entry.type);
+    setRappelModalOpen(true);
+  };
+  const toggleDeclarationForm = () => { setShowDeclarationForm((previous) => !previous); setDeclarationError(''); setDeclarationSuccess(''); };
 
-  if (error || !contribuable) {
-    return (
-      <section className="page error">
-        <h1>Contribuable indisponible</h1>
-        <p>{error || 'Aucune donnée disponible pour ce contribuable.'}</p>
-        <Link className="primary detail-back" to="/contribuables">
-          Retour à la liste des contribuables
-        </Link>
-      </section>
-    );
-  }
+  if (loading) return <p className="page status">Chargement de l'historique du contribuable...</p>;
+  if (error || !contribuable) return <section className="page error"><h1>Contribuable indisponible</h1><p>{error || 'Aucune donnée disponible pour ce contribuable.'}</p><Link className="primary detail-back" to="/contribuables">Retour à la liste des contribuables</Link></section>;
 
-  return (
+  return <>
     <section className="page declaration-page">
-      <Link className="detail-back-link" to="/contribuables">
-        ← Retour aux contribuables
-      </Link>
-
-      <div className="page-heading declaration-page-heading">
-        <p className="eyebrow">Fiche contribuable</p>
-        <div className="contribuable-heading-row">
-          <h1>
-            {contribuable.raison_sociale || 'Contribuable'}
-            <span
-              className="categorie-badge-inline"
-              style={{ background: fiche.background, color: fiche.couleur }}
-            >
-              {fiche.label}
-            </span>
-          </h1>
-          <button
-            type="button"
-            className="primary add-declaration-button"
-            onClick={() => {
-              setShowDeclarationForm((previous) => !previous);
-              setDeclarationError('');
-              setDeclarationSuccess('');
-            }}
-          >
-            {showDeclarationForm ? 'Annuler' : '+ Ajouter une déclaration'}
-          </button>
-        </div>
-        <p>
-          NIF : {contribuable.nif || 'N/A'} · {declarations.length} année(s) suivie(s)
-        </p>
-      </div>
-
-      {declarationSuccess && (
-        <p className="success form-submit-message" role="status">
-          {declarationSuccess}
-        </p>
-      )}
-
-      {showDeclarationForm && (
-        <form className="declaration-create-form" onSubmit={handleDeclarationSubmit}>
-          <div className="declaration-create-form-heading">
-            <div>
-              <p className="eyebrow">Nouvelle déclaration</p>
-              <h2>Ajouter une déclaration fiscale</h2>
-            </div>
-            <span>Contribuable : {contribuable.raison_sociale}</span>
-          </div>
-          {declarationError && (
-            <p className="error form-submit-message" role="alert">
-              {declarationError}
-            </p>
-          )}
-          <div className="declaration-create-grid">
-            {[
-              ['annee', 'Année', 'number'],
-              ['ca', "Chiffre d'affaires", 'number'],
-              ['benefice', 'Bénéfice', 'number'],
-              ['tva_collectee', 'TVA collectée', 'number'],
-              ['tva_deductible', 'TVA déductible', 'number'],
-              ['tva_payee', 'TVA payée', 'number'],
-            ].map(([name, label, type]) => (
-              <label className="field" htmlFor={`declaration-${name}`} key={name}>
-                {label}
-                <input
-                  id={`declaration-${name}`}
-                  name={name}
-                  type={type}
-                  min="0"
-                  step={name === 'annee' ? '1' : '0.01'}
-                  value={declarationForm[name]}
-                  onChange={handleDeclarationInputChange}
-                  required
-                />
-              </label>
-            ))}
-          </div>
-          <div className="form-actions">
-            <button className="primary" type="submit" disabled={declarationSubmitting}>
-              {declarationSubmitting ? 'Enregistrement...' : 'Enregistrer la déclaration'}
-            </button>
-          </div>
-        </form>
-      )}
-
-      <div className="declaration-summary">
-        <div>
-          <span>TVA payée cumulée</span>
-          <strong>{formatAriary(totalPaid)}</strong>
-        </div>
-        <div>
-          <span>Dernière déclaration enregistrée</span>
-          <strong>{declarations[0]?.annee || 'N/A'}</strong>
-        </div>
-      </div>
-
-      {/* ========== PANNEAU CLASSIFICATION ========== */}
-      <div
-        className="classification-panel"
-        style={{ borderLeftColor: fiche.couleur }}
-      >
-        <div className="classification-panel-header">
-          <span
-            className="classification-panel-badge"
-            style={{ background: fiche.background, color: fiche.couleur }}
-          >
-            {fiche.label}
-          </span>
-          <span className="classification-panel-seuil">{fiche.seuil}</span>
-        </div>
-
-        {/* Régime fiscal */}
-        <div className="classification-panel-section">
-          <h3>📋 Régime fiscal &amp; comptable</h3>
-          <p>{fiche.regime}</p>
-        </div>
-
-        {/* Pénalités de retard */}
-        <div className="classification-panel-section">
-          <h3>⏱️ Pénalités de retard de paiement <small>({fiche.refArticle})</small></h3>
-          <ul>
-            {fiche.penaliteRetard.map((p, i) => (
-              <li key={i}>{p}</li>
-            ))}
-          </ul>
-        </div>
-
-        {/* Amendes */}
-        <div className="classification-panel-section">
-          <h3>⚠️ Amendes administratives</h3>
-          <div className="amendes-grid">
-            {fiche.amendes.map((a, i) => (
-              <div key={i} className="amende-card">
-                <span className="amende-motif">{a.motif}</span>
-                <strong className="amende-montant">{formatAriary(a.montant)}</strong>
-                {a.unite && <small className="amende-unite">{a.unite}</small>}
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Graphiques déportés dans components/charts/Diagrammes.jsx */}
-      <div className="contrib-chart-grid">
-        <ContribVolumeChart
-          annualData={annualData}
-          maxBars={maxBars}
-          currentRegime={currentRegime}
-        />
-        <ContribComparisonChart
-          curveData={curveData}
-          curveMax={curveMax}
-          currentRegime={currentRegime}
-        />
-      </div>
-
-      <div className="history-heading">
-        <h2>Historique des déclarations</h2>
-        <span>{declarations.length} déclaration(s)</span>
-      </div>
-
-      <div className="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>Année</th>
-              <th>Chiffre d'affaires</th>
-              <th>Catégorie</th>
-              <th>TVA collectée</th>
-              <th>TVA déductible</th>
-              <th>TVA payée</th>
-              <th>TVA théorique</th>
-              <th>Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            {declarations.map((declaration) => {
-              const declCa = toNumber(declaration.ca);
-              const declCat =
-                declCa >= 400_000_000
-                  ? 'Grand'
-                  : declCa >= 100_000_000
-                    ? 'Moyen'
-                    : 'Petit';
-              const declBadge =
-                declCat === 'Grand'
-                  ? 'badge critique'
-                  : declCat === 'Moyen'
-                    ? 'badge surveillance'
-                    : 'badge conforme';
-
-              return (
-                <tr
-                  key={declaration.id_declaration}
-                  className="clickable-row"
-                  title="Voir le détail de cette déclaration"
-                  onClick={() =>
-                    navigate(`/suivi/${declaration.id_declaration}`, {
-                      state: { declaration },
-                    })
-                  }
-                >
-                  <td>
-                    <strong>{declaration.annee}</strong>
-                  </td>
-                  <td>{formatAriary(declaration.ca)}</td>
-                  <td>
-                    <span className={declBadge}>{declCat}</span>
-                  </td>
-                  <td>{formatAriary(declaration.tva_collectee)}</td>
-                  <td>{formatAriary(declaration.tva_deductible)}</td>
-                  <td>
-                    <strong>{formatAriary(declaration.tva_payee)}</strong>
-                  </td>
-                  <td>{formatAriary(declaration.tva_theorique)}</td>
-                  <td>{declaration.statut || 'Conforme'}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      <ContribuableHeader activeTab={activeTab} contribuable={contribuable} declarationsCount={declarations.length} fiche={fiche} id={id} onToggleDeclarationForm={toggleDeclarationForm} showDeclarationForm={showDeclarationForm} />
+      {declarationSuccess && <p className="success form-submit-message" role="status">{declarationSuccess}</p>}
+      {activeTab === 'declarations' && showDeclarationForm && <DeclarationForm contribuable={contribuable} error={declarationError} form={declarationForm} onChange={handleDeclarationInputChange} onSubmit={handleDeclarationSubmit} submitting={declarationSubmitting} />}
+      {activeTab === 'overview' && <ContribuableOverview annualData={annualData} curveData={curveData} currentRegime={currentRegime} declarations={declarations} maxBars={maxBars} curveMax={curveMax} totalPaid={totalPaid} />}
+      {activeTab === 'classification' && <ClassificationPanel fiche={fiche} />}
+      {activeTab === 'declarations' && <DeclarationHistory declarations={declarations} onOpenDeclaration={(declaration) => navigate(`/suivi/${declaration.id_declaration}`, { state: { declaration } })} />}
+      {activeTab === 'relances' && <RelancePanel history={relanceHistory} montantDu={totalDuRelance} nif={contribuable.nif} onIssue={issueRelance} onOpenHistoryEntry={openHistoryEntry} onRegularize={regularize} success={relanceSuccess} />}
     </section>
-  );
+    <RappelOrdreModal isOpen={rappelModalOpen} onClose={() => setRappelModalOpen(false)} dossier={rappelDossier} type={rappelModalType} />
+  </>;
 }
