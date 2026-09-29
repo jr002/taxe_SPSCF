@@ -234,6 +234,7 @@ export default function NotificationModal({
               <small>L'Inspecteur Vérificateur des Impôts</small>
               <div className="stamp-placeholder">[ Cachet de la DGI ]</div>
             </div>
+          <div>Pour plus d'information contacte le 034 00 000 00</div>  
           </div>
         </div>
       </div>

@@ -18,6 +18,7 @@ model agents {
   date_creation     DateTime?   @default(now()) @db.Timestamp(6)
   date_modification DateTime?   @db.Timestamp(6)
   controles         controles[]
+  relances          relances[]
 
   @@index([email], map: "idx_agents_email")
 }
@@ -61,6 +62,7 @@ model declarations {
   date_creation                DateTime?      @default(now()) @db.Timestamp(6)
   date_modification            DateTime?      @db.Timestamp(6)
   controles                    controles[]
+  relances                      relances[]
   contribuables                contribuables? @relation(fields: [id_contribuable], references: [id_contribuable], onDelete: Cascade, onUpdate: NoAction, map: "declarations_id_entreprise_fkey")
 
   @@unique([id_contribuable, annee], map: "declarations_id_entreprise_annee_key")
@@ -100,6 +102,7 @@ model contribuables {
   date_modification DateTime?      @db.Timestamp(6)
   declarations      declarations[]
   recoupements      recoupements[]
+  relances          relances[]
   centres           centres?       @relation(fields: [id_centre], references: [id_centre], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([nif], map: "idx_entreprises_nif")
@@ -118,4 +121,29 @@ model centres {
   contribuables  contribuables[]
 
   @@index([type_centre], map: "idx_centres_type")
+}
+
+model relances {
+  id_relance          Int           @id @default(autoincrement())
+  id_contribuable     Int
+  id_declaration      Int?
+  id_agent            Int?
+  type_relance        String        @db.VarChar(30)
+  statut              String        @default("emise") @db.VarChar(20)
+  annee               Int
+  montant_du          Decimal       @db.Decimal(15, 2)
+  jours_retard        Int           @default(0)
+  date_emission       DateTime      @default(now()) @db.Timestamp(6)
+  date_regularisation DateTime?     @db.Timestamp(6)
+  document_url        String?
+  observations        String?
+  date_creation       DateTime      @default(now()) @db.Timestamp(6)
+  date_modification   DateTime?     @db.Timestamp(6)
+  contribuables       contribuables @relation(fields: [id_contribuable], references: [id_contribuable], onDelete: Cascade, onUpdate: NoAction)
+  declarations        declarations? @relation(fields: [id_declaration], references: [id_declaration], onDelete: SetNull, onUpdate: NoAction)
+  agents              agents?       @relation(fields: [id_agent], references: [id_agent], onDelete: SetNull, onUpdate: NoAction)
+
+  @@index([id_contribuable, date_emission], map: "idx_relances_contribuable_date")
+  @@index([statut], map: "idx_relances_statut")
+  @@index([id_declaration], map: "idx_relances_declaration")
 }
