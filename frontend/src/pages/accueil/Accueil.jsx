@@ -36,9 +36,9 @@ export default function Accueil() {
       {/* Section Hero */}
       <section className="home-hero">
         <div className="home-hero-copy">
-          <p className="eyebrow">
-            Système de pilotage du contrôle et de la conformité fiscale (SP2CF)
-          </p>
+          <h3 className="eyebrow">
+            SYSTEME DE PILOTAGE ET DU SUIVI DE LA CONFORMITE FISCALE (SPSCF)
+          </h3>
           <h1>La TVA, claire dès le premier regard.</h1>
           <p className="home-lead">
             Simulez, contrôlez et enregistrez vos déclarations fiscales en toute conformité.

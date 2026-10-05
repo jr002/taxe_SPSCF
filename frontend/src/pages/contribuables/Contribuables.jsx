@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+
 import ExcelImportModal from '../../components/forms/ExcelImportModal';
 import ContribuablesFilters from './components/ContribuablesFilters';
 import ContribuablesTable from './components/ContribuablesTable';
@@ -16,6 +17,8 @@ export default function Contribuables() {
       state: { contribuable },
     });
   };
+
+  const hasPagination = list.filteredContribuables.length > list.pageSize;
 
   return (
     <section className="page">
@@ -54,7 +57,8 @@ export default function Contribuables() {
             contribuables={list.paginatedContribuables}
             onOpenDetail={openDetail}
           />
-          {list.filteredContribuables.length > list.pageSize && (
+
+          {hasPagination && (
             <Pagination
               currentPage={list.currentPage}
               onPageChange={list.setCurrentPage}

@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
 const helmet = require('helmet');
 const morgan = require('morgan');
 const path = require('path');
@@ -11,6 +12,8 @@ const declarationRoutes = require('./routes/declaration.routes');
 const controleRoutes = require('./routes/controle.routes');
 const recoupementRoutes = require('./routes/recoupement.routes');
 const centreRoutes = require('./routes/centre.routes');
+const authRoutes = require('./routes/auth.routes');
+const { authenticate } = require('./middlewares/auth.middleware');
 
 // Middleware d'erreur
 const errorHandler = require('./middlewares/error.middleware');
@@ -45,12 +48,15 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(morgan('dev'));
 
 // Dossier uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
+app.use('/api/auth', authRoutes);
+app.use('/api', authenticate);
 app.use('/api/contribuables', contribuableRoutes);
 app.use('/api/declarations', declarationRoutes);
 app.use('/api/controles', controleRoutes);

@@ -37,6 +37,7 @@ DB_PASSWORD=<mot_de_passe_postgresql>
 DATABASE_URL="postgresql://postgres:<mot_de_passe_postgresql>@localhost:5432/taxe_verification?schema=public"
 
 CORS_ORIGIN=http://localhost:5173
+JWT_SECRET=<secret-aleatoire-long-et-prive>
 ```
 
 La base indiquée par `DATABASE_URL` doit exister avant le démarrage de l'API.
@@ -56,6 +57,24 @@ npm start
 ```
 
 Par défaut, l'API écoute sur `http://localhost:5000`.
+
+### Créer le premier compte agent
+
+Les comptes ne sont pas ouverts à l'inscription publique. Après avoir configuré
+la base, créez un compte depuis PowerShell :
+
+```powershell
+$env:AGENT_EMAIL = "agent@example.com"
+$env:AGENT_PASSWORD = "un-mot-de-passe-de-12-caracteres-minimum"
+$env:AGENT_FIRST_NAME = "Prenom"
+$env:AGENT_LAST_NAME = "Nom"
+npm run agent:create
+```
+
+Le mot de passe est enregistré sous forme de hash. Supprimez ensuite ces
+variables de l'environnement PowerShell. En production, définissez aussi un
+`JWT_SECRET` aléatoire et privé ; sans lui, les sessions ne sont pas activées.
+La session expire au bout de huit heures.
 
 Vérifier que le serveur fonctionne :
 

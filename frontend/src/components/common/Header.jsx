@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import logoDgi from '../../assets/logodgi.jpg';
 
 const NAVIGATION_LINKS = [
-  { to: '/', label: 'Accueil' },
+  { to: '/acceuil', label: 'Accueil' },
   { to: '/collecte', label: 'Collecte TVA' },
   { to: '/decisionnel', label: 'Tableau décisionnel' },
   { to: '/suivi', label: 'Suivi fiscal' },
@@ -19,6 +19,7 @@ export default function Header({
   onSelectModule,
   isDarkMode,
   onToggleTheme,
+  onLogout,
 }) {
   const { pathname } = useLocation();
 
@@ -34,7 +35,7 @@ export default function Header({
 
   return (
     <header className="topbar">
-      <Link to="/" className="brand">
+      <Link to="/acceuil" className="brand">
         <img
           className="brand-logo"
           src={logoDgi}
@@ -84,6 +85,9 @@ export default function Header({
           title={isDarkMode ? 'Mode clair' : 'Mode sombre'}
         >
           {isDarkMode ? '☀' : '☾'}
+        </button>
+        <button type="button" className="logout-button" onClick={onLogout}>
+          Déconnexion
         </button>
       </nav>
     </header>
