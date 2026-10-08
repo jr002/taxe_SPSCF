@@ -1,120 +1,269 @@
-# 📚 Documentation des Routes Frontend, Backend et API (SP2CF / TVA•SSIF)
+# Documentation des routes frontend, backend et API (SP2CF / TVA•SSIF)
 
-Ce document décrit l'ensemble des **routes frontend (React Router)**, des **routes backend (API REST Express)** et du **client API** du projet.
+Ce document décrit les routes du frontend React, les endpoints de l'API REST
+Express et les fonctions du client API du projet. Il est maintenu en regard du
+code : [`frontend/src/App.jsx`](frontend/src/App.jsx),
+[`frontend/src/api/api.js`](frontend/src/api/api.js) et
+[`backend/src/app.js`](backend/src/app.js).
 
 ---
 
-## 🧭 1. Routes Frontend (React Router v7)
+## 1. Routes frontend (React Router)
 
-Toutes les routes sont déclarées dans [`App.jsx`](file:///c:/Users/PC/Desktop/ssif/rendu/version4/frontend/src/App.jsx) et protégées par la barre de navigation [`Header.jsx`](file:///c:/Users/PC/Desktop/ssif/rendu/version4/frontend/src/components/common/Header.jsx).
+Toutes les routes sont déclarées dans [`App.jsx`](frontend/src/App.jsx). Au
+montage, l'application appelle `GET /api/auth/me` avec le cookie de session :
+tant que la réponse n'est pas connue, un message « Vérification de la session… »
+est affiché. Ensuite :
 
-| Route URL | Composant Page | Paramètres / Query | Description & Rôle Métier |
+- la route `/` affiche l'écran de connexion
+  [`users/signin.jsx`](frontend/src/users/signin.jsx) si l'agent n'est pas
+  authentifié, sinon elle redirige vers `/acceuil` ;
+- les autres pages sont regroupées dans une route de layout sans chemin, qui
+  rend [`Header.jsx`](frontend/src/components/common/Header.jsx) puis
+  `<main><Outlet /></main>` lorsque la session est valide, et redirige vers `/`
+  sinon ;
+- toute URL inconnue correspond au motif `*` et redirige vers `/`.
+
+| Route URL | Composant page | Accès | Rôle |
 | :--- | :--- | :--- | :--- |
-| **`/`** | `Accueil.jsx` | - | **Tableau de bord d'accueil** : Présentation du système SP2CF / DGI, indicateurs de synthèse fiscale annuelle, boutons d'actions rapides. |
-| **`/collecte`** | `Collecte.jsx` | Tab `currentModule` | **Simulateur de collecte TVA multi-modules** :<br>• *Module A* : TVA sur ventes et achats.<br>• *Module B* : TVA théorique IS / IR & Redressements.<br>• *Module C* : Recoupement fiscal tiers. |
-| **`/entreprises/nouveau`** | `PhaseClassement.jsx` | - | **Étape 1 Immatriculation** : Choix de la structure fiscale compétente (Centre Fiscal `< 2 Md`, SRE `2-4 Md`, DGE `> 4 Md`). |
-| **`/entreprises/nouveau/form`** | `FormInformation.jsx` | `?structure=centre_fiscal\|sre\|dge` | **Étape 2 Immatriculation** : Formulaire de création d'un contribuable (NIF 10 chiffres, Raison sociale, CA, Secteur, Contact). |
-| **`/decisionnel`** | `TableauDecisionnel.jsx` | - | **Tableau de bord de pilotage stratégique** : KPIs (Total déclarations, Alertes/Critiques, Écart total, TVA théorique) + Graphiques SVG. |
-| **`/suivi`** | `SuiviFiscal.jsx` | - | **Tableau d'audit et de suivi des déclarations** : Historique complet, recherche en temps réel, tri dynamique sur les colonnes, pagination. |
-| **`/suivi/:id`** | `DeclarationDetail.jsx` | `:id` *(ID de la déclaration)* | **Fiche détaillée d'une déclaration** : Données chiffrées complètes (CA, bénéfice, TVA déductible/payée/théorique), statut de conformité. |
-| **`/contribuables`** | `Contribuables.jsx` | - | **Registre des contribuables** : Synthèse par entreprise, cumul des montants payés, nombre d'années suivies. |
-| **`/contribuables/:id`** | `ContribuableDetail.jsx` | `:id` *(NIF / Clé contribuable)* | **Fiche détaillée d'un contribuable** : Historique multi-annuel, graphiques de volume sur 5 ans et courbes d'écarts TVA. |
-| **`/register`** | `Register.jsx` | - | **Registre fiscal par centre** : Répartition visuelle en 3 colonnes (Centre Fiscal, SRE, DGE) selon le chiffre d'affaires déclaré. |
+| `/` | `users/signin.jsx` | public | Écran de connexion ; redirige vers `/acceuil` si la session est déjà valide |
+| `/signin` | — | public | Redirection immédiate vers `/` |
+| `/acceuil` | `Accueil.jsx` | protégé | Tableau de bord d'accueil et indicateurs de synthèse |
+| `/collecte` | `Collecte.jsx` | protégé | Simulateur de collecte TVA ; l'onglet actif est porté par `currentModule` (`sales`, `theoretical`, `reconciliation`, `declaration`) |
+| `/entreprises/nouveau` | `PhaseClassement.jsx` | protégé | Étape 1 de l'immatriculation : choix de la structure compétente |
+| `/entreprises/nouveau/form` | `FormInformation.jsx` | protégé | Étape 2 de l'immatriculation : formulaire de création d'un contribuable (`?structure=…`) |
+| `/decisionnel` | `TableauDecisionnel.jsx` | protégé | Tableau de bord de pilotage (KPI et graphiques) |
+| `/register` | `Register.jsx` | protégé | Registre fiscal par centre |
+| `/centres/:id` | `CentreDetail.jsx` | protégé | Fiche d'un centre et de ses contribuables |
+| `/suivi` | `SuiviFiscal.jsx` | protégé | Suivi et recherche des déclarations |
+| `/suivi/:id` | `DeclarationDetail.jsx` | protégé | Fiche détaillée d'une déclaration et actes de procédure contradictoire |
+| `/contribuables` | `Contribuables.jsx` | protégé | Registre des contribuables |
+| `/contribuables/:id` | `ContribuableDetail.jsx` | protégé | Fiche détaillée d'un contribuable |
+| `/contribuables/:id/classification` | `ContribuableDetail.jsx` | protégé | Même fiche, onglet classification |
+| `/contribuables/:id/declarations` | `ContribuableDetail.jsx` | protégé | Même fiche, onglet déclarations |
+| `/contribuables/:id/relances` | `ContribuableDetail.jsx` | protégé | Même fiche, onglet relances (données locales, aucune API de relance) |
+| `/relance` | `RelanceFiscale.jsx` | protégé | Relance fiscale et recouvrement, alimentée par les déclarations et les contribuables |
+| `*` | — | public | Redirection vers `/` |
+
+Remarques :
+
+- l'orthographe `/acceuil` (au lieu de `/accueil`) est celle du code et doit
+  être conservée dans les liens ;
+- les pages sont réexportées par [`pages/index.jsx`](frontend/src/pages/index.jsx) ;
+- [`users/login.jsx`](frontend/src/users/login.jsx) existe mais n'est importé
+  par aucune route : l'écran de connexion réel est `users/signin.jsx` ;
+- le lien « S'inscrire » de l'écran de connexion pointe vers `/signup`, qui ne
+  correspond à aucune route : le motif `*` renvoie donc vers `/` ;
+- « protégé » signifie que l'accès direct à l'URL sans session valide redirige
+  vers `/` ; les pages protégées elles-mêmes ne vérifient pas les rôles.
 
 ---
 
-## ⚙️ 2. Routes Backend (API REST Express)
+## 2. Routes backend (API REST Express)
 
-Le backend écoute par défaut sur le port `5000` (`http://localhost:5000`). En développement, Vite relaie automatiquement les requêtes commençant par `/api` via son proxy interne.
+Le backend écoute par défaut sur le port `5000` (`http://localhost:5000`,
+défini par `PORT` dans `backend/.env`). En développement, Vite relaie les
+requêtes `/api` vers ce serveur via
+[`frontend/vite.config.js`](frontend/vite.config.js).
 
-### 🛡️ Route de Santé
-* **`GET /health`**
-  * **Description** : Vérifie la disponibilité de l'API.
-  * **Réponse (200 OK)** :
-    ```json
-    {
-      "status": "OK",
-      "message": "API de contrôle fiscal en ligne",
-      "version": "1.0.0"
-    }
-    ```
+### Authentification et routes publiques
 
-### 🏢 Module Centres (`/api/centres`)
+`backend/src/app.js` monte six domaines :
 
-| Méthode | Endpoint | Description |
+```text
+/api/auth          (monté avant le middleware d'authentification)
+/api/contribuables
+/api/declarations
+/api/controles
+/api/recoupements
+/api/centres
+```
+
+La ligne `app.use('/api', authenticate)` protège **toutes** les routes `/api`
+sauf celles de `/api/auth`. Sans cookie `fiscal_session` valide, une route
+protégée répond :
+
+```json
+{ "success": false, "message": "Authentification requise" }
+```
+
+(code `401`). Un cookie présent mais expiré ou signé avec un autre
+`JWT_SECRET` répond `401` avec le message « Session invalide ou expirée ».
+
+Routes publiques : `GET /health`, l'interface `/api-docs`, la spécification
+`/api-docs/swagger.json`, les fichiers statiques `/uploads`, ainsi que
+`POST /api/auth/login` et `POST /api/auth/logout`. `GET /api/auth/me` applique
+le middleware dans son propre routeur et exige donc le cookie.
+
+Le cookie `fiscal_session` est `httpOnly`, `sameSite=lax`, `secure` lorsque
+`NODE_ENV=production`, et sa durée est de 8 heures, comme le jeton JWT
+(`expiresIn: '8h'`). Aucun endpoint ne contrôle `agents.role`.
+
+### Santé et documentation
+
+| Méthode | Endpoint | Accès | Réponse |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/health` | public | `200` — `{ "status": "OK", "message": "API de contrôle fiscal en ligne", "version": "1.0.0" }` |
+| `GET` | `/api-docs` | public | `200` — interface Swagger UI |
+| `GET` | `/api-docs/swagger.json` | public | `200` — spécification OpenAPI 3.0.3 définie dans [`backend/src/config/swagger.js`](backend/src/config/swagger.js) |
+
+### Module Auth (`/api/auth`)
+
+| Méthode | Endpoint | Accès | Corps / paramètres | Codes |
+| :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/login` | public | `email`, `password` (chaînes, obligatoires) | `400` si l'un manque ; `401` si les identifiants sont incorrects ou si le compte n'est pas `actif` ; `200` avec `{ success: true, user: { id, email, nom, prenom, role } }` et le cookie `fiscal_session` |
+| `GET` | `/api/auth/me` | authentifié | — | `200` — `{ success: true, user }` ; `401` sans session valide |
+| `POST` | `/api/auth/logout` | public | — | `200` — `{ success: true }` et suppression du cookie |
+
+### Module Contribuables (`/api/contribuables`)
+
+| Méthode | Endpoint | Corps / paramètres | Codes |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/contribuables` | query `page` (défaut 1), `limit` (défaut 20), `search` (NIF, raison sociale ou secteur) | `200` — `{ data: { data: [...], pagination: { page, limit, total, pages } } }` |
+| `GET` | `/api/contribuables/:id` | `id` = `id_contribuable` | `200` — contribuable, ses `declarations`, la relation `centres`, et les champs calculés `nb_declarations` et `ca_moyen` ; `404` si introuvable |
+| `POST` | `/api/contribuables` | `nif` (obligatoire, au moins 10 chiffres, numérique), `raison_sociale` (obligatoire, 2 caractères minimum), `secteur_activite` (obligatoire), `adresse` (obligatoire), `telephone` (obligatoire, format `[0-9+\-\s]{8,}`), `email` (optionnel, e-mail valide), `regime_fiscal` (optionnel, `IS` ou `IR`), `id_centre` (optionnel, entier ≥ 1) | `201` ; `400` si la validation échoue, si le NIF existe déjà, ou si `id_centre` ne correspond à aucun centre ; `500` sinon |
+| `PUT` | `/api/contribuables/:id` | champs modifiables : `raison_sociale`, `secteur_activite`, `adresse`, `telephone`, `email`, `regime_fiscal`, `id_centre` — **aucun validateur middleware** | `200` ; `404` si introuvable ; `400` si `id_centre` est inconnu |
+
+### Module Déclarations (`/api/declarations`)
+
+| Méthode | Endpoint | Corps / paramètres | Codes |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/declarations` | query `page`, `limit`, `search` (NIF ou raison sociale), `statut` (`conforme`, `alerte`, `critique`, ou un statut de procédure), `annee` | `200` — liste paginée enrichie du NIF et de la raison sociale |
+| `GET` | `/api/declarations/stats` | — | `200` — `total`, `conformes`, `alertes`, `critiques`, `ca_moyen`, `tva_totale`, `tva_theorique_totale`, `ecart_total` (compteurs renvoyés sous forme de chaînes) |
+| `GET` | `/api/declarations/:id` | `id` = `id_declaration` | `200` ; `404` si introuvable |
+| `POST` | `/api/declarations` | `id_contribuable` (entier), `annee` (entier entre 2000 et 2100), `ca`, `benefice`, `tva_collectee`, `tva_deductible`, `tva_payee` (nombres ≥ 0) ; `regime_fiscal` (`IS` ou `IR`) est accepté et utilisé pour le calcul, mais n'est pas enregistré en base | `201` avec `{ declaration, analyse: { tva_theorique, ecart, pourcentage_ecart, statut } }` ; `400` si la validation échoue ; `500` sinon |
+| `POST` | `/api/declarations/:id/notification-primitive` | `date_emission` (défaut : maintenant), `prorogation_jours` (défaut 0), `montant_redressement` (défaut : TVA théorique − TVA payée, plancher à 0), `credit_impot`, `observations_agent` — tous optionnels | `200` — statut `PRIMITIVE_ENVOYÉE`, `date_limite_reponse` = date d'émission + 30 jours + prorogation, `montant_impute` remis à 0 ; `404` si introuvable |
+| `POST` | `/api/declarations/:id/notification-definitive` | `date_emission` (défaut : maintenant), `montant_valide` (défaut : `montant_redressement` courant), `credit_impot`, `observations_agent` | `200` — statut `DÉFINITIVE_ENVOYÉE`, montants arrêtés et imputation débloquée ; `404` si introuvable |
+| `POST` | `/api/declarations/:id/imputer-credit` | `credit_impot`, `montant_a_imputer`, `observations_agent` ; le montant imputé est borné par le minimum entre le montant demandé, le crédit disponible et le redressement | `200` — `montant_impute` et `montant_net_a_payer` recalculés ; `400` si le statut n'est pas `DÉFINITIVE_ENVOYÉE` (articles 01.01.15 et 01.02.06 du CGI) ; `404` si introuvable |
+
+### Module Contrôles (`/api/controles`)
+
+| Méthode | Endpoint | Corps / paramètres | Codes |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/controles/stats` | — | `200` — `{ global: { total, conformes, alertes, critiques, ecart_moyen, ecart_max }, par_type: [ { type, total, ecart_moyen } ] }` |
+| `POST` | `/api/controles/:id_declaration/effectuer` | `id_agent` (optionnel) ; calcule la TVA théorique, l'écart et le statut, enregistre le contrôle puis met à jour la déclaration | `200` — `{ controle, declaration, analyse }` ; `500` — `{ message: "Erreur lors du contrôle", error: "Déclaration non trouvée" }` si la déclaration n'existe pas, et **aussi** après tout contrôle réussi, à cause du bug `updateData` non déclarée dans `DeclarationModel.update` (voir § 4) |
+| `GET` | `/api/controles/:id_declaration/historique` | `id_declaration` | `200` — contrôles triés par date décroissante, enrichis du nom et du prénom de l'agent |
+
+### Module Recoupements (`/api/recoupements`)
+
+| Méthode | Endpoint | Corps / paramètres | Codes |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/recoupements` | `id_contribuable` (obligatoire) ; `source` (défaut `tiers_declarant`), `merchandise_sold`, `goods_purchased`, `services_purchased`, `third_party_payments`, `local_products`, `import_expenses`, `ca_declare` (optionnel, déclenche la vérification de cohérence), `reference_periode` (accepté mais ignoré) | `201` — `{ data, source_utilisee }` avec `somme_recoupee` calculée par le service ; `400` si `id_contribuable` manque ; `500` sinon |
+| `GET` | `/api/recoupements/:id_contribuable/analyser` | `id_contribuable` | `200` — `{ hasData: false, message }` si aucun recoupement, sinon `{ hasData: true, recoupements, dernier, verification, somme_recoupee, ca_declare, source }` |
+| `GET` | `/api/recoupements/stats/sources` | — | `200` — `[ { source, total, moyenne_recoupee } ]`, trié par nombre décroissant |
+
+### Module Centres (`/api/centres`)
+
+| Méthode | Endpoint | Corps / paramètres | Codes |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/centres` | — | `200` — centres triés par nom, avec `_count.contribuables` |
+| `GET` | `/api/centres/:id` | `id` = `id_centre` | `200` ; `404` si introuvable |
+| `POST` | `/api/centres` | `nom_centre`, `numero_centre`, `type_centre` (obligatoires) ; `email_centre`, `telephone_centre` (optionnels) | `201` ; `400` si un champ obligatoire manque ou si `type_centre` est invalide ; `409` si `numero_centre` existe déjà |
+| `PUT` | `/api/centres/:id` | mêmes champs, tous optionnels | `200` ; `400` si `type_centre` est invalide ; `404` ; `409` si `numero_centre` existe déjà |
+| `DELETE` | `/api/centres/:id` | `id` = `id_centre` | `200` — les contribuables rattachés conservent leur ligne et voient `id_centre` passer à `NULL` ; `404` si introuvable |
+
+Valeurs acceptées pour `type_centre` : `Centre Fiscal`, `SRE`, `DGE`, `autre`
+(constante `CENTRE_TYPES` de
+[`backend/src/models/centre.model.js`](backend/src/models/centre.model.js)).
+Un contribuable est rattaché à un centre avec le champ `id_centre` dans `POST`
+ou `PUT /api/contribuables` ; le centre associé est inclus dans les réponses de
+liste et de détail des contribuables.
+
+### Aucun autre domaine
+
+Le backend ne monte ni `/api/entreprises` ni `/api/relances`. Comme ces URL
+commencent par `/api`, elles passent d'abord par le middleware
+d'authentification : sans cookie valide la réponse est `401`, et avec une
+session valide elles aboutissent au gestionnaire de fin de chaîne qui répond
+`404` avec `{ "success": false, "message": "Route non trouvée" }` (voir
+[`backend/src/app.js`](backend/src/app.js)). La table `relances` existe dans
+[`backend/prisma/schema.prisma`](backend/prisma/schema.prisma) mais aucune
+route, aucun contrôleur et aucun modèle ne l'expose.
+
+---
+
+## 3. Client API frontend
+
+[`frontend/src/api/api.js`](frontend/src/api/api.js) crée une instance Axios
+unique :
+
+```js
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || '/api',
+  timeout: 10000,
+  withCredentials: true,
+});
+```
+
+L'authentification ne repose sur aucun jeton côté client : il n'y a ni
+`localStorage`, ni en-tête `Authorization: Bearer`. Le cookie `fiscal_session`
+est `httpOnly`, donc invisible au JavaScript, et c'est `withCredentials: true`
+qui le fait circuler. Les appels de connexion, de vérification de session et de
+déconnexion utilisent directement l'instance par défaut `api` (aucune fonction
+dédiée n'est exportée) :
+
+| Appel | Endpoint | Utilisé par |
 | :--- | :--- | :--- |
-| **`GET`** | `/api/centres` | Liste les centres avec le nombre de contribuables rattachés |
-| **`GET`** | `/api/centres/:id` | Récupère un centre |
-| **`POST`** | `/api/centres` | Crée un centre (`nom_centre`, `type_centre`, `numero_centre`, `email_centre`) |
-| **`PUT`** | `/api/centres/:id` | Modifie un centre |
-| **`DELETE`** | `/api/centres/:id` | Supprime un centre ; ses contribuables deviennent non affectés |
+| `api.post('/auth/login', { email, password })` | `POST /api/auth/login` | [`users/signin.jsx`](frontend/src/users/signin.jsx) |
+| `api.get('/auth/me')` | `GET /api/auth/me` | [`App.jsx`](frontend/src/App.jsx) au montage |
+| `api.post('/auth/logout')` | `POST /api/auth/logout` | bouton de déconnexion de [`Header.jsx`](frontend/src/components/common/Header.jsx), câblé dans `App.jsx` |
 
-Les valeurs acceptées pour `type_centre` sont `Centre Fiscal`, `SRE`, `DGE` et `autre`.
-Un contribuable est rattaché avec le champ `id_centre` dans les requêtes
-`POST` ou `PUT /api/contribuables`. Le centre associé est inclus dans les
-réponses de liste et de détail des contribuables.
+### Fonctions exportées
 
----
-
-### 🏢 Module Entreprises (`/api/entreprises`)
-
-| Méthode | Endpoint | Description | Paramètres / Body | Code HTTP |
-| :--- | :--- | :--- | :--- | :--- |
-| **`GET`** | `/api/entreprises` | Liste paginée avec recherche | **Query :** `page` (défaut: 1), `limit` (défaut: 20), `search` (NIF ou Raison sociale) | `200 OK` |
-| **`GET`** | `/api/entreprises/:id` | Détails d'une entreprise par son ID | **Param :** `id` (ID Entreprise) | `200 OK` / `404 Not Found` |
-| **`POST`** | `/api/entreprises` | Créer un nouveau contribuable | **Body JSON :**<br>• `nif` *(string, min 10 chiffres, requis)*<br>• `raison_sociale` *(string, requis)*<br>• `secteur_activite` *(string, requis)*<br>• `regime_fiscal` *(string: 'IS' \| 'IR')*<br>• `adresse` *(string, requis)*<br>• `telephone` *(string, requis)*<br>• `email` *(string, optionnel)* | `201 Created` / `400 Bad Request` |
-| **`PUT`** | `/api/entreprises/:id` | Mettre à jour une entreprise | **Param :** `id`<br>**Body JSON :** champs modifiés | `200 OK` / `404 Not Found` |
-
----
-
-### 📑 Module Déclarations (`/api/declarations`)
-
-| Méthode | Endpoint | Description | Paramètres / Body | Code HTTP |
-| :--- | :--- | :--- | :--- | :--- |
-| **`GET`** | `/api/declarations` | Liste filtrable des déclarations | **Query :** `page`, `limit`, `search` (NIF/Nom), `statut` (`conforme`\|`alerte`\|`critique`), `annee` | `200 OK` |
-| **`GET`** | `/api/declarations/stats` | Statistiques globales & KPIs | **Réponse :** total, conformes, alertes, critiques, ca_moyen, tva_totale, tva_theorique_totale, ecart_total | `200 OK` |
-| **`GET`** | `/api/declarations/:id` | Fiche détaillée d'une déclaration | **Param :** `id` (ID Déclaration) | `200 OK` / `404 Not Found` |
-| **`POST`** | `/api/declarations` | Enregistrer une déclaration (Calcul automatique TVA théorique, écart et statut) | **Body JSON :**<br>• `id_entreprise` *(number, requis)*<br>• `annee` *(number, requis)*<br>• `ca` *(number, requis)*<br>• `benefice` *(number, requis)*<br>• `tva_collectee` *(number)*<br>• `tva_deductible` *(number)*<br>• `tva_payee` *(number)*<br>• `regime_fiscal` *('IS' \| 'IR')* | `201 Created` |
-| **`POST`** | `/api/declarations/:id/notification-primitive` | Émettre la **Notification Primitive** (délai 30j, statut `PRIMITIVE_ENVOYÉE`) | **Param :** `id`<br>**Body :** `date_emission`, `prorogation_jours`, `montant_redressement`, `credit_impot`, `observations_agent` | `200 OK` |
-| **`POST`** | `/api/declarations/:id/notification-definitive` | Émettre la **Notification Définitive** (validation agent, dette arrêtée, statut `DÉFINITIVE_ENVOYÉE`, déblocage imputation) | **Param :** `id`<br>**Body :** `date_emission`, `montant_valide`, `credit_impot`, `observations_agent` | `200 OK` |
-| **`POST`** | `/api/declarations/:id/imputer-credit` | **Imputer le Crédit d'Impôt** (Articles 01.01.15 et 01.02.06 CGI LFI 2026, autorisé uniquement si `DÉFINITIVE_ENVOYÉE`) | **Param :** `id`<br>**Body :** `credit_impot`, `montant_a_imputer`, `observations_agent` | `200 OK` / `400 Bad Request` |
-
----
-
-### 🔍 Module Contrôles Fiscaux (`/api/controles`)
-
-| Méthode | Endpoint | Description | Paramètres / Body | Code HTTP |
-| :--- | :--- | :--- | :--- | :--- |
-| **`POST`** | `/api/controles/:id_declaration/effectuer` | Lancer un contrôle fiscal sur une déclaration | **Param :** `id_declaration`<br>**Body :** `{ "id_agent": 1 }` (optionnel) | `200 OK` |
-| **`GET`** | `/api/controles/:id_declaration/historique` | Historique des contrôles d'une déclaration | **Param :** `id_declaration` | `200 OK` |
-| **`GET`** | `/api/controles/stats` | Statistiques globales de contrôle | - | `200 OK` |
-
----
-
-### 🔄 Module Recoupements (`/api/recoupements`)
-
-| Méthode | Endpoint | Description | Paramètres / Body | Code HTTP |
-| :--- | :--- | :--- | :--- | :--- |
-| **`POST`** | `/api/recoupements` | Enregistrer une collecte de recoupement tiers | **Body JSON :**<br>• `id_entreprise` *(number, requis)*<br>• `source` *(string, défaut: 'tiers_declarant')*<br>• `merchandise_sold` *(number)*<br>• `goods_purchased` *(number)*<br>• `services_purchased` *(number)*<br>• `third_party_payments` *(number)*<br>• `local_products` *(number)*<br>• `import_expenses` *(number)*<br>• `ca_declare` *(number, optionnel)* | `201 Created` |
-| **`GET`** | `/api/recoupements/:id_entreprise/analyser` | Analyser la cohérence des recoupements d'un contribuable | **Param :** `id_entreprise` | `200 OK` |
-| **`GET`** | `/api/recoupements/stats/sources` | Statistiques groupées par source de recoupement | - | `200 OK` |
-
----
-
-## 🔌 3. Mapping des Fonctions API Frontend ([`api.js`](file:///c:/Users/PC/Desktop/ssif/rendu/version4/frontend/src/api/api.js))
-
-| Fonction JS | Méthode & Endpoint Backend Correspondant | Rôle |
+| Fonction JS | Méthode et endpoint backend | Rôle |
 | :--- | :--- | :--- |
-| `getDeclarations(params)` | `GET /api/declarations` | Récupère la liste des déclarations |
-| `getDeclarationById(id)` | `GET /api/declarations/:id` | Récupère une déclaration spécifique |
-| `getDeclarationStats()` | `GET /api/declarations/stats` | Récupère les agrégats de statistiques pour le tableau décisionnel |
-| `createDeclaration(payload)` | `POST /api/declarations` | Enregistre une nouvelle déclaration fiscale |
-| `getContribuables(params)` | `GET /api/entreprises` | Récupère la liste des contribuables |
-| `getContribuableById(id)` | `GET /api/entreprises/:id` | Récupère les informations d'un contribuable |
-| `getContribuableByNif(nif)` | `GET /api/entreprises?search=nif` | Recherche et sélectionne un contribuable par son NIF |
-| `createContribuable(payload)` | `POST /api/entreprises` | Crée un nouveau contribuable dans la base |
-| `createRecoupement(payload)` | `POST /api/recoupements` | Enregistre les données financières de recoupement |
-| `getRecoupementsByContribuable(id)` | `GET /api/recoupements/:id/analyser` | Récupère les recoupements et l'analyse de cohérence |
-| `effectuerControle(idDecl, payload)` | `POST /api/controles/:id_declaration/effectuer` | Déclenche un contrôle fiscal formel |
-| `getControlesDeclaration(idDecl)` | `GET /api/controles/:id_declaration/historique` | Historique des contrôles |
-| `getErrorMessage(error)` | *(Utilitaire local)* | Formate le message d'erreur d'une requête Axios |
+| `getDeclarations(params)` | `GET /api/declarations` | Liste des déclarations (`limit: 250` par défaut, surchargeable) |
+| `getDeclarationById(id)` | `GET /api/declarations/:id` | Fiche d'une déclaration |
+| `getDeclarationStats()` | `GET /api/declarations/stats` | Agrégats pour le tableau décisionnel |
+| `createDeclaration(payload)` | `POST /api/declarations` | Enregistrement d'une déclaration |
+| `getContribuables(params)` | `GET /api/contribuables` | Liste paginée des contribuables |
+| `getContribuableById(id)` | `GET /api/contribuables/:id` | Fiche d'un contribuable |
+| `getContribuableByNif(nif)` | `GET /api/contribuables?search=<nif>&limit=20` | Recherche par NIF, puis filtrage exact côté client |
+| `createContribuable(payload)` | `POST /api/contribuables` | Création d'un contribuable |
+| `getCentres()` | `GET /api/centres` | Liste des centres |
+| `getCentreById(id)` | `GET /api/centres/:id` | Fiche d'un centre |
+| `createCentre(payload)` | `POST /api/centres` | Création d'un centre |
+| `updateCentre(id, payload)` | `PUT /api/centres/:id` | Mise à jour d'un centre |
+| `deleteCentre(id)` | `DELETE /api/centres/:id` | Suppression d'un centre (renvoie la réponse Axios complète) |
+| `createRecoupement(payload)` | `POST /api/recoupements` | Enregistrement d'un recoupement |
+| `getRecoupementsByContribuable(id)` | `GET /api/recoupements/:id_contribuable/analyser` | Recoupements et analyse de cohérence |
+| `effectuerControle(idDeclaration, payload)` | `POST /api/controles/:id_declaration/effectuer` | Déclenchement d'un contrôle fiscal |
+| `getControlesDeclaration(idDeclaration)` | `GET /api/controles/:id_declaration/historique` | Historique des contrôles |
+| `emettreNotificationPrimitive(id, payload)` | `POST /api/declarations/:id/notification-primitive` | Émission de la notification primitive |
+| `emettreNotificationDefinitive(id, payload)` | `POST /api/declarations/:id/notification-definitive` | Émission de la notification définitive |
+| `imputerCreditImpot(id, payload)` | `POST /api/declarations/:id/imputer-credit` | Imputation du crédit d'impôt |
+| `getErrorMessage(error)` | *(utilitaire local)* | Extrait `error.response.data.message`, sinon `error.message`, sinon un message réseau générique |
+
+Sauf `deleteCentre`, toutes ces fonctions renvoient `res.data.data`, c'est-à-dire
+le contenu utile de l'enveloppe `{ success, data }` de l'API.
+
+---
+
+## 4. Écarts connus entre le frontend et l'API
+
+- `POST /api/controles/:id_declaration/effectuer` se termine actuellement en
+  `500` même quand tout se passe bien : `ControleService.effectuerControle`
+  enregistre d'abord le contrôle (`ControleModel.create`), puis appelle
+  `DeclarationModel.update`, qui lève un `ReferenceError` parce que la variable
+  `updateData` n'y est jamais déclarée (contrairement aux autres modèles de
+  `backend/src/models/`). Le contrôle est donc bien écrit en base, mais la
+  déclaration n'est jamais mise à jour (ni `statut`, ni `tva_theorique`) et
+  l'API répond `500` avec `message: "Erreur lors du contrôle"` et
+  `error: "updateData is not defined"`. La route reste documentée ci-dessus
+  telle qu'elle est écrite.
+- La page `/relance` et l'onglet « relances » d'une fiche contribuable
+  fonctionnent à partir des déclarations et des contribuables : aucune API de
+  relance n'existe côté backend, alors que la table `relances` est présente en
+  base.
+- Les corps de `POST /api/declarations` et `POST /api/recoupements` attendent
+  `id_contribuable` (et non `id_entreprise`, nom des colonnes avant la migration
+  `001-rename-contribuables.sql`).
+- Le régime fiscal n'est pas persisté sur `declarations` : les contrôles
+  ultérieurs ne peuvent pas le relire et retombent sur le taux par défaut de
+  `FiscalService.calculerTVATheorique`.
+- Aucune fonction du client n'appelle `PUT /api/contribuables/:id` : la mise à
+  jour d'un contribuable, y compris le changement de `id_centre`, n'est
+  possible que directement par l'API. Le rattachement à un centre passe par le
+  champ `id_centre` du formulaire d'immatriculation
+  ([`FormInformation.jsx`](frontend/src/pages/entreprises/FormInformation.jsx)),
+  qui utilise `POST /api/contribuables`.

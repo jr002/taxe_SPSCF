@@ -16,6 +16,7 @@ export default function FormInformation() {
     legalStatus: '',
     revenue: '',
     fiscalStructure: selectedStructure,
+    regimeFiscal: '',
     phone: '',
     email: '',
     address: '',
@@ -40,6 +41,7 @@ export default function FormInformation() {
     setFormData((prev) => ({
       ...prev,
       [name]: value,
+      ...(name === 'fiscalStructure' && value !== 'centre_fiscal' ? { regimeFiscal: '' } : {}),
     }));
 
     if (errors[name]) {
@@ -81,6 +83,10 @@ export default function FormInformation() {
       newErrors.fiscalStructure = 'La structure fiscale est obligatoire';
     }
 
+    if (formData.fiscalStructure === 'centre_fiscal' && !formData.regimeFiscal) {
+      newErrors.regimeFiscal = 'Veuillez sélectionner le régime IS ou IR';
+    }
+
     if (!formData.phone.trim()) {
       newErrors.phone = 'Le numéro de téléphone est obligatoire';
     } else if (!/^[0-9+\-\s]{8,}$/.test(formData.phone)) {
@@ -114,7 +120,9 @@ export default function FormInformation() {
           nif: formData.nif.trim(),
           raison_sociale: [formData.companyName.trim(), formData.socialReason.trim()].filter(Boolean).join(' / '),
           secteur_activite: formData.legalStatus.trim(),
-          regime_fiscal: Number(formData.revenue) < 400000000 ? 'IS' : 'IR',
+          regime_fiscal: formData.fiscalStructure === 'centre_fiscal'
+            ? formData.regimeFiscal
+            : Number(formData.revenue) < 400000000 ? 'IS' : 'IR',
           id_centre: formData.id_centre ? Number(formData.id_centre) : undefined,
           telephone: formData.phone.trim(),
           email: formData.email.trim(),
@@ -139,6 +147,7 @@ export default function FormInformation() {
       legalStatus: '',
       revenue: '',
       fiscalStructure: '',
+      regimeFiscal: '',
       phone: '',
       email: '',
       address: '',
@@ -311,6 +320,39 @@ export default function FormInformation() {
             <span className="text-red-600 text-xs block mt-1">{errors.fiscalStructure}</span>
           )}
         </div>
+
+        {formData.fiscalStructure === 'centre_fiscal' && (
+          <fieldset className="space-y-2">
+            <legend className="block font-semibold text-gray-700 text-sm">
+              Régime fiscal <span className="text-red-600">*</span>
+            </legend>
+            <div className="flex flex-wrap gap-4">
+              {['IS', 'IR'].map((regime) => (
+                <label
+                  key={regime}
+                  className={`inline-flex cursor-pointer items-center gap-2 rounded-lg border-2 px-4 py-3 text-sm font-semibold transition-colors ${
+                    formData.regimeFiscal === regime
+                      ? 'border-indigo-600 bg-indigo-50 text-indigo-900'
+                      : 'border-gray-300 text-gray-700 hover:border-indigo-400'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="regimeFiscal"
+                    value={regime}
+                    checked={formData.regimeFiscal === regime}
+                    onChange={handleInputChange}
+                    className="h-4 w-4 accent-indigo-600"
+                  />
+                  {regime}
+                </label>
+              ))}
+            </div>
+            {errors.regimeFiscal && (
+              <span className="text-red-600 text-xs block mt-1">{errors.regimeFiscal}</span>
+            )}
+          </fieldset>
+        )}
 
         {/* Centre de rattachement */}
         <div className="space-y-1">

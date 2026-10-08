@@ -1,3 +1,5 @@
 # Utilitaires backend
 
-Espace réservé aux fonctions techniques communes qui ne dépendent pas directement d'une route ou d'un domaine métier.
+Dossier réservé aux fonctions techniques communes, indépendantes d'une route ou
+d'un domaine métier. Il ne contient actuellement aucun module : seul ce README
+y est présent.

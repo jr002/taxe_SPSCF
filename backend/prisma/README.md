@@ -19,30 +19,45 @@ votre installation. Ne versionnez jamais ce fichier.
 
 | Modèle | Rôle |
 | --- | --- |
-| `contribuables` | entreprises ou personnes suivies ; `nif` unique |
-| `declarations` | données fiscales annuelles et montants de TVA |
+| `contribuables` | entreprises ou personnes suivies ; `nif` unique ; rattachement facultatif à un centre |
+| `declarations` | données fiscales annuelles, montants de TVA et procédure contradictoire ; unique par `id_contribuable` + `annee` |
 | `controles` | historique des contrôles d'une déclaration |
-| `agents` | agents qui effectuent les contrôles ; `email` unique |
+| `agents` | agents qui effectuent les contrôles ; `email` unique ; `mot_de_passe` haché |
 | `recoupements` | montants issus de sources externes |
+| `centres` | centres fiscaux ; `numero_centre` unique |
+| `relances` | relances émises pour un contribuable ; exposées par aucune route de l'API |
 
 Relations principales :
 
 ```text
-contribuables 1 ──── n declarations 1 ──── n controles n ──── 0..1 agents
-       │
-       └──────────── n recoupements
+centres 1 ──── n contribuables 1 ──── n declarations 1 ──── n controles n ──── 0..1 agents
+                      │                      │
+                      │                      └──── n relances (0..1 declaration, 0..1 agent)
+                      └──── n recoupements
 ```
 
 - Une déclaration peut appartenir à un contribuable.
 - Une déclaration est unique par couple `id_contribuable` + `annee`.
 - Un contrôle peut être lié à une déclaration et à un agent.
-- La suppression d'un contribuable supprime ses déclarations et recoupements.
-- La suppression d'une déclaration supprime ses contrôles.
+- Un contribuable peut être rattaché à un centre ; la suppression du centre met
+  `id_centre` à `NULL` (`onDelete: SetNull`).
+- La suppression d'un contribuable supprime ses déclarations, ses recoupements
+  et ses relances (`onDelete: Cascade`).
+- La suppression d'une déclaration supprime ses contrôles (`onDelete: Cascade`)
+  et met `relances.id_declaration` à `NULL`.
+- La suppression d'un agent met `relances.id_agent` à `NULL`.
 
 Les montants financiers utilisent `Decimal(15, 2)`. Les dates sont initialisées
 automatiquement lorsque le schéma le prévoit. Les modèles sont au pluriel car
 ils correspondent aux tables existantes ; utilisez donc par exemple
 `prisma.contribuables` et `prisma.declarations`.
+
+Certains noms d'index et de contraintes conservent l'ancien vocabulaire
+« entreprise » (chantier de renommage inachevé) : `contribuables` porte la clé
+primaire mappée sur `entreprises_pkey` et la clé unique `entreprises_nif_key`,
+tandis que `declarations` et `recoupements` gardent les index
+`idx_declarations_entreprise` et `idx_recoupements_entreprise`, ainsi que la
+contrainte `declarations_id_entreprise_fkey`.
 
 ## Générer le client Prisma
 
@@ -58,9 +73,15 @@ Relancez `npm run prisma:generate` après chaque modification de
 
 ## Migrations Prisma
 
-Le dossier [`migrations/0_init/migration.sql`](migrations/0_init/migration.sql) contient la migration initiale (baseline) correspondant à l'ensemble du schéma actuel (`agents`, `controles`, `declarations`, `recoupements`, `contribuables`, `centres`).
+Le dossier [`migrations/`](migrations/) contient deux migrations versionnées :
 
-- **Si la base PostgreSQL est déjà existante et à jour**, marquez la migration comme déjà appliquée sans réexécuter le SQL :
+| Migration | Contenu |
+| --- | --- |
+| [`0_init/migration.sql`](migrations/0_init/migration.sql) | migration initiale (baseline) correspondant aux modèles `agents`, `controles`, `declarations`, `recoupements`, `contribuables` et `centres` |
+| [`20260922120000_add_relances/migration.sql`](migrations/20260922120000_add_relances/migration.sql) | création de la table `relances`, de ses clés étrangères et de ses index |
+
+- **Si la base PostgreSQL est déjà existante et à jour**, marquez la migration
+  initiale comme déjà appliquée sans réexécuter le SQL :
   ```bash
   npx prisma migrate resolve --applied 0_init
   ```
@@ -72,7 +93,9 @@ Le dossier [`migrations/0_init/migration.sql`](migrations/0_init/migration.sql) 
   npx prisma migrate dev
   ```
 
-Des scripts SQL historiques ponctuels sont également conservés dans [`../migrations/`](../migrations/) pour référence.
+Des scripts SQL historiques ponctuels sont également conservés dans
+[`../migrations/`](../migrations/) pour référence ; ils ne sont pas gérés par
+Prisma (voir [`../README.md`](../README.md)).
 
 ## Sécurité
 

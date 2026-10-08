@@ -71,7 +71,7 @@ export default function Login({ onAuthenticated }) {
                     <button className="login-submit" type="submit" disabled={isSubmitting}>
                         {isSubmitting ? 'Connexion...' : 'Se connecter'}
                     </button>
-                    <p className="login-security-note">Accès réservé aux individus habilités.</p>
+                    <p className="login-security-note">Attendre les autorisations de l'administrateur du site.</p>
                 </form>
             </section>
         </div>

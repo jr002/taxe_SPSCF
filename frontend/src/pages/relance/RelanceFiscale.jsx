@@ -21,7 +21,7 @@ function calcJoursRetard(declaration) {
  * Retourne la sévérité du retard et le label badge correspondant.
  */
 function getSeverite(jours) {
-  if (jours <= 0) return { label: 'Conforme', cls: 'sev-ok' };
+  if (jours <= 0) return { label: 'Conforme', cls: 'sev-conforme' };
   if (jours < 15) return { label: `${jours}j`, cls: 'sev-faible' };
   if (jours < 30) return { label: `${jours}j`, cls: 'sev-moyen' };
   return { label: `${jours}j`, cls: 'sev-critique' };

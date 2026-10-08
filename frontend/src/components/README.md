@@ -1,31 +1,44 @@
-# 🧩 Composants Réutilisables (`/src/components`)
+# Composants réutilisables (`/src/components`)
 
-Ce dossier contient l'ensemble des composants d'interface utilisateur (UI) réutilisables, subdivisés par domaine fonctionnel.
+Ce dossier contient les composants d'interface réutilisables, organisés par domaine fonctionnel. Tous les fichiers sont en `.jsx` et utilisent des exports nommés, sauf mention contraire (export par défaut).
 
 ---
 
-## 📁 Sous-dossiers et Fichiers
+## 1. `common/` — composants transversaux
 
-### 1. `common/` (Composants Communs et Layout)
-* **[`Header.jsx`](file:///c:/Users/PC/Desktop/ssif/rendu/version4/frontend/src/components/common/Header.jsx)** :
-  * Barre de navigation principale (Header) avec logo de l'administration, liens de routage actifs, onglets des modules de collecte et bouton de bascule du thème clair / sombre (*Dark Mode*).
+* [`common/Header.jsx`](common/Header.jsx) : en-tête de navigation principal. Affiche le logo, les liens de routage, les onglets de sous-modules de collecte et les boutons de thème et de déconnexion. Export par défaut `Header`.
+* [`common/NotificationModal.jsx`](common/NotificationModal.jsx) : modale d'affichage et d'impression du document officiel de notification (primitive ou définitive) de redressement fiscal. Export par défaut `NotificationModal`.
 
-### 2. `forms/` (Composants de Formulaire & Saisie Fiscale)
-* **[`AmountField.jsx`](file:///c:/Users/PC/Desktop/ssif/rendu/version4/frontend/src/components/forms/AmountField.jsx)** :
-  * Champ de saisie numérique formaté avec libellé et suffixe monétaire en Ariary (`Ar`).
-* **[`IdentityFields.jsx`](file:///c:/Users/PC/Desktop/ssif/rendu/version4/frontend/src/components/forms/IdentityFields.jsx)** :
-  * Bloc de formulaire réutilisable pour identifier l'entreprise (NIF, Société, Année fiscale, Raison sociale, Adresse, Contact).
-* **[`ControlResult.jsx`](file:///c:/Users/PC/Desktop/ssif/rendu/version4/frontend/src/components/forms/ControlResult.jsx)** :
-  * Carte récapitulative affichant le diagnostic du contrôle (Conforme / Alerte / Critique) et la ventilation des montants calculés.
-* **[`ExcelImportModal.jsx`](file:///c:/Users/PC/Desktop/ssif/rendu/version4/frontend/src/components/forms/ExcelImportModal.jsx)** :
-  * Fenêtre modale / Pop-up d'importation par lot de fichiers Excel (`.xlsx`, `.xls`) et `.csv` pour les contribuables et déclarations.
-  * Comprend le Drag & Drop, le téléchargement d'un modèle vierge, l'aperçu dynamique avec validation immédiate et la barre de progression.
+Détail : [`common/README.md`](common/README.md).
 
-### 3. `charts/` (Visualisations et Graphiques SVG)
-* **[`Diagrammes.jsx`](file:///c:/Users/PC/Desktop/ssif/rendu/version4/frontend/src/components/charts/Diagrammes.jsx)** :
-  * `VolumeChart` : Graphique en barres multi-séries (dossiers IS, IR, TVA sur 5 ans).
-  * `RegimeChart` : Graphique circulaire en Donut (répartition IS / IR).
-  * `CurveChart` : Courbes comparatives interactives (TVA théorique vs TVA payée).
-  * `ContribVolumeChart` : Graphique en barres pour la fiche individuelle contribuable.
-  * `ContribComparisonChart` : Comparaison récente sous forme de courbes SVG pour un contribuable.
-  * `MiniLine` & `buildChartPoints` : Moteurs de calcul et tracés vectoriels SVG.
+## 2. `forms/` — saisie et import fiscal
+
+* [`forms/AmountField.jsx`](forms/AmountField.jsx) : champ de saisie monétaire avec libellé et suffixe `Ar`. Export par défaut `AmountField`.
+* [`forms/IdentityFields.jsx`](forms/IdentityFields.jsx) : bloc d'identification du contribuable (NIF, année fiscale, société, adresse, contact, e-mail). Export par défaut `IdentityFields`.
+* [`forms/ControlResult.jsx`](forms/ControlResult.jsx) : carte de résultat d'un contrôle, avec état `success` ou `alert` et ventilation des montants. Export par défaut `ControlResult`.
+* [`forms/ExcelImportModal.jsx`](forms/ExcelImportModal.jsx) : modale d'import par lot de fichiers `.xlsx`, `.xls` et `.csv` (drag & drop, modèle téléchargeable, aperçu validé, barre de progression). Export par défaut `ExcelImportModal`.
+
+Détail : [`forms/README.md`](forms/README.md).
+
+## 3. `charts/` — visualisations SVG
+
+[`charts/Diagrammes.jsx`](charts/Diagrammes.jsx) est le seul fichier du sous-dossier. Il expose des exports nommés :
+
+* `buildChartPoints`, `MiniLine` : moteurs de tracé SVG.
+* `VolumeChart`, `RegimeChart`, `CurveChart` : graphiques du tableau décisionnel.
+* `ContribVolumeChart`, `ContribComparisonChart` : graphiques de la fiche d'un contribuable.
+
+Détail : [`charts/README.md`](charts/README.md).
+
+---
+
+## Consommateurs
+
+| Composant | Importé par |
+| --- | --- |
+| `Header` | `src/App.jsx` |
+| `NotificationModal` | `src/pages/suivi-fiscal/DeclarationDetail.jsx`, `src/pages/collecte/modules/TheoreticalForm.jsx` |
+| `AmountField`, `IdentityFields`, `ControlResult` | `src/pages/collecte/modules/` (TheoreticalForm, ReconciliationForm, InsertionDeclaration, CollecterDeductible) |
+| `ExcelImportModal` | `src/pages/contribuables/Contribuables.jsx` |
+| `VolumeChart`, `RegimeChart`, `CurveChart` | `src/pages/decisionnel/TableauDecisionnel.jsx` |
+| `ContribVolumeChart`, `ContribComparisonChart` | `src/pages/contribuables/components/ContribuableOverview.jsx` |

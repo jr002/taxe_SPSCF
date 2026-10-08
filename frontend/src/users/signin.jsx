@@ -1,7 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import api, { getErrorMessage } from '../api/api';
 import logoDgi from '../assets/logodgi.jpg';
 
-export default function Signin() {
+export default function Signin({ onAuthenticated }) {
+    const navigate = useNavigate();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -10,20 +13,14 @@ export default function Signin() {
     const handleSubmit = async (event) => {
         event.preventDefault();
         setError('');
-
-        if (!email || !password) {
-            setError('Veuillez remplir les champs requis.');
-            return;
-        }
-
         setIsSubmitting(true);
 
         try {
-            // TODO: remplacer par l'appel API d'authentification.
-            console.log('Connexion en cours...', { email, password });
-        // eslint-disable-next-line no-unused-vars
-        } catch (err) {
-            setError('Identifiants invalides ou erreur de connexion.');
+            await api.post('/auth/login', { email, password });
+            onAuthenticated();
+            navigate('/acceuil', { replace: true });
+        } catch (loginError) {
+            setError(getErrorMessage(loginError));
         } finally {
             setIsSubmitting(false);
         }
@@ -45,7 +42,7 @@ export default function Signin() {
             <section className="login-form-panel">
                 <form className="login-form" onSubmit={handleSubmit}>
                     <p className="login-kicker">Espace agent</p>
-                    <h2>Connexion</h2>
+                    <h2>Sign in</h2>
                     <p className="login-intro">Connectez-vous avec les identifiants de votre compte agent.</p>
                     <label className="login-field">
                         Adresse e-mail
@@ -71,9 +68,10 @@ export default function Signin() {
                     </label>
                     {error && <p className="login-error" role="alert">{error}</p>}
                     <button className="login-submit" type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Connexion...' : 'Se connecter'}
+                        {isSubmitting ? 'Signing in...' : 'Sign in'}
                     </button>
-                    <p className="login-security-note">Accès réservé aux individus habilités.</p>
+                    <a href="/signup">S'inscrire</a>
+                    <p className="login-security-note">Attendre les autorisations de l'administrateur du site.</p>
                 </form>
             </section>
         </div>

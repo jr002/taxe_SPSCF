@@ -7,7 +7,7 @@ import api from './api/api';
 import Header from './components/common/Header';
 
 // Page de connexion
-import Login from './users/login';
+import Signin from './users/signin';
 
 // Pages principales (organisation modulaire par domaine)
 import {
@@ -71,7 +71,7 @@ export default function App() {
           path="/"
           element={isCheckingSession ? <p className="auth-loading">Vérification de la session...</p> : (
             isAuthenticated ? <Navigate to="/acceuil" replace /> : (
-              <Login onAuthenticated={() => setIsAuthenticated(true)} />
+              <Signin onAuthenticated={() => setIsAuthenticated(true)} />
             )
           )}
         />
