@@ -1,0 +1,1011 @@
+{
+  "pays": "Madagascar",
+  "source_principale": "https://terraformalis.com/centre-fiscal-madagascar/",
+  "source_telephones_adresses": "https://portal.impots.mg/textes/textes/2018-05-28--N-442-2018-MFB.SG.DGI-Ref-X8MFQN-GU8X32.pdf",
+  "source_sre": "https://orinasa.edbm.mg/Articles_10/",
+  "note": "14 DRI couvrant les 23 régions. Les SRE gèrent principalement les entreprises de taille intermédiaire ; null = information non vérifiée publiquement. Fichier restructuré en trois unités opérationnelles : DGE, SRE, Centre Fiscal.",
+  "unites_operationnelles": {
+    "dge": [
+      {
+        "type": "DGE",
+        "nom": "Direction des Grandes Entreprises (DGE)",
+        "region": "Analamanga",
+        "adresse": "Rue Razafindratantadra, Amparibe, Antananarivo"
+      }
+    ],
+    "sre": [
+      {
+        "type": "SRE",
+        "nom": "SRE 1 Analamanga",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "67 Ha, Antananarivo",
+        "telephone": ["020 22 253 18", "032 12 010 28"],
+        "email": "sre1tana@gmail.com"
+      },
+      {
+        "type": "SRE",
+        "nom": "SRE 2 Analamanga",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "67 Ha, Antananarivo",
+        "telephone": ["020 22 253 18", "020 24 522 99", "032 12 010 29"],
+        "email": "sre2tana@gmail.com"
+      },
+      {
+        "type": "SRE",
+        "nom": "SRE Atsinanana",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Toamasina",
+        "telephone": null,
+        "email": "sre.atsinanana@gmail.com"
+      },
+      {
+        "type": "SRE",
+        "nom": "SRE Vakinankaratra",
+        "dri": "DRI Vakinankaratra",
+        "regions_couvertes": ["Vakinankaratra"],
+        "adresse": "Lot 0112 F 41 Antsenakely, face Shoprite, Antsirabe 110",
+        "telephone": ["032 12 010 53"],
+        "email": "dri.vakinankaratra@gmail.com"
+      },
+      {
+        "type": "SRE",
+        "nom": "SRE Boeny",
+        "dri": "DRI Boeny",
+        "regions_couvertes": ["Boeny", "Melaky"],
+        "adresse": "Mahajanga",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "SRE",
+        "nom": "SRE Diana",
+        "dri": "DRI Diana",
+        "regions_couvertes": ["Diana"],
+        "adresse": "Antsiranana",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "SRE",
+        "nom": "SRE Haute Matsiatra",
+        "dri": "DRI Haute Matsiatra",
+        "regions_couvertes": ["Haute Matsiatra", "Amoron'i Mania", "Ihorombe"],
+        "adresse": "Fianarantsoa",
+        "telephone": null,
+        "email": null
+      }
+    ],
+    "centres_fiscaux": [
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF1 Analakely",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Immeuble Firaisana I, Soarano, Analakely",
+        "telephone": null,
+        "email": "cf1tana@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF2 Tsimbazaza",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Ex-CUA Tsimbazaza",
+        "telephone": null,
+        "email": "cf2tana@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF3 Faravohitra",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Immeuble ex-Contributions Directes, Faravohitra",
+        "telephone": null,
+        "email": "cf3tana@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF4 Mahamasina",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Lot VF 62 Mahamasina Nord",
+        "telephone": null,
+        "email": "cftana4@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF5 Amboditsiry",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Amboditsiry",
+        "telephone": null,
+        "email": "cf5tana@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF6 Ambohimanarina",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Lot IV 170 Ambohimanandray",
+        "telephone": null,
+        "email": "cf6tana@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF7 Ambohimangakely",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Face Espèce Tantely",
+        "telephone": "020 26 269 43",
+        "email": "cf7tana@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF8 Sabotsy Namehana",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Sabotsy Namehana",
+        "telephone": null,
+        "email": "cf8tana@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF9 Itaosy / Atsimondrano",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Itaosy",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF10 Andoharanofotsy",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Andoharanofotsy",
+        "telephone": null,
+        "email": "cf10tana@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF11 Ambohidratrimo",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Lot 63 Ambohidratrimo",
+        "telephone": null,
+        "email": "cf11tana@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF12 Andramasina",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Andramasina",
+        "telephone": null,
+        "email": "cf12tana@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF13 Anjozorobe",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Lot III A K 203 Anjozorobe",
+        "telephone": null,
+        "email": "cf13tana@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF14 Manjakandriana",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Lot II V 16 Manjakandriana",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF15 Ivato",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Ivato",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF16 Ankazobe",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Ankazobe",
+        "telephone": null,
+        "email": "cfankazobe@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF17 Alasora",
+        "dri": "DRI Analamanga",
+        "regions_couvertes": ["Analamanga"],
+        "adresse": "Alasora",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ambatondrazaka",
+        "dri": "DRI Alaotra-Mangoro",
+        "regions_couvertes": ["Alaotra-Mangoro"],
+        "adresse": "Près Hôtel de ville, Ambatondrazaka",
+        "telephone": "020 54 812 94",
+        "email": "cfambatondrazaka@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Amparafaravola",
+        "dri": "DRI Alaotra-Mangoro",
+        "regions_couvertes": ["Alaotra-Mangoro"],
+        "adresse": "Amparafaravola",
+        "telephone": null,
+        "email": "cfamparafaravola@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Andilamena",
+        "dri": "DRI Alaotra-Mangoro",
+        "regions_couvertes": ["Alaotra-Mangoro"],
+        "adresse": "Près Tranompokonolona, Andilamena",
+        "telephone": null,
+        "email": "cfandilamena@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Moramanga",
+        "dri": "DRI Alaotra-Mangoro",
+        "regions_couvertes": ["Alaotra-Mangoro"],
+        "adresse": "Rue du Commerce, Moramanga",
+        "telephone": "020 56 824 06",
+        "email": "cfmoramanga@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Breuville",
+        "dri": "DRI Alaotra-Mangoro",
+        "regions_couvertes": ["Alaotra-Mangoro"],
+        "adresse": "Breuville",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF A Toamasina",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Rue du Général Paul Be (ex-Rue du Commerce), Toamasina",
+        "telephone": "020 53 324 08",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF B Toamasina",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Rue du Général Paul Be (ex-Rue du Commerce), Toamasina",
+        "telephone": "020 53 324 08",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Sainte-Marie",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Logement Centre fiscal, Île Sainte-Marie",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Fénérive-Est",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Bloc Administratif, Fénérive-Est",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Brickaville",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Brickaville",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Vatomandry",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Immeuble ex-Enregistrements et Timbres, Vatomandry",
+        "telephone": "020 57 300 24",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Mahanoro",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Beanana, Mahanoro",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Maroantsetra",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Ambatoratsy, Maroantsetra",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Soanierana-Ivongo",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Soanierana-Ivongo",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Vavatenina",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Vavatenina",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Mananara-Nord",
+        "dri": "DRI Atsinanana",
+        "regions_couvertes": ["Atsinanana", "Analanjirofo"],
+        "adresse": "Andranomasibe I, Mananara-Nord",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Taolagnaro",
+        "dri": "DRI Anosy",
+        "regions_couvertes": ["Anosy", "Androy"],
+        "adresse": "Quartier Bazaribe, Taolagnaro",
+        "telephone": "020 94 445 31",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ambovombe",
+        "dri": "DRI Anosy",
+        "regions_couvertes": ["Anosy", "Androy"],
+        "adresse": "Fokontany Avaradrova 604, Ambovombe",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Betroka",
+        "dri": "DRI Anosy",
+        "regions_couvertes": ["Anosy", "Androy"],
+        "adresse": "Quartier Mahazoarivo RN13, Betroka",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Bekily",
+        "dri": "DRI Anosy",
+        "regions_couvertes": ["Anosy", "Androy"],
+        "adresse": "Bekily",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Amboasary Sud",
+        "dri": "DRI Anosy",
+        "regions_couvertes": ["Anosy", "Androy"],
+        "adresse": "Amboasary",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF A Toliara",
+        "dri": "DRI Atsimo-Andrefana",
+        "regions_couvertes": ["Atsimo-Andrefana"],
+        "adresse": "Immeuble Contributions, Toliara",
+        "telephone": "020 94 410 03",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF B Toliara",
+        "dri": "DRI Atsimo-Andrefana",
+        "regions_couvertes": ["Atsimo-Andrefana"],
+        "adresse": "Immeuble Contributions, Toliara",
+        "telephone": "020 94 410 03",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Betioky",
+        "dri": "DRI Atsimo-Andrefana",
+        "regions_couvertes": ["Atsimo-Andrefana"],
+        "adresse": "Route de l'hôpital, Betioky Ville",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Sakaraha",
+        "dri": "DRI Atsimo-Andrefana",
+        "regions_couvertes": ["Atsimo-Andrefana"],
+        "adresse": "Sakaraha",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ampanihy",
+        "dri": "DRI Atsimo-Andrefana",
+        "regions_couvertes": ["Atsimo-Andrefana"],
+        "adresse": "Ampanihy",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Morombe Atsimo",
+        "dri": "DRI Atsimo-Andrefana",
+        "regions_couvertes": ["Atsimo-Andrefana"],
+        "adresse": "Morombe",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF A Mahajanga",
+        "dri": "DRI Boeny",
+        "regions_couvertes": ["Boeny", "Melaky"],
+        "adresse": "Bloc Administratif, 5e étage, Mahajanga",
+        "telephone": "020 62 222 37",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF B Mahajanga",
+        "dri": "DRI Boeny",
+        "regions_couvertes": ["Boeny", "Melaky"],
+        "adresse": "Bloc Administratif, 5e étage, Mahajanga",
+        "telephone": "020 62 222 37",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Marovoay",
+        "dri": "DRI Boeny",
+        "regions_couvertes": ["Boeny", "Melaky"],
+        "adresse": "Marovoay",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Maintirano",
+        "dri": "DRI Boeny",
+        "regions_couvertes": ["Boeny", "Melaky"],
+        "adresse": "Fokontany Andranovorobe, Maintirano",
+        "telephone": "020 68 620 17",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Mitsinjo",
+        "dri": "DRI Boeny",
+        "regions_couvertes": ["Boeny", "Melaky"],
+        "adresse": "Quartier créole (ex-SIRAMA), Mitsinjo",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Besalampy",
+        "dri": "DRI Boeny",
+        "regions_couvertes": ["Boeny", "Melaky"],
+        "adresse": "Besalampy",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Soalala",
+        "dri": "DRI Boeny",
+        "regions_couvertes": ["Boeny", "Melaky"],
+        "adresse": "Enceinte Usine SIRAMA, Soalala",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ambato-Boeni",
+        "dri": "DRI Boeny",
+        "regions_couvertes": ["Boeny", "Melaky"],
+        "adresse": "Ambato-Boeni",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Antsiranana A",
+        "dri": "DRI Diana",
+        "regions_couvertes": ["Diana"],
+        "adresse": "Boulevard Étienne, Antsiranana",
+        "telephone": "020 82 214 55",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Antsiranana B",
+        "dri": "DRI Diana",
+        "regions_couvertes": ["Diana"],
+        "adresse": "Immeuble des Impôts et Contributions Indirectes, Rue de la Marne, Antsiranana",
+        "telephone": "020 82 214 55",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ambilobe",
+        "dri": "DRI Diana",
+        "regions_couvertes": ["Diana"],
+        "adresse": "Près Tranompokonolona, Ambilobe",
+        "telephone": "020 82 220 04",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Nosy Be",
+        "dri": "DRI Diana",
+        "regions_couvertes": ["Diana"],
+        "adresse": "Nosy Be",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ambanja",
+        "dri": "DRI Diana",
+        "regions_couvertes": ["Diana"],
+        "adresse": "Près Hôtel de ville, Ambanja",
+        "telephone": "020 88 500 73",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Fianarantsoa A",
+        "dri": "DRI Haute Matsiatra",
+        "regions_couvertes": ["Haute Matsiatra", "Amoron'i Mania", "Ihorombe"],
+        "adresse": "Immeuble des Domaines, Tsianolondroa, Fianarantsoa",
+        "telephone": "020 75 505 38",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Fianarantsoa B",
+        "dri": "DRI Haute Matsiatra",
+        "regions_couvertes": ["Haute Matsiatra", "Amoron'i Mania", "Ihorombe"],
+        "adresse": "Immeuble des Domaines, Tsianolondroa, Fianarantsoa",
+        "telephone": "020 75 505 38",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ambositra",
+        "dri": "DRI Haute Matsiatra",
+        "regions_couvertes": ["Haute Matsiatra", "Amoron'i Mania", "Ihorombe"],
+        "adresse": "Bloc Administratif Tsianolondroa, Ambositra",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ambalavao",
+        "dri": "DRI Haute Matsiatra",
+        "regions_couvertes": ["Haute Matsiatra", "Amoron'i Mania", "Ihorombe"],
+        "adresse": "Antanambazaha, Ambalavao",
+        "telephone": "020 75 620 26",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Fandriana",
+        "dri": "DRI Haute Matsiatra",
+        "regions_couvertes": ["Haute Matsiatra", "Amoron'i Mania", "Ihorombe"],
+        "adresse": "Lot 064 M Andrefatsena, Fandriana",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ambohimahasoa",
+        "dri": "DRI Haute Matsiatra",
+        "regions_couvertes": ["Haute Matsiatra", "Amoron'i Mania", "Ihorombe"],
+        "adresse": "Lot 6 VE Antalata, Ambohimahasoa",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ihosy",
+        "dri": "DRI Haute Matsiatra",
+        "regions_couvertes": ["Haute Matsiatra", "Amoron'i Mania", "Ihorombe"],
+        "adresse": "Lot IM3 Andrefatsena, Ihosy",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ambatofinandrahana",
+        "dri": "DRI Haute Matsiatra",
+        "regions_couvertes": ["Haute Matsiatra", "Amoron'i Mania", "Ihorombe"],
+        "adresse": "Terrain Ampanaovampoara, Ambatofinandrahana",
+        "telephone": "020 47 713 67",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ikalamavony",
+        "dri": "DRI Haute Matsiatra",
+        "regions_couvertes": ["Haute Matsiatra", "Amoron'i Mania", "Ihorombe"],
+        "adresse": "Ikalamavony",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Tsiroanomandidy",
+        "dri": "DRI Itasy",
+        "regions_couvertes": ["Itasy", "Bongolava"],
+        "adresse": "Ankadinakanga, Tsiroanomandidy",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Arivonimamo",
+        "dri": "DRI Itasy",
+        "regions_couvertes": ["Itasy", "Bongolava"],
+        "adresse": "Lot VDI, Arivonimamo",
+        "telephone": "020 26 269 34",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Miarinarivo",
+        "dri": "DRI Itasy",
+        "regions_couvertes": ["Itasy", "Bongolava"],
+        "adresse": "Lot VB 14, Miarinarivo",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Soavinandriana",
+        "dri": "DRI Itasy",
+        "regions_couvertes": ["Itasy", "Bongolava"],
+        "adresse": "Soavinandriana Ville",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Fenoarivo Be",
+        "dri": "DRI Itasy",
+        "regions_couvertes": ["Itasy", "Bongolava"],
+        "adresse": "Fenoarivobe",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Morondava",
+        "dri": "DRI Menabe",
+        "regions_couvertes": ["Menabe"],
+        "adresse": "Immeuble Circonscription financière, Morondava",
+        "telephone": "020 95 520 04",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Miandrivazo",
+        "dri": "DRI Menabe",
+        "regions_couvertes": ["Menabe"],
+        "adresse": "Face Bureau Commune, Miandrivazo",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Manja",
+        "dri": "DRI Menabe",
+        "regions_couvertes": ["Menabe"],
+        "adresse": "Face Bureau SIRAMA, Manja",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Belon'i Tsiribihina",
+        "dri": "DRI Menabe",
+        "regions_couvertes": ["Menabe"],
+        "adresse": "Belo sur Tsiribihina",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Sambava",
+        "dri": "DRI Sava",
+        "regions_couvertes": ["Sava"],
+        "adresse": "Sambava Centre",
+        "telephone": "020 75 340 23",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Antalaha",
+        "dri": "DRI Sava",
+        "regions_couvertes": ["Sava"],
+        "adresse": "Ambatoratsy, Antalaha",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Vohémar",
+        "dri": "DRI Sava",
+        "regions_couvertes": ["Sava"],
+        "adresse": "Vohémar",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Andapa",
+        "dri": "DRI Sava",
+        "regions_couvertes": ["Sava"],
+        "adresse": "Fokontany Manarivotra, Andapa",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Antsohihy",
+        "dri": "DRI Sofia",
+        "regions_couvertes": ["Sofia", "Betsiboka"],
+        "adresse": "Haute ville, Antsohihy 407",
+        "telephone": "020 67 020 86",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Port-Bergé",
+        "dri": "DRI Sofia",
+        "regions_couvertes": ["Sofia", "Betsiboka"],
+        "adresse": "Port-Bergé",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Mandritsara",
+        "dri": "DRI Sofia",
+        "regions_couvertes": ["Sofia", "Betsiboka"],
+        "adresse": "Mandritsara",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Maevatanana",
+        "dri": "DRI Sofia",
+        "regions_couvertes": ["Sofia", "Betsiboka"],
+        "adresse": "Fokontany Ambodimadiro, Maevatanana",
+        "telephone": "020 62 222 37",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Mampikony",
+        "dri": "DRI Sofia",
+        "regions_couvertes": ["Sofia", "Betsiboka"],
+        "adresse": "Mampikony",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Befandriana Avaratra",
+        "dri": "DRI Sofia",
+        "regions_couvertes": ["Sofia", "Betsiboka"],
+        "adresse": "Befandriana Avaratra",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Bealanana",
+        "dri": "DRI Sofia",
+        "regions_couvertes": ["Sofia", "Betsiboka"],
+        "adresse": "Bealanana",
+        "telephone": "020 62 222 37",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Tsaratanana",
+        "dri": "DRI Sofia",
+        "regions_couvertes": ["Sofia", "Betsiboka"],
+        "adresse": "Tsaratanana",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Analalava",
+        "dri": "DRI Sofia",
+        "regions_couvertes": ["Sofia", "Betsiboka"],
+        "adresse": "Analalava",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Kandreho",
+        "dri": "DRI Sofia",
+        "regions_couvertes": ["Sofia", "Betsiboka"],
+        "adresse": "Fokontany Antsapanimahazo, Kandreho",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF A Antsirabe",
+        "dri": "DRI Vakinankaratra",
+        "regions_couvertes": ["Vakinankaratra"],
+        "adresse": "Lot 24 M10, près Gare, Tsarasaotra, Antsirabe 110",
+        "telephone": "020 44 487 99",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF B Antsirabe",
+        "dri": "DRI Vakinankaratra",
+        "regions_couvertes": ["Vakinankaratra"],
+        "adresse": "Antsirabe",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ambatolampy",
+        "dri": "DRI Vakinankaratra",
+        "regions_couvertes": ["Vakinankaratra"],
+        "adresse": "Lot 65 CA Ambanimaso, Ambatolampy",
+        "telephone": "020 42 492 22",
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Betafo",
+        "dri": "DRI Vakinankaratra",
+        "regions_couvertes": ["Vakinankaratra"],
+        "adresse": "Betafo",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Antanifotsy",
+        "dri": "DRI Vakinankaratra",
+        "regions_couvertes": ["Vakinankaratra"],
+        "adresse": "Antanifotsy",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Manakara",
+        "dri": "DRI Vatovavy-Fitovinany",
+        "regions_couvertes": ["Vatovavy", "Fitovinany", "Atsimo-Atsinanana"],
+        "adresse": "Hôtel des Impôts Manakara Be",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Mananjary",
+        "dri": "DRI Vatovavy-Fitovinany",
+        "regions_couvertes": ["Vatovavy", "Fitovinany", "Atsimo-Atsinanana"],
+        "adresse": "Mananjary",
+        "telephone": null,
+        "email": "cfmananjary@gmail.com"
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Farafangana",
+        "dri": "DRI Vatovavy-Fitovinany",
+        "regions_couvertes": ["Vatovavy", "Fitovinany", "Atsimo-Atsinanana"],
+        "adresse": "Fenoarivo Nord, Farafangana",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Vangaindrano",
+        "dri": "DRI Vatovavy-Fitovinany",
+        "regions_couvertes": ["Vatovavy", "Fitovinany", "Atsimo-Atsinanana"],
+        "adresse": "Bloc District Ampahatelo, Vangaindrano",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Nosy Varika",
+        "dri": "DRI Vatovavy-Fitovinany",
+        "regions_couvertes": ["Vatovavy", "Fitovinany", "Atsimo-Atsinanana"],
+        "adresse": "Nosy Varika",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Vohipeno",
+        "dri": "DRI Vatovavy-Fitovinany",
+        "regions_couvertes": ["Vatovavy", "Fitovinany", "Atsimo-Atsinanana"],
+        "adresse": "Fokontany Haute ville, Vohipeno",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ifanadiana",
+        "dri": "DRI Vatovavy-Fitovinany",
+        "regions_couvertes": ["Vatovavy", "Fitovinany", "Atsimo-Atsinanana"],
+        "adresse": "Ifanadiana",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Ikongo",
+        "dri": "DRI Vatovavy-Fitovinany",
+        "regions_couvertes": ["Vatovavy", "Fitovinany", "Atsimo-Atsinanana"],
+        "adresse": "Ikongo",
+        "telephone": null,
+        "email": null
+      },
+      {
+        "type": "Centre Fiscal",
+        "nom": "CF Midongy Atsimo",
+        "dri": "DRI Vatovavy-Fitovinany",
+        "regions_couvertes": ["Vatovavy", "Fitovinany", "Atsimo-Atsinanana"],
+        "adresse": "Midongy Atsimo",
+        "telephone": null,
+        "email": null
+      }
+    ]
+  }
+}

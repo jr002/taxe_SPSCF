@@ -12,6 +12,7 @@ Contribuables.jsx
 
 ContribuableDetail.jsx
 ├── ContribuableHeader
+│   └── ExportFicheButton
 ├── ContribuableOverview
 ├── ClassificationPanel
 ├── DeclarationForm
@@ -30,7 +31,8 @@ Affiche les outils de filtrage au-dessus de la liste :
 - les onglets de catégories : Tous, Grand, Moyen et Petit (avec le compteur de chaque catégorie) ;
 - le champ de recherche par NIF, raison sociale ou secteur ;
 - le nombre de résultats affichés sous la forme `début-fin / total` ;
-- les actions d'actualisation, d'import Excel/CSV et le lien « + Ajouter un contribuable » vers `/entreprises/nouveau`.
+- les actions d'actualisation, d'import Excel/CSV et d'export Excel des résultats filtrés ;
+- le lien « + Ajouter un contribuable » vers `/entreprises/nouveau`.
 
 Propriétés :
 
@@ -42,6 +44,7 @@ Propriétés :
 | `filter` | Valeur du champ de recherche. |
 | `loading` | Désactive le bouton d'actualisation pendant un chargement. |
 | `onCategoryChange` | Appelée lors d'un changement de catégorie. |
+| `onExport` | Exporte au format Excel tous les résultats correspondant aux filtres actifs. |
 | `onFilterChange` | Appelée lors de la saisie d'une recherche, avec la valeur saisie. |
 | `onImport` | Ouvre la fenêtre d'import. |
 | `onRefresh` | Recharge la liste depuis l'API. |
@@ -72,9 +75,23 @@ En-tête commun de la fiche détaillée. Il affiche :
 - le lien de retour vers la liste ;
 - la raison sociale, le NIF, le badge de catégorie et le nombre d'années suivies ;
 - les onglets Synthèse, Régime fiscal, Déclarations et Relances, qui renvoient vers `/contribuables/:id`, `/classification`, `/declarations` et `/relances` ;
+- un bouton d'export Excel des données de l'onglet actif (`ExportFicheButton`) ;
 - un bouton qui, dans l'onglet Déclarations, ouvre ou ferme le formulaire, et sinon renvoie vers l'onglet Déclarations.
 
-Propriétés : `activeTab` (met en évidence l'onglet courant), `contribuable`, `declarationsCount`, `fiche` (badge de catégorie), `id` (construction des liens d'onglets), `onToggleDeclarationForm` et `showDeclarationForm` (libellé du bouton).
+Les deux boutons sont regroupés dans `.contribuable-heading-actions`, qui passe en pleine largeur sur petit écran.
+
+Propriétés : `activeTab` (met en évidence l'onglet courant), `contribuable`, `declarationsCount`, `exportDisabled` (désactive l'export quand l'onglet n'a aucune ligne), `exportLabel` et `exportTitle` (libellé et infobulle contextuels du bouton d'export), `fiche` (badge de catégorie), `id` (construction des liens d'onglets), `onExport`, `onToggleDeclarationForm` et `showDeclarationForm` (libellé du bouton).
+
+### `ExportFicheButton.jsx`
+
+Bouton d'export Excel placé dans l'en-tête de la fiche. Il ne contient aucune logique métier : le libellé et l'action lui sont fournis par `ContribuableDetail.jsx`, qui s'appuie sur `../utils/exportFicheContribuable`. Son style reprend celui du bouton « 📥 Exporter Excel » de `ContribuablesFilters.jsx`.
+
+| Propriété | Description |
+| --- | --- |
+| `disabled` | Désactive le bouton lorsque l'onglet courant n'a aucune ligne exportable. |
+| `label` | Libellé affiché (par exemple « 📥 Exporter les déclarations »). |
+| `onExport` | Déclenche la génération du fichier `.xlsx`. |
+| `title` | Infobulle décrivant le contenu exporté. |
 
 ### `ContribuableOverview.jsx`
 

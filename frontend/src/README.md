@@ -22,6 +22,9 @@ Point d'entrée de l'interface React (React 19 + Vite, routage `react-router-dom
 | --- | --- |
 | `/` | Écran de connexion si non authentifié, sinon redirection vers `/acceuil` |
 | `/signin` | Redirection vers `/` |
+| `/signup` | `Signup` (demande de création de compte) |
+| `/admin` | `AccueilAdmin` (tableau de bord des comptes, administrateurs) |
+| `/admin/utilisateurs` | `Admin` (gestion des utilisateurs, administrateurs) |
 | `/acceuil` | `Accueil` |
 | `/collecte` | `Collecte` (reçoit `currentModule`) |
 | `/entreprises/nouveau` | `PhaseClassement` |
@@ -55,7 +58,10 @@ Toutes les routes métier (de `/acceuil` à `/relance`) sont des routes enfants 
 
 Il n'existe pas de module d'authentification isolé (ni dossier `auth/`, ni contexte React, ni gestion de jeton). L'authentification est assurée par :
 
-* [`users/signin.jsx`](users/signin.jsx) : composant `Signin` (export par défaut), utilisé par `App.jsx`. Soumet `api.post('/auth/login', { email, password })` et remonte l'état authentifié via la prop `onAuthenticated`.
+* [`users/signin.jsx`](users/signin.jsx) : composant `Signin` (export par défaut), monté sur `/` par `App.jsx`. Soumet `api.post('/auth/login', { email, password })` et remonte l'état authentifié via la prop `onAuthenticated`.
+* [`users/signup.jsx`](users/signup.jsx) : composant `Signup` (export par défaut), monté sur `/signup`. Soumet `api.post('/auth/register', { nom, prenom, email, password })` après vérification locale de la confirmation du mot de passe ; la demande crée un agent au statut `en_attente` et n'ouvre aucune session.
 * [`users/login.jsx`](users/login.jsx) : composant `Login`, quasi identique à `Signin` (libellés français). Ce fichier n'est importé par aucun autre module et fait doublon avec `signin.jsx`.
+
+Le détail des écrans, des champs et du contrat d'API est dans [`users/README.md`](users/README.md).
 
 La session repose sur un cookie : l'instance Axios est créée avec `withCredentials: true` et la connexion est validée par `GET /auth/me`. Aucun jeton n'est stocké ni injecté côté client.

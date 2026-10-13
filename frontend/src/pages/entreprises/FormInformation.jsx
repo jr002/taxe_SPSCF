@@ -1,6 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createContribuable, getCentres, getErrorMessage } from '../../api/api';
+import { createContribuable, getErrorMessage } from '../../api/api';
+import uniteFiscale from '../../../../unitefiscal.json';
+
+const CENTRES_BY_STRUCTURE = {
+  centre_fiscal: uniteFiscale.unites_operationnelles.centres_fiscaux,
+  sre: uniteFiscale.unites_operationnelles.sre,
+  dge: uniteFiscale.unites_operationnelles.dge,
+};
+
+const normalizeCentreText = (value) => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .toLocaleLowerCase('fr');
 
 /**
  * Étape 2 : Formulaire de création et d'immatriculation d'un contribuable
@@ -20,28 +32,32 @@ export default function FormInformation() {
     phone: '',
     email: '',
     address: '',
-    id_centre: '',
+    centreSelection: '',
   });
 
-  const [centres, setCentres] = useState([]);
   const [errors, setErrors] = useState({});
+  const [centreSearch, setCentreSearch] = useState('');
+  const [centreSuggestionsOpen, setCentreSuggestionsOpen] = useState(false);
+  const [activeCentreIndex, setActiveCentreIndex] = useState(-1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
   const navigate = useNavigate();
 
-  useEffect(() => {
-    getCentres()
-      .then(setCentres)
-      .catch((requestError) => setSubmitError(getErrorMessage(requestError)));
-  }, []);
-
   const handleInputChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'fiscalStructure') {
+      setCentreSearch('');
+      setCentreSuggestionsOpen(false);
+      setActiveCentreIndex(-1);
+    }
+
     setFormData((prev) => ({
       ...prev,
       [name]: value,
-      ...(name === 'fiscalStructure' && value !== 'centre_fiscal' ? { regimeFiscal: '' } : {}),
+      ...(name === 'fiscalStructure'
+        ? { centreSelection: '', ...(value !== 'centre_fiscal' ? { regimeFiscal: '' } : {}) }
+        : {}),
     }));
 
     if (errors[name]) {
@@ -123,7 +139,6 @@ export default function FormInformation() {
           regime_fiscal: formData.fiscalStructure === 'centre_fiscal'
             ? formData.regimeFiscal
             : Number(formData.revenue) < 400000000 ? 'IS' : 'IR',
-          id_centre: formData.id_centre ? Number(formData.id_centre) : undefined,
           telephone: formData.phone.trim(),
           email: formData.email.trim(),
           adresse: formData.address.trim(),
@@ -151,11 +166,59 @@ export default function FormInformation() {
       phone: '',
       email: '',
       address: '',
-      id_centre: '',
+      centreSelection: '',
     });
+    setCentreSearch('');
+    setCentreSuggestionsOpen(false);
+    setActiveCentreIndex(-1);
     setErrors({});
     setSubmitError('');
     setSubmitSuccess('');
+  };
+
+  const centresCompatibles = CENTRES_BY_STRUCTURE[formData.fiscalStructure] || [];
+  const termesRecherche = normalizeCentreText(centreSearch).trim().split(/\s+/).filter(Boolean);
+  const centresFiltres = centresCompatibles.filter((centre) => {
+    const termesCentre = [
+      centre.nom,
+      centre.type,
+      centre.dri,
+      centre.region,
+      ...(centre.regions_couvertes || []),
+      centre.adresse,
+    ]
+      .filter(Boolean)
+      .join(' ');
+
+    const texteCentreNormalise = normalizeCentreText(termesCentre);
+    return termesRecherche.every((terme) => texteCentreNormalise.includes(terme));
+  });
+  const centreSuggestions = centresFiltres.slice(0, 8);
+
+  const selectCentre = (centre) => {
+    const centreValue = `${centre.dri || centre.region}-${centre.nom}`;
+    const zone = centre.regions_couvertes?.join(', ') || centre.region;
+    setFormData((previous) => ({ ...previous, centreSelection: centreValue }));
+    setCentreSearch(`${centre.nom} - ${centre.type}${zone ? ` (${zone})` : ''}`);
+    setCentreSuggestionsOpen(false);
+    setActiveCentreIndex(-1);
+  };
+
+  const handleCentreSearchKeyDown = (event) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setCentreSuggestionsOpen(true);
+      setActiveCentreIndex((previous) => Math.min(previous + 1, centreSuggestions.length - 1));
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActiveCentreIndex((previous) => Math.max(previous - 1, 0));
+    } else if (event.key === 'Enter' && centreSuggestionsOpen && centreSuggestions.length) {
+      event.preventDefault();
+      selectCentre(centreSuggestions[Math.max(activeCentreIndex, 0)]);
+    } else if (event.key === 'Escape') {
+      setCentreSuggestionsOpen(false);
+      setActiveCentreIndex(-1);
+    }
   };
 
   return (
@@ -356,28 +419,89 @@ export default function FormInformation() {
 
         {/* Centre de rattachement */}
         <div className="space-y-1">
-          <label htmlFor="id_centre" className="block font-semibold text-gray-700 text-sm">
+          <label htmlFor="centreSearch" className="block font-semibold text-gray-700 text-sm">
             Centre de rattachement
           </label>
-          <select
-            id="id_centre"
-            name="id_centre"
-            value={formData.id_centre}
-            onChange={handleInputChange}
+          <input
+            type="text"
+            id="centreSearch"
+            value={centreSearch}
+            onChange={(event) => {
+              setCentreSearch(event.target.value);
+              setCentreSuggestionsOpen(true);
+              setActiveCentreIndex(-1);
+              setFormData((previous) => ({ ...previous, centreSelection: '' }));
+            }}
+            onFocus={(event) => {
+              event.target.select();
+              setCentreSuggestionsOpen(true);
+            }}
+            onBlur={() => setCentreSuggestionsOpen(false)}
+            onKeyDown={handleCentreSearchKeyDown}
+            role="combobox"
+            aria-autocomplete="list"
+            aria-expanded={centreSuggestionsOpen}
+            aria-controls="centre-suggestions"
+            aria-activedescendant={activeCentreIndex >= 0
+              ? `centre-suggestion-${activeCentreIndex}`
+              : undefined}
+            autoComplete="off"
+            placeholder="Saisissez un nom, une région ou une DRI..."
+            aria-label="Rechercher un centre par nom, région ou DRI"
             className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:border-indigo-600 focus:ring-2 focus:ring-indigo-600 focus:ring-opacity-50"
-          >
-            <option value="">Sélectionner un centre</option>
-            {centres.map((centre) => (
-              <option key={centre.id_centre} value={centre.id_centre}>
-                {centre.nom_centre} - {centre.type_centre} ({centre.numero_centre})
-              </option>
-            ))}
-          </select>
-          {!centres.length && (
+          />
+          {centreSuggestionsOpen && centresCompatibles.length > 0 && (
+            <ul
+              id="centre-suggestions"
+              role="listbox"
+              className="max-h-64 overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-lg"
+            >
+              {centreSuggestions.map((centre, index) => {
+                const centreValue = `${centre.dri || centre.region}-${centre.nom}`;
+                const zone = centre.regions_couvertes?.join(', ') || centre.region;
+                const label = `${centre.nom} - ${centre.type}${zone ? ` (${zone})` : ''}`;
+
+                return (
+                  <li
+                    id={`centre-suggestion-${index}`}
+                    key={centreValue}
+                    role="option"
+                    aria-selected={index === activeCentreIndex}
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => selectCentre(centre)}
+                    className={`cursor-pointer px-4 py-2.5 text-sm hover:bg-indigo-50 ${
+                      index === activeCentreIndex ? 'bg-indigo-50' : ''
+                    }`}
+                  >
+                    {label}
+                  </li>
+                );
+              })}
+              {centreSuggestions.length > 0 && centresFiltres.length > centreSuggestions.length && (
+                <li className="border-t border-gray-200 px-4 py-2 text-xs text-gray-500">
+                  {centresFiltres.length - centreSuggestions.length} autre(s) résultat(s) — précisez votre recherche.
+                </li>
+              )}
+            </ul>
+          )}
+          {!centresCompatibles.length && (
             <span className="text-gray-500 text-xs block mt-1">
-              Aucun centre n'est encore enregistré. Vous pourrez affecter le contribuable via l'API.
+              Aucun centre n'est renseigné dans unitefiscal.json pour cette structure.
             </span>
           )}
+          {formData.centreSelection && (
+            <span className="text-gray-600 text-xs block mt-1" role="status">
+              Centre sélectionné : {centreSearch}
+            </span>
+          )}
+          {centresCompatibles.length > 0 && !centresFiltres.length && (
+            <span className="text-gray-500 text-xs block mt-1" aria-live="polite">
+              Aucun centre ne correspond à cette recherche.
+            </span>
+          )}
+          <span className="text-gray-500 text-xs block mt-1">
+            Cette liste provient de unitefiscal.json. Le centre choisi ne sera pas enregistré avec le contribuable.
+          </span>
         </div>
 
         {/* Téléphone */}

@@ -202,6 +202,7 @@ export default function SuiviFiscal() {
                   return (
                     <tr
                       key={row.id_declaration}
+                      className={`statut-row row-${controleStatus.className}`}
                       onClick={() =>
                         navigate(`/suivi/${row.id_declaration}`, {
                           state: { declaration: row },

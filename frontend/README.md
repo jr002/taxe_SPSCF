@@ -71,6 +71,9 @@ authentifié est ramené sur `/`.
 | --- | --- | --- |
 | `/` | écran de connexion, ou redirection vers `/acceuil` si la session est valide | public |
 | `/signin` | redirection vers `/` | public |
+| `/signup` | `Signup` — demande de création de compte agent | public |
+| `/admin` | `AccueilAdmin` — tableau de bord des comptes agents | protégé, administrateurs |
+| `/admin/utilisateurs` | `Admin` — espace administrateur : activer / bloquer les comptes, rôles, mots de passe | protégé, administrateurs |
 | `/acceuil` | `Accueil` — tableau de bord | protégé |
 | `/collecte` | `Collecte` + onglets de modules TVA | protégé |
 | `/entreprises/nouveau` | `PhaseClassement` | protégé |
@@ -86,6 +89,12 @@ authentifié est ramené sur `/`.
 Les routes protégées partagent un même layout (`<Outlet />`) qui rend
 [`Header`](src/components/common/Header.jsx) puis `<main className="app-main">`.
 Le `Header` est donc absent de l'écran de connexion.
+
+La navigation du `Header` dépend du rôle : un agent voit les modules fiscaux
+(Accueil, Collecte TVA, Tableau décisionnel, Suivi fiscal, Contribuables,
+Relance fiscale), tandis qu'un administrateur ne voit que **« Accueil »**
+(`/admin`, tableau de bord des comptes) et **« Utilisateurs »**
+(`/admin/utilisateurs`), son logo renvoyant vers `/admin`.
 
 > Remarque : la route du tableau de bord est orthographiée `/acceuil` dans le
 > code (`App.jsx`, `Header.jsx`, écrans de connexion), et non `/accueil`.
@@ -114,9 +123,18 @@ La liste complète des fonctions et leur endpoint est dans
   `POST /api/auth/login` avec l'e-mail et le mot de passe, affiche les erreurs
   renvoyées par l'API et désactive le bouton pendant l'envoi.
 - En cas de succès, le cookie de session est posé pour 8 heures et
-  l'utilisateur est redirigé vers `/acceuil`.
+  l'utilisateur est redirigé vers `/acceuil` — ou vers `/admin` si son rôle est
+  `admin` (`getLandingPath` de `src/users/signin.jsx`). Le rôle est celui
+  renvoyé par `POST /api/auth/login`, donc aucune redirection ne peut être
+  forcée sans authentification valide.
 - Le bouton « Déconnexion » du `Header` appelle `POST /api/auth/logout`, remet
   l'état d'authentification à `false` et revient sur `/`.
+- La route publique `/signup` ([`Signup`](src/users/signup.jsx)) envoie
+  `POST /api/auth/register` (nom, prénom, e-mail, mot de passe confirmé côté
+  client). La demande crée un agent au statut `en_attente` : elle n'ouvre pas de
+  session, et la connexion reste refusée jusqu'à l'activation du compte par un
+  administrateur. Le détail est dans
+  [`src/users/README.md`](src/users/README.md).
 - Le contrôle de session n'a lieu qu'au chargement de l'application
   (`GET /api/auth/me`). Un `401` survenu plus tard, pendant la navigation, n'est
   pas intercepté : seule une actualisation de la page ou une déconnexion ramène

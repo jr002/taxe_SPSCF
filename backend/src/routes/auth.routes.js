@@ -44,6 +44,56 @@ router.post('/login', async (req, res, next) => {
   }
 });
 
+router.post('/register', async (req, res, next) => {
+  try {
+    const body = req.body || {};
+    const nom = typeof body.nom === 'string' ? body.nom.trim() : '';
+    const prenom = typeof body.prenom === 'string' ? body.prenom.trim() : '';
+    const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
+    const password = typeof body.password === 'string' ? body.password : '';
+
+    if (!nom || !prenom || !email || !password) {
+      return res.status(400).json({ success: false, message: 'Tous les champs sont obligatoires' });
+    }
+    if (nom.length > 100 || prenom.length > 100) {
+      return res.status(400).json({ success: false, message: 'Le nom et le prénom doivent contenir au maximum 100 caractères' });
+    }
+    if (email.length > 255 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ success: false, message: 'Adresse e-mail invalide' });
+    }
+    if (password.length < 4 || Buffer.byteLength(password, 'utf8') > 72) {
+      return res.status(400).json({ success: false, message: 'Le mot de passe doit contenir au moins 4 caractères et au maximum 72 octets' });
+    }
+
+    const existingAgent = await prisma.agents.findUnique({ where: { email } });
+    if (existingAgent) {
+      return res.status(409).json({ success: false, message: 'Un compte utilise déjà cette adresse e-mail' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    await prisma.agents.create({
+      data: {
+        nom,
+        prenom,
+        email,
+        mot_de_passe: hashedPassword,
+        role: 'agent',
+        statut: 'en_attente',
+      },
+    });
+
+    return res.status(201).json({
+      success: true,
+      message: 'Votre demande a été enregistrée. Attendez l’activation de votre compte par un administrateur.',
+    });
+  } catch (error) {
+    if (error.code === 'P2002') {
+      return res.status(409).json({ success: false, message: 'Un compte utilise déjà cette adresse e-mail' });
+    }
+    return next(error);
+  }
+});
+
 router.get('/me', authenticate, (req, res) => {
   res.json({ success: true, user: req.user });
 });

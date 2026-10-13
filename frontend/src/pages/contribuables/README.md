@@ -14,6 +14,7 @@ contribuables/
 │   └── useContribuablesList.jsx
 └── utils/
     ├── pagination.jsx
+    ├── exportFicheContribuable.js
     └── amoutsArrondi.jsx
 ```
 
@@ -26,6 +27,7 @@ Page principale du registre fiscal (`/contribuables`). Elle :
 - charge la liste avec `useContribuablesList` ;
 - affiche les filtres par catégorie et la recherche textuelle ;
 - affiche le tableau paginé ;
+- exporte au format Excel tous les contribuables correspondant aux filtres actifs ;
 - ouvre la fiche d'un contribuable sélectionné (navigation vers `/contribuables/:id` avec le contribuable passé dans `location.state`) ;
 - permet l'import de contribuables depuis un fichier Excel ou CSV via `ExcelImportModal`, puis recharge la liste.
 
@@ -49,6 +51,19 @@ L'onglet actif est déduit du chemin par `getActiveTab` ; les quatre routes rend
 
 Les relances créées depuis cette page sont conservées dans le navigateur via `localStorage`, avec la clé `relance_historique`.
 
+#### Export Excel des données listées
+
+`ContribuableHeader` affiche sur chaque onglet un bouton « 📥 Exporter … » qui produit un classeur `.xlsx` à partir des données affichées par l'onglet actif. Le classeur contient deux feuilles : `Identification` (une colonne par rubrique et une seule ligne de valeurs : raison sociale, NIF, secteur, adresse, contacts, centre de rattachement, régime, catégorie, années suivies, TVA payée cumulée) puis les données tabulaires de l'onglet actif :
+
+| Onglet | Feuille exportée | Colonnes |
+| --- | --- | --- |
+| Synthèse | `Synthèse` | Année, déclarations déposées, TVA payée, TVA théorique, écart |
+| Régime fiscal | `Régime fiscal` | Catégorie, seuil, régime fiscal et comptable, pénalités de retard, amendes, référence légale |
+| Déclarations | `Déclarations` | Année, chiffre d'affaires, catégorie, TVA collectée, TVA déductible, TVA payée, TVA théorique, statut |
+| Relances | `Relances` | Date, type, montant, statut (historique du NIF affiché) |
+
+Le bouton est désactivé lorsque l'onglet courant n'a aucune ligne à exporter (aucune déclaration, aucun historique de relance ou aucune année). Le fichier est nommé `contribuable-<NIF>-<onglet>-<AAAA-MM-JJ>.xlsx` et un message de confirmation indique le nombre de lignes exportées. Les montants sont écrits en valeurs numériques avec le format Excel `#,##0 "Ar"`, comme dans l'export de la liste.
+
 ## Composants
 
 | Composant | Rôle |
@@ -56,7 +71,8 @@ Les relances créées depuis cette page sont conservées dans le navigateur via 
 | `ContribuablesFilters.jsx` | Onglets de catégories, champ de recherche, compteur de résultats, boutons d'actualisation et d'import, lien d'ajout d'un contribuable. |
 | `ContribuablesTable.jsx` | Tableau de la liste ; chaque ligne ouvre la fiche correspondante. |
 | `Pagination.jsx` | Navigation entre les pages de résultats. |
-| `ContribuableHeader.jsx` | En-tête de la fiche, navigation par onglets et bouton d'ajout ou d'accès aux déclarations. |
+| `ContribuableHeader.jsx` | En-tête de la fiche, navigation par onglets, bouton d'export Excel et bouton d'ajout ou d'accès aux déclarations. |
+| `ExportFicheButton.jsx` | Bouton d'export Excel des données de l'onglet actif. |
 | `ContribuableOverview.jsx` | Indicateurs synthétiques et graphiques de TVA. |
 | `ClassificationPanel.jsx` | Affiche le régime fiscal, les pénalités et les amendes de la catégorie. |
 | `DeclarationForm.jsx` | Formulaire de création d'une déclaration fiscale. |
@@ -70,6 +86,10 @@ Les propriétés attendues par chacun de ces composants sont détaillées dans l
 ### `hooks/useContribuablesList.jsx`
 
 Centralise l'état de la liste : récupération des données API (`getContribuables` avec une limite de 10 000), filtre texte, filtre de catégorie, pagination (15 éléments par page), chargement et erreurs. Il enrichit chaque contribuable d'une clé (`key`) et de sa catégorie, calcule les compteurs par catégorie, et fournit à `Contribuables.jsx` les données déjà filtrées et paginées (`allContribuables`, `filteredContribuables`, `paginatedContribuables`, `counts`, `totalPages`, `loadData`, etc.).
+
+### `utils/exportFicheContribuable.js`
+
+Construit et télécharge le classeur Excel de la fiche. `countExportRows(props)` renvoie le nombre de lignes que produirait l'export (utilisé pour désactiver le bouton) et `exportFicheContribuable(props)` génère le fichier et renvoie `{ count, label }`. Les deux fonctions attendent le même objet : `{ activeTab, annualData, contribuable, declarations, fiche, history }`. Le module réutilise les seuils `SEUIL_GRAND` et `SEUIL_MOYEN` de `../../utils/contribuable.utils` pour la colonne « Catégorie ».
 
 ### `utils/pagination.jsx`
 
@@ -89,7 +109,8 @@ Exporte le composant `AmountFormatter({ amount })`, qui affiche un montant arron
 - `../../utils/formatters` : `formatAriary` et `toNumber` ;
 - `../../components/forms/ExcelImportModal` : fenêtre d'import Excel/CSV ;
 - `../relance/components/RappelOrdreModal` : aperçu des documents de relance ;
-- `../../components/charts/Diagrammes` : graphiques utilisés par `ContribuableOverview`.
+- `../../components/charts/Diagrammes` : graphiques utilisés par `ContribuableOverview` ;
+- `xlsx` (SheetJS) : génération du classeur Excel exporté depuis la fiche, comme dans `Contribuables.jsx` et `ExcelImportModal`.
 
 ## Flux simplifié
 

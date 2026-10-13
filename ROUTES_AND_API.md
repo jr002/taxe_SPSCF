@@ -26,8 +26,11 @@ est affiché. Ensuite :
 
 | Route URL | Composant page | Accès | Rôle |
 | :--- | :--- | :--- | :--- |
-| `/` | `users/signin.jsx` | public | Écran de connexion ; redirige vers `/acceuil` si la session est déjà valide |
+| `/` | `users/signin.jsx` | public | Écran de connexion ; redirige vers `/acceuil` si la session est déjà valide, ou vers `/admin` après connexion lorsque l'agent a le rôle `admin` |
 | `/signin` | — | public | Redirection immédiate vers `/` |
+| `/signup` | `users/signup.jsx` | public | Demande de création d'un compte agent (nom, prénom, e-mail, mot de passe et confirmation) ; enregistre la demande sans connecter l'utilisateur |
+| `/admin` | `users/acceuiladmin.jsx` | protégé — administrateurs | **Accueil de l'espace admin** : tableau de bord des comptes agents (effectifs par statut, répartition, derniers comptes créés, accès rapides) |
+| `/admin/utilisateurs` | `users/admin.jsx` | protégé — administrateurs | Gestion des comptes : activation des demandes, blocage / réactivation, rôles, mots de passe, suppression. Pour un admin, le `Header` ne présente que ces deux modules (et le logo renvoie vers `/admin`) |
 | `/acceuil` | `Accueil.jsx` | protégé | Tableau de bord d'accueil et indicateurs de synthèse |
 | `/collecte` | `Collecte.jsx` | protégé | Simulateur de collecte TVA ; l'onglet actif est porté par `currentModule` (`sales`, `theoretical`, `reconciliation`, `declaration`) |
 | `/entreprises/nouveau` | `PhaseClassement.jsx` | protégé | Étape 1 de l'immatriculation : choix de la structure compétente |
@@ -52,10 +55,24 @@ Remarques :
 - les pages sont réexportées par [`pages/index.jsx`](frontend/src/pages/index.jsx) ;
 - [`users/login.jsx`](frontend/src/users/login.jsx) existe mais n'est importé
   par aucune route : l'écran de connexion réel est `users/signin.jsx` ;
-- le lien « S'inscrire » de l'écran de connexion pointe vers `/signup`, qui ne
-  correspond à aucune route : le motif `*` renvoie donc vers `/` ;
+- l'écran de connexion (`/`, composant `Signin`) renvoie vers `/signup` par un
+  lien `Link`, et `signup.jsx` renvoie vers `/` (« Déjà inscrit ? Se
+  connecter ») ;
 - « protégé » signifie que l'accès direct à l'URL sans session valide redirige
-  vers `/` ; les pages protégées elles-mêmes ne vérifient pas les rôles.
+  vers `/` ; les pages protégées elles-mêmes ne vérifient pas les rôles, sauf
+  `/admin`, qui n'est proposée qu'aux administrateurs et dont les appels API
+  sont de toute façon refusés (`403`) pour les autres rôles ;
+- **redirection des administrateurs** : après une connexion réussie, un agent
+  dont le rôle est `admin` est envoyé directement sur `/admin`
+  (`getLandingPath` de [`users/signin.jsx`](frontend/src/users/signin.jsx)) ;
+  les autres rôles arrivent sur `/acceuil`. Le rôle provenant de la réponse de
+  `POST /api/auth/login`, il n'y a aucun contournement d'authentification ;
+- **espace administrateur** : pour un agent dont le rôle est `admin`, le
+  `Header` ne propose que « Accueil » (`/admin`, le tableau de bord des comptes)
+  et « Utilisateurs » (`/admin/utilisateurs`), et son logo renvoie vers
+  `/admin` — la navigation fiscale est réservée aux autres rôles. Les URL
+  fiscales restent techniquement accessibles à un admin (aucun blocage de
+  route), mais elles ne lui sont plus proposées.
 
 ---
 
@@ -68,7 +85,7 @@ requêtes `/api` vers ce serveur via
 
 ### Authentification et routes publiques
 
-`backend/src/app.js` monte six domaines :
+`backend/src/app.js` monte sept domaines :
 
 ```text
 /api/auth          (monté avant le middleware d'authentification)
@@ -77,6 +94,7 @@ requêtes `/api` vers ce serveur via
 /api/controles
 /api/recoupements
 /api/centres
+/api/agents        (réservé au rôle admin, via le middleware requireAdmin)
 ```
 
 La ligne `app.use('/api', authenticate)` protège **toutes** les routes `/api`
@@ -92,8 +110,9 @@ protégée répond :
 
 Routes publiques : `GET /health`, l'interface `/api-docs`, la spécification
 `/api-docs/swagger.json`, les fichiers statiques `/uploads`, ainsi que
-`POST /api/auth/login` et `POST /api/auth/logout`. `GET /api/auth/me` applique
-le middleware dans son propre routeur et exige donc le cookie.
+`POST /api/auth/register`, `POST /api/auth/login` et `POST /api/auth/logout`.
+`GET /api/auth/me` applique le middleware dans son propre routeur et exige donc
+le cookie.
 
 Le cookie `fiscal_session` est `httpOnly`, `sameSite=lax`, `secure` lorsque
 `NODE_ENV=production`, et sa durée est de 8 heures, comme le jeton JWT
@@ -111,9 +130,26 @@ Le cookie `fiscal_session` est `httpOnly`, `sameSite=lax`, `secure` lorsque
 
 | Méthode | Endpoint | Accès | Corps / paramètres | Codes |
 | :--- | :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | public | `nom`, `prenom`, `email`, `password` (chaînes, obligatoires ; mot de passe de 4 caractères minimum) | `400` si les champs ou formats sont invalides ; `409` si l'e-mail existe déjà ; `201` avec une demande enregistrée et un compte `agent` au statut `en_attente` |
 | `POST` | `/api/auth/login` | public | `email`, `password` (chaînes, obligatoires) | `400` si l'un manque ; `401` si les identifiants sont incorrects ou si le compte n'est pas `actif` ; `200` avec `{ success: true, user: { id, email, nom, prenom, role } }` et le cookie `fiscal_session` |
 | `GET` | `/api/auth/me` | authentifié | — | `200` — `{ success: true, user }` ; `401` sans session valide |
 | `POST` | `/api/auth/logout` | public | — | `200` — `{ success: true }` et suppression du cookie |
+
+### Module Agents (`/api/agents`) — administration des comptes
+
+Ces routes passent par `authenticate` (cookie de session) **puis** par
+`requireAdmin` : un agent dont le rôle n'est pas `admin` reçoit `403`.
+
+| Méthode | Endpoint | Corps / paramètres | Codes |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/agents` | query facultatives `search` (nom, prénom ou e-mail), `statut` (`actif`, `en_attente`, `inactif`), `role` (`agent`, `admin`) | `200` — `{ success: true, data: [...] }`, toujours sans `mot_de_passe` |
+| `PATCH` | `/api/agents/:id/statut` | `{ statut }` | `200` ; `400` si le statut est invalide, s'il s'agit de son propre compte ou du dernier administrateur actif ; `404` si introuvable |
+| `PATCH` | `/api/agents/:id/role` | `{ role }` | `200` ; `400` (rôle invalide, son propre compte, dernier administrateur actif) ; `404` |
+| `PATCH` | `/api/agents/:id/password` | `{ password }` (4 caractères minimum, 72 octets maximum) | `200` — nouveau mot de passe haché (bcrypt, 12 tours) ; `400` ; `404` |
+| `DELETE` | `/api/agents/:id` | — | `200` ; `400` sur son propre compte ou sur le dernier administrateur actif ; `404` |
+
+La suppression d'un agent ne supprime ni ses contrôles ni ses relances :
+`controles.id_agent` et `relances.id_agent` passent à `NULL`.
 
 ### Module Contribuables (`/api/contribuables`)
 
@@ -204,6 +240,7 @@ dédiée n'est exportée) :
 
 | Appel | Endpoint | Utilisé par |
 | :--- | :--- | :--- |
+| `api.post('/auth/register', { nom, prenom, email, password })` | `POST /api/auth/register` | [`users/signup.jsx`](frontend/src/users/signup.jsx) |
 | `api.post('/auth/login', { email, password })` | `POST /api/auth/login` | [`users/signin.jsx`](frontend/src/users/signin.jsx) |
 | `api.get('/auth/me')` | `GET /api/auth/me` | [`App.jsx`](frontend/src/App.jsx) au montage |
 | `api.post('/auth/logout')` | `POST /api/auth/logout` | bouton de déconnexion de [`Header.jsx`](frontend/src/components/common/Header.jsx), câblé dans `App.jsx` |
@@ -225,6 +262,11 @@ dédiée n'est exportée) :
 | `createCentre(payload)` | `POST /api/centres` | Création d'un centre |
 | `updateCentre(id, payload)` | `PUT /api/centres/:id` | Mise à jour d'un centre |
 | `deleteCentre(id)` | `DELETE /api/centres/:id` | Suppression d'un centre (renvoie la réponse Axios complète) |
+| `getAgents(params)` | `GET /api/agents` | Liste des comptes agents (réservé aux administrateurs) |
+| `updateAgentStatut(id, statut)` | `PATCH /api/agents/:id/statut` | Active ou désactive un compte |
+| `updateAgentRole(id, role)` | `PATCH /api/agents/:id/role` | Change le rôle d'un compte |
+| `resetAgentPassword(id, password)` | `PATCH /api/agents/:id/password` | Réinitialise le mot de passe d'un compte |
+| `deleteAgent(id)` | `DELETE /api/agents/:id` | Supprime un compte (renvoie la réponse Axios complète) |
 | `createRecoupement(payload)` | `POST /api/recoupements` | Enregistrement d'un recoupement |
 | `getRecoupementsByContribuable(id)` | `GET /api/recoupements/:id_contribuable/analyser` | Recoupements et analyse de cohérence |
 | `effectuerControle(idDeclaration, payload)` | `POST /api/controles/:id_declaration/effectuer` | Déclenchement d'un contrôle fiscal |
@@ -234,8 +276,9 @@ dédiée n'est exportée) :
 | `imputerCreditImpot(id, payload)` | `POST /api/declarations/:id/imputer-credit` | Imputation du crédit d'impôt |
 | `getErrorMessage(error)` | *(utilitaire local)* | Extrait `error.response.data.message`, sinon `error.message`, sinon un message réseau générique |
 
-Sauf `deleteCentre`, toutes ces fonctions renvoient `res.data.data`, c'est-à-dire
-le contenu utile de l'enveloppe `{ success, data }` de l'API.
+Sauf `deleteCentre` et `deleteAgent`, qui renvoient la réponse Axios complète,
+toutes ces fonctions renvoient `res.data.data`, c'est-à-dire le contenu utile de
+l'enveloppe `{ success, data }` de l'API.
 
 ---
 

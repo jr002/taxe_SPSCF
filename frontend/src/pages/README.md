@@ -59,7 +59,7 @@ Toutes les routes protégées ci-dessous sont des enfants du layout authentifié
 
 ### 4. 👥 Portefeuille Contribuables (`contribuables/`)
 * **[`Contribuables.jsx`](contribuables/Contribuables.jsx)** (`/contribuables`) : Registre filtrable, compteurs par catégorie (Grand, Moyen, Petit) et import Excel/CSV.
-* **[`ContribuableDetail.jsx`](contribuables/ContribuableDetail.jsx)** (`/contribuables/:id`, `/classification`, `/declarations`, `/relances`) : Fiche complète d'un contribuable, graphiques d'évolution et historique multi-annuel. Les quatre routes partagent le même composant, qui déduit l'onglet actif du chemin.
+* **[`ContribuableDetail.jsx`](contribuables/ContribuableDetail.jsx)** (`/contribuables/:id`, `/classification`, `/declarations`, `/relances`) : Fiche complète d'un contribuable, graphiques d'évolution et historique multi-annuel. Les quatre routes partagent le même composant, qui déduit l'onglet actif du chemin ; chaque onglet peut être exporté au format Excel.
 * Détails dans le [`README`](contribuables/README.md) du domaine.
 
 ### 5. 📑 Suivi Fiscal & Procédure Contradictoire (`suivi-fiscal/`)

@@ -6,8 +6,11 @@ import api from './api/api';
 // Composants communs
 import Header from './components/common/Header';
 
-// Page de connexion
+// Pages de connexion, d'inscription et d'administration
 import Signin from './users/signin';
+import Signup from './users/signup';
+import AccueilAdmin from './users/acceuiladmin';
+import Admin from './users/admin';
 
 // Pages principales (organisation modulaire par domaine)
 import {
@@ -20,6 +23,7 @@ import {
   DeclarationDetail,
   Contribuables,
   ContribuableDetail,
+  Confrontation,
   Register,
   CentreDetail,
   RelanceFiscale,
@@ -32,6 +36,7 @@ export default function App() {
   const navigate = useNavigate();
   const [isCheckingSession, setIsCheckingSession] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
   const [currentModule, setCurrentModule] = useState('sales');
   const [isDarkMode, setIsDarkMode] = useState(
     () => localStorage.getItem('tva-ssif-theme') === 'dark'
@@ -43,15 +48,38 @@ export default function App() {
 
   useEffect(() => {
     api.get('/auth/me')
-      .then(() => setIsAuthenticated(true))
-      .catch(() => setIsAuthenticated(false))
+      .then((response) => {
+        setCurrentUser(response.data?.user || null);
+        setIsAuthenticated(true);
+      })
+      .catch(() => {
+        setCurrentUser(null);
+        setIsAuthenticated(false);
+      })
       .finally(() => setIsCheckingSession(false));
   }, []);
+
+  /**
+   * Après connexion : l'écran de connexion transmet l'agent renvoyé par l'API ;
+   * s'il n'est pas fourni, le profil est relu depuis la session.
+   */
+  const handleAuthenticated = (authenticatedUser = null) => {
+    setCurrentUser(authenticatedUser);
+
+    if (!authenticatedUser) {
+      api.get('/auth/me')
+        .then((response) => setCurrentUser(response.data?.user || null))
+        .catch(() => setCurrentUser(null));
+    }
+
+    setIsAuthenticated(true);
+  };
 
   const handleLogout = async () => {
     try {
       await api.post('/auth/logout');
     } finally {
+      setCurrentUser(null);
       setIsAuthenticated(false);
       navigate('/', { replace: true });
     }
@@ -71,11 +99,12 @@ export default function App() {
           path="/"
           element={isCheckingSession ? <p className="auth-loading">Vérification de la session...</p> : (
             isAuthenticated ? <Navigate to="/acceuil" replace /> : (
-              <Signin onAuthenticated={() => setIsAuthenticated(true)} />
+              <Signin onAuthenticated={handleAuthenticated} />
             )
           )}
         />
         <Route path="/signin" element={<Navigate to="/" replace />} />
+        <Route path="/signup" element={<Signup />} />
         <Route
           element={isCheckingSession ? <p className="auth-loading">Vérification de la session...</p> : (
             isAuthenticated ? (
@@ -87,6 +116,7 @@ export default function App() {
                   isDarkMode={isDarkMode}
                   onToggleTheme={() => setIsDarkMode((prev) => !prev)}
                   onLogout={handleLogout}
+                  isAdmin={currentUser?.role === 'admin'}
                 />
                 <main className="app-main"><Outlet /></main>
               </>
@@ -107,7 +137,10 @@ export default function App() {
           <Route path="/contribuables/:id/classification" element={<ContribuableDetail />} />
           <Route path="/contribuables/:id/declarations" element={<ContribuableDetail />} />
           <Route path="/contribuables/:id/relances" element={<ContribuableDetail />} />
+          <Route path="/contribuables/:id/confrontation" element={<Confrontation />} />
           <Route path="/relance" element={<RelanceFiscale />} />
+          <Route path="/admin" element={<AccueilAdmin currentUser={currentUser} />} />
+          <Route path="/admin/utilisateurs" element={<Admin currentUser={currentUser} />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

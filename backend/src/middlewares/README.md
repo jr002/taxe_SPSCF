@@ -3,8 +3,9 @@
 Traitements exécutés pendant le cycle d'une requête Express.
 
 - [`auth.middleware.js`](auth.middleware.js) : exporte `authenticate` (vérifie le
-  cookie `fiscal_session` et renseigne `req.user`) et `getJwtSecret` (lit
-  `JWT_SECRET`, avec une valeur de repli en développement).
+  cookie `fiscal_session` et renseigne `req.user`), `authorize(...roles)` et
+  `requireAdmin` (contrôle du rôle, utilisé par `/api/agents`), ainsi que
+  `getJwtSecret` (lit `JWT_SECRET`, avec une valeur de repli en développement).
 - [`validation.middleware.js`](validation.middleware.js) : exporte `validate`,
   `contribuableValidators` et `declarationValidators` (basés sur
   `express-validator`).

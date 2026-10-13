@@ -48,6 +48,16 @@ L'instance Axios est exportée par défaut (`export default api`) et créée ave
 * `updateCentre(id, payload)` — `PUT /centres/:id`.
 * `deleteCentre(id)` — `DELETE /centres/:id` (renvoie `res.data`, non déballé).
 
+### Agents (administration)
+
+Réservées au rôle `admin` côté serveur, ces fonctions alimentent la page [`../users/admin.jsx`](../users/admin.jsx) :
+
+* `getAgents(params = {})` — `GET /agents`, filtres facultatifs `search`, `statut`, `role`.
+* `updateAgentStatut(id, statut)` — `PATCH /agents/:id/statut` avec `{ statut }` (`actif`, `en_attente` ou `inactif`).
+* `updateAgentRole(id, role)` — `PATCH /agents/:id/role` avec `{ role }` (`agent` ou `admin`).
+* `resetAgentPassword(id, password)` — `PATCH /agents/:id/password` avec `{ password }`.
+* `deleteAgent(id)` — `DELETE /agents/:id` (renvoie `res.data`, non déballé).
+
 ### Recoupements
 
 * `createRecoupement(payload)` — `POST /recoupements`.

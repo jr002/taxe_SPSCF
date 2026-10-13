@@ -103,7 +103,9 @@ npm run agent:create
 ```
 
 Le script [`scripts/create-agent.js`](scripts/create-agent.js) refuse un mot de
-passe de moins de 12 caractères et une adresse e-mail déjà utilisée. Il
+passe de moins de 12 caractères et une adresse e-mail déjà utilisée pour les
+comptes administrateur. L'inscription publique accepte un minimum de
+4 caractères afin de permettre les comptes de test. Il
 enregistre le mot de passe haché (bcrypt, 12 tours) et crée le compte avec
 `role = "admin"` et `statut = "actif"`. Supprimez ensuite ces variables de
 l'environnement PowerShell.
@@ -115,6 +117,8 @@ La session repose sur un cookie, pas sur un jeton transmis par le client :
 - `POST /api/auth/login` (public) vérifie l'e-mail et le mot de passe, dépose
   le cookie `fiscal_session` (`httpOnly`, `sameSite=lax`, `secure` en
   production, durée 8 heures) et renvoie l'agent connecté ;
+- `POST /api/auth/register` (public) enregistre une demande d'accès, avec un
+  mot de passe haché et un compte `agent` au statut `en_attente` ;
 - `GET /api/auth/me` (authentifié) renvoie l'agent porté par la session ;
 - `POST /api/auth/logout` (public) supprime le cookie ;
 - `app.use('/api', authenticate)` dans [`src/app.js`](src/app.js) protège
@@ -145,17 +149,18 @@ Le contenu de cette spécification est défini dans
 
 ### Routes principales
 
-Six domaines sont montés. Tous exigent le cookie `fiscal_session`, sauf
+Sept domaines sont montés. Tous exigent le cookie `fiscal_session`, sauf
 `/api/auth`.
 
 | Préfixe | Rôle | Auth |
 | --- | --- | --- |
-| `/api/auth` | connexion, session courante, déconnexion | publique, sauf `GET /api/auth/me` |
+| `/api/auth` | connexion, inscription, session courante, déconnexion | publique, sauf `GET /api/auth/me` |
 | `/api/contribuables` | créer, consulter et modifier les contribuables | requise |
 | `/api/declarations` | gérer les déclarations, leurs statistiques et la procédure contradictoire | requise |
 | `/api/controles` | effectuer un contrôle et consulter son historique | requise |
 | `/api/recoupements` | enregistrer et analyser des données de recoupement | requise |
 | `/api/centres` | gérer les centres fiscaux (CRUD complet) | requise |
+| `/api/agents` | administrer les comptes agents (activation, rôle, mot de passe, suppression) | requise **+ rôle `admin`** |
 
 Il n'existe **aucun** préfixe `/api/entreprises` ni `/api/relances` : le modèle
 Prisma `relances` existe en base mais n'est exposé par aucune route.
@@ -163,6 +168,7 @@ Prisma `relances` existe en base mais n'est exposé par aucune route.
 Exemples :
 
 ```text
+POST /api/auth/register
 POST /api/auth/login
 GET  /api/auth/me
 POST /api/auth/logout
@@ -193,6 +199,12 @@ GET    /api/centres/:id
 POST   /api/centres
 PUT    /api/centres/:id
 DELETE /api/centres/:id
+
+GET    /api/agents
+PATCH  /api/agents/:id/statut
+PATCH  /api/agents/:id/role
+PATCH  /api/agents/:id/password
+DELETE /api/agents/:id
 ```
 
 Le détail des corps attendus, des codes HTTP et du mapping avec le client

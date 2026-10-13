@@ -12,8 +12,30 @@ import ContribuableOverview from './components/ContribuableOverview';
 import DeclarationForm from './components/DeclarationForm';
 import DeclarationHistory from './components/DeclarationHistory';
 import RelancePanel from './components/RelancePanel';
+import { countExportRows, exportFicheContribuable } from './utils/exportFicheContribuable';
 
 const HISTORY_KEY = 'relance_historique';
+
+/** Libellé et infobulle du bouton d'export, selon l'onglet affiché. */
+const EXPORT_LABELS = {
+  overview: {
+    label: '📥 Exporter la synthèse',
+    title: 'Exporter la synthèse annuelle (TVA payée, TVA théorique, écart) en fichier Excel',
+  },
+  classification: {
+    label: '📥 Exporter le régime fiscal',
+    title: 'Exporter la fiche réglementaire de la catégorie en fichier Excel',
+  },
+  declarations: {
+    label: '📥 Exporter les déclarations',
+    title: 'Exporter la liste des déclarations affichée en fichier Excel',
+  },
+  relances: {
+    label: '📥 Exporter les relances',
+    title: "Exporter l'historique des relances de ce contribuable en fichier Excel",
+  },
+};
+
 const REQUIRED_DECLARATION_FIELDS = [
   'annee',
   'ca',
@@ -78,6 +100,7 @@ export default function ContribuableDetail() {
   const [rappelModalType, setRappelModalType] = useState('rappel1');
   const [rappelDossier, setRappelDossier] = useState(null);
   const [relanceSuccess, setRelanceSuccess] = useState('');
+  const [exportSuccess, setExportSuccess] = useState('');
   const [currentTimestamp] = useState(() => Date.now());
 
   const activeTab = getActiveTab(location.pathname);
@@ -312,6 +335,27 @@ export default function ContribuableDetail() {
     setDeclarationSuccess('');
   };
 
+  const exportPayload = {
+    activeTab,
+    annualData,
+    contribuable,
+    declarations,
+    fiche,
+    history: relanceHistory,
+  };
+  const exportLabels = EXPORT_LABELS[activeTab] || EXPORT_LABELS.overview;
+  const exportDisabled = countExportRows(exportPayload) === 0;
+
+  const handleExport = () => {
+    const result = exportFicheContribuable(exportPayload);
+
+    setExportSuccess(
+      result.count
+        ? `${result.count} ligne(s) exportée(s) dans un fichier Excel (feuille « ${result.label} »).`
+        : '',
+    );
+  };
+
   if (loading) {
     return <p className="page status">Chargement de l'historique du contribuable...</p>;
   }
@@ -335,15 +379,33 @@ export default function ContribuableDetail() {
           activeTab={activeTab}
           contribuable={contribuable}
           declarationsCount={declarations.length}
+          exportDisabled={exportDisabled}
+          exportLabel={exportLabels.label}
+          exportTitle={exportLabels.title}
           fiche={fiche}
           id={id}
+          onExport={handleExport}
           onToggleDeclarationForm={toggleDeclarationForm}
           showDeclarationForm={showDeclarationForm}
         />
 
+        <Link
+          className="primary detail-back"
+          to={`/contribuables/${id}/confrontation`}
+          state={{ contribuable }}
+        >
+          ⚖️ Ouvrir la confrontation
+        </Link>
+
         {declarationSuccess && (
           <p className="success form-submit-message" role="status">
             {declarationSuccess}
+          </p>
+        )}
+
+        {exportSuccess && (
+          <p className="success form-submit-message" role="status">
+            {exportSuccess}
           </p>
         )}
 

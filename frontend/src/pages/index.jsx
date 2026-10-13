@@ -20,6 +20,7 @@ export { default as FormInformation } from './entreprises/FormInformation';
 // Portefeuille Contribuables
 export { default as Contribuables } from './contribuables/Contribuables';
 export { default as ContribuableDetail } from './contribuables/ContribuableDetail';
+export { default as Confrontation } from './contribuables/pages/Confrontation';
 
 // Suivi fiscal & Contrôle contradictoire
 export { default as SuiviFiscal } from './suivi-fiscal/SuiviFiscal';

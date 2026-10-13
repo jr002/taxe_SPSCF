@@ -1,7 +1,17 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api, { getErrorMessage } from '../api/api';
 import logoDgi from '../assets/logodgi.jpg';
+
+/**
+ * Redirection après connexion : un agent dont le rôle est `admin` est envoyé
+ * directement sur la page de gestion des utilisateurs (`/admin`), les autres
+ * arrivent sur le tableau de bord (`/acceuil`).
+ *
+ * Le rôle provient de la réponse de `POST /api/auth/login`, donc d'une session
+ * réellement authentifiée : il n'y a aucun contournement possible.
+ */
+const getLandingPath = (user) => (user?.role === 'admin' ? '/admin' : '/acceuil');
 
 export default function Signin({ onAuthenticated }) {
     const navigate = useNavigate();
@@ -16,9 +26,10 @@ export default function Signin({ onAuthenticated }) {
         setIsSubmitting(true);
 
         try {
-            await api.post('/auth/login', { email, password });
-            onAuthenticated();
-            navigate('/acceuil', { replace: true });
+            const response = await api.post('/auth/login', { email, password });
+            const user = response.data?.user;
+            onAuthenticated(user);
+            navigate(getLandingPath(user), { replace: true });
         } catch (loginError) {
             setError(getErrorMessage(loginError));
         } finally {
@@ -42,7 +53,7 @@ export default function Signin({ onAuthenticated }) {
             <section className="login-form-panel">
                 <form className="login-form" onSubmit={handleSubmit}>
                     <p className="login-kicker">Espace agent</p>
-                    <h2>Sign in</h2>
+                    <h2>Se connecter</h2>
                     <p className="login-intro">Connectez-vous avec les identifiants de votre compte agent.</p>
                     <label className="login-field">
                         Adresse e-mail
@@ -68,9 +79,9 @@ export default function Signin({ onAuthenticated }) {
                     </label>
                     {error && <p className="login-error" role="alert">{error}</p>}
                     <button className="login-submit" type="submit" disabled={isSubmitting}>
-                        {isSubmitting ? 'Signing in...' : 'Sign in'}
+                        {isSubmitting ? 'Connexion en cours...' : 'Se connecter'}
                     </button>
-                    <a href="/signup">S'inscrire</a>
+                    <Link className="auth-link" to="/signup">S'inscrire</Link>
                     <p className="login-security-note">Attendre les autorisations de l'administrateur du site.</p>
                 </form>
             </section>

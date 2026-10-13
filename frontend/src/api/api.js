@@ -66,6 +66,22 @@ export const updateCentre = (id, payload) =>
 export const deleteCentre = (id) =>
   api.delete(`/centres/${id}`).then((res) => res.data);
 
+// ==================== AGENTS (ADMINISTRATION) ====================
+export const getAgents = (params = {}) =>
+  api.get('/agents', { params }).then((res) => res.data.data);
+
+export const updateAgentStatut = (id, statut) =>
+  api.patch(`/agents/${id}/statut`, { statut }).then((res) => res.data.data);
+
+export const updateAgentRole = (id, role) =>
+  api.patch(`/agents/${id}/role`, { role }).then((res) => res.data.data);
+
+export const resetAgentPassword = (id, password) =>
+  api.patch(`/agents/${id}/password`, { password }).then((res) => res.data.data);
+
+export const deleteAgent = (id) =>
+  api.delete(`/agents/${id}`).then((res) => res.data);
+
 // ==================== RECOUPEMENTS ====================
 export const createRecoupement = (payload) =>
   api.post('/recoupements', payload).then((res) => res.data.data);

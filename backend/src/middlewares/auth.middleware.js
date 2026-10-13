@@ -22,4 +22,21 @@ const authenticate = (req, res, next) => {
   }
 };
 
-module.exports = { authenticate, getJwtSecret };
+/**
+ * Restreint une route aux agents dont le rôle figure dans `roles`.
+ * À utiliser après `authenticate`, qui renseigne `req.user`.
+ */
+const authorize = (...roles) => (req, res, next) => {
+  if (!req.user || !roles.includes(req.user.role)) {
+    return res.status(403).json({
+      success: false,
+      message: 'Accès réservé aux administrateurs',
+    });
+  }
+
+  return next();
+};
+
+const requireAdmin = authorize('admin');
+
+module.exports = { authenticate, authorize, getJwtSecret, requireAdmin };

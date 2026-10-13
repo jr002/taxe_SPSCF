@@ -11,6 +11,15 @@ const NAVIGATION_LINKS = [
 ];
 
 /**
+ * Espace administrateur : navigation limitée au tableau de bord et à la gestion
+ * des comptes. Les modules fiscaux restent réservés aux autres rôles.
+ */
+const ADMIN_LINKS = [
+  { to: '/admin', label: 'Accueil' },
+  { to: '/admin/utilisateurs', label: 'Utilisateurs' },
+];
+
+/**
  * Barre de navigation principale avec gestion du thème et des onglets de modules
  */
 export default function Header({
@@ -20,8 +29,12 @@ export default function Header({
   isDarkMode,
   onToggleTheme,
   onLogout,
+  isAdmin = false,
 }) {
   const { pathname } = useLocation();
+
+  const links = isAdmin ? ADMIN_LINKS : NAVIGATION_LINKS;
+  const homePath = isAdmin ? ADMIN_LINKS[0].to : '/acceuil';
 
   const isLinkActive = (link) => {
     if (link.to === '/contribuables') {
@@ -35,7 +48,7 @@ export default function Header({
 
   return (
     <header className="topbar">
-      <Link to="/acceuil" className="brand">
+      <Link to={homePath} className="brand">
         <img
           className="brand-logo"
           src={logoDgi}
@@ -50,7 +63,7 @@ export default function Header({
       </Link>
 
       <nav aria-label="Navigation principale">
-        {NAVIGATION_LINKS.map((link) => (
+        {links.map((link) => (
           <Link
             key={link.to}
             to={link.to}
