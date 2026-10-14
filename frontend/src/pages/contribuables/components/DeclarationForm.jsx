@@ -1,4 +1,5 @@
 const FIELDS = [
+  ['periode', 'Période (AAAA-MM)', 'month'],
   ['annee', 'Année'],
   ['ca', "Chiffre d'affaires"],
   ['benefice', 'Bénéfice'],
@@ -32,21 +33,35 @@ export default function DeclarationForm({
       )}
 
       <div className="declaration-create-grid">
-        {FIELDS.map(([name, label]) => (
+        {FIELDS.map(([name, label, type]) => (
           <label className="field" htmlFor={`declaration-${name}`} key={name}>
             {label}
             <input
               id={`declaration-${name}`}
               name={name}
-              type="number"
-              min="0"
-              step={name === 'annee' ? '1' : '0.01'}
+              type={type || 'number'}
+              min={type ? undefined : '0'}
+              step={type ? undefined : name === 'annee' ? '1' : '0.01'}
               value={form[name]}
               onChange={onChange}
               required
             />
           </label>
         ))}
+        <label className="field" htmlFor="declaration-type">
+          Type de déclaration
+          <select
+            id="declaration-type"
+            name="type_declaration"
+            value={form.type_declaration}
+            onChange={onChange}
+          >
+            <option value="TVA">TVA</option>
+            <option value="IR">IR</option>
+            <option value="IS">IS</option>
+            <option value="autre">Autre</option>
+          </select>
+        </label>
       </div>
 
       <div className="form-actions">

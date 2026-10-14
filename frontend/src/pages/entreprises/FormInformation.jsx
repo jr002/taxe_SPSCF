@@ -139,6 +139,7 @@ export default function FormInformation() {
           regime_fiscal: formData.fiscalStructure === 'centre_fiscal'
             ? formData.regimeFiscal
             : Number(formData.revenue) < 400000000 ? 'IS' : 'IR',
+          centre_fiscal_ref: formData.centreSelection || undefined,
           telephone: formData.phone.trim(),
           email: formData.email.trim(),
           adresse: formData.address.trim(),
@@ -196,7 +197,7 @@ export default function FormInformation() {
   const centreSuggestions = centresFiltres.slice(0, 8);
 
   const selectCentre = (centre) => {
-    const centreValue = `${centre.dri || centre.region}-${centre.nom}`;
+    const centreValue = `${formData.fiscalStructure}:${centre.nom}`;
     const zone = centre.regions_couvertes?.join(', ') || centre.region;
     setFormData((previous) => ({ ...previous, centreSelection: centreValue }));
     setCentreSearch(`${centre.nom} - ${centre.type}${zone ? ` (${zone})` : ''}`);
@@ -457,7 +458,7 @@ export default function FormInformation() {
               className="max-h-64 overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-lg"
             >
               {centreSuggestions.map((centre, index) => {
-                const centreValue = `${centre.dri || centre.region}-${centre.nom}`;
+                const centreValue = `${formData.fiscalStructure}:${centre.nom}`;
                 const zone = centre.regions_couvertes?.join(', ') || centre.region;
                 const label = `${centre.nom} - ${centre.type}${zone ? ` (${zone})` : ''}`;
 

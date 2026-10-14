@@ -50,11 +50,18 @@ class FiscalService {
       services_purchased = 0,
       third_party_payments = 0,
       local_products = 0,
-      import_expenses = 0
+      import_expenses = 0,
+      montant_ttc = 0,
+      montant_declare = 0
     } = data;
     
-    return merchandise_sold + goods_purchased + services_purchased +
-           third_party_payments + local_products + import_expenses;
+    const sumBreakdown = Number(merchandise_sold) + Number(goods_purchased) + Number(services_purchased) +
+           Number(third_party_payments) + Number(local_products) + Number(import_expenses);
+
+    if (sumBreakdown > 0) return sumBreakdown;
+    if (Number(montant_ttc) > 0) return Number(montant_ttc);
+    if (Number(montant_declare) > 0) return Number(montant_declare);
+    return 0;
   }
 
   // Vérifier la cohérence des recoupements

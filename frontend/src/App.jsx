@@ -26,6 +26,8 @@ import {
   Confrontation,
   Register,
   CentreDetail,
+  CentreListe,
+  UniteFiscaleDetail,
   RelanceFiscale,
 } from './pages';
 
@@ -130,6 +132,8 @@ export default function App() {
           <Route path="/decisionnel" element={<TableauDecisionnel />} />
           <Route path="/register" element={<Register />} />
           <Route path="/centres/:id" element={<CentreDetail />} />
+          <Route path="/centres-fiscaux" element={<CentreListe />} />
+          <Route path="/centres-fiscaux/:type/:index" element={<UniteFiscaleDetail />} />
           <Route path="/suivi" element={<SuiviFiscal />} />
           <Route path="/suivi/:id" element={<DeclarationDetail />} />
           <Route path="/contribuables" element={<Contribuables />} />

@@ -1,124 +1,144 @@
 generator client {
   provider = "prisma-client-js"
 }
- 
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
 /// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
 model agents {
-  id_agent          Int         @id @default(autoincrement())
-  nom               String      @db.VarChar(100)
-  prenom            String      @db.VarChar(100)
-  email             String      @unique @db.VarChar(255)
-  mot_de_passe      String      @db.VarChar(255)
-  role              String?     @default("agent") @db.VarChar(50)
-  statut            String?     @default("actif") @db.VarChar(20)
-  date_creation     DateTime?   @default(now()) @db.Timestamp(6)
-  date_modification DateTime?   @db.Timestamp(6)
+  id_agent          Int                 @id @default(autoincrement())
+  nom               String              @db.VarChar(100)
+  prenom            String              @db.VarChar(100)
+  email             String              @unique @db.VarChar(255)
+  mot_de_passe      String              @db.VarChar(255)
+  role              String?             @default("agent") @db.VarChar(50)
+  statut            String?             @default("actif") @db.VarChar(20)
+  date_creation     DateTime?           @default(now()) @db.Timestamp(6)
+  date_modification DateTime?           @db.Timestamp(6)
   controles         controles[]
+  etat_contribuable etat_contribuable[]
   relances          relances[]
 
   @@index([email], map: "idx_agents_email")
 }
 
 model controles {
-  id_controle       Int           @id @default(autoincrement())
+  id_controle       Int              @id @default(autoincrement())
   id_declaration    Int?
   id_agent          Int?
-  type              String        @db.VarChar(20)
-  resultat          String        @db.VarChar(20)
-  ecart             Decimal?      @default(0) @db.Decimal(15, 2)
-  pourcentage_ecart Decimal?      @default(0) @db.Decimal(8, 2)
+  type              String           @db.VarChar(20)
+  resultat          String           @db.VarChar(20)
+  ecart             Decimal?         @default(0) @db.Decimal(15, 2)
+  pourcentage_ecart Decimal?         @default(0) @db.Decimal(8, 2)
   commentaire       String?
-  date_controle     DateTime?     @default(now()) @db.Timestamp(6)
-  agents            agents?       @relation(fields: [id_agent], references: [id_agent], onUpdate: NoAction)
-  declarations      declarations? @relation(fields: [id_declaration], references: [id_declaration], onDelete: Cascade, onUpdate: NoAction)
+  date_controle     DateTime?        @default(now()) @db.Timestamp(6)
+  agents            agents?          @relation(fields: [id_agent], references: [id_agent], onUpdate: NoAction)
+  declarations      declarations?    @relation(fields: [id_declaration], references: [id_declaration], onDelete: Cascade, onUpdate: NoAction)
+  rapprochements    rapprochements[]
 
   @@index([id_declaration], map: "idx_controles_declaration")
 }
 
 model declarations {
-  id_declaration               Int            @id @default(autoincrement())
+  id_declaration               Int              @id @default(autoincrement())
   id_contribuable              Int?
   annee                        Int
-  ca                           Decimal?       @default(0) @db.Decimal(15, 2)
-  benefice                     Decimal?       @default(0) @db.Decimal(15, 2)
-  tva_collectee                Decimal?       @default(0) @db.Decimal(15, 2)
-  tva_deductible               Decimal?       @default(0) @db.Decimal(15, 2)
-  tva_payee                    Decimal?       @default(0) @db.Decimal(15, 2)
-  tva_theorique                Decimal?       @default(0) @db.Decimal(15, 2)
-  statut                       String?        @default("conforme") @db.VarChar(40)
-  date_notification_primitive  DateTime?      @db.Timestamp(6)
-  date_limite_reponse          DateTime?      @db.Timestamp(6)
-  prorogation_jours            Int?           @default(0)
-  date_notification_definitive DateTime?      @db.Timestamp(6)
-  montant_redressement         Decimal?       @default(0) @db.Decimal(15, 2)
-  credit_impot                 Decimal?       @default(0) @db.Decimal(15, 2)
-  montant_impute               Decimal?       @default(0) @db.Decimal(15, 2)
-  montant_net_a_payer          Decimal?       @default(0) @db.Decimal(15, 2)
+  ca                           Decimal?         @default(0) @db.Decimal(15, 2)
+  benefice                     Decimal?         @default(0) @db.Decimal(15, 2)
+  tva_collectee                Decimal?         @default(0) @db.Decimal(15, 2)
+  tva_deductible               Decimal?         @default(0) @db.Decimal(15, 2)
+  tva_payee                    Decimal?         @default(0) @db.Decimal(15, 2)
+  tva_theorique                Decimal?         @default(0) @db.Decimal(15, 2)
+  statut                       String?          @default("conforme") @db.VarChar(40)
+  date_creation                DateTime?        @default(now()) @db.Timestamp(6)
+  date_modification            DateTime?        @db.Timestamp(6)
+  date_notification_primitive  DateTime?        @db.Timestamp(6)
+  date_limite_reponse          DateTime?        @db.Timestamp(6)
+  prorogation_jours            Int?             @default(0)
+  date_notification_definitive DateTime?        @db.Timestamp(6)
+  montant_redressement         Decimal?         @default(0) @db.Decimal(15, 2)
+  credit_impot                 Decimal?         @default(0) @db.Decimal(15, 2)
+  montant_impute               Decimal?         @default(0) @db.Decimal(15, 2)
+  montant_net_a_payer          Decimal?         @default(0) @db.Decimal(15, 2)
   observations_agent           String?
-  date_creation                DateTime?      @default(now()) @db.Timestamp(6)
-  date_modification            DateTime?      @db.Timestamp(6)
+  type_declaration             String           @default("TVA") @db.VarChar(30)
+  periode                      String?          @db.VarChar(7)
   controles                    controles[]
-  relances                      relances[]
-  contribuables                contribuables? @relation(fields: [id_contribuable], references: [id_contribuable], onDelete: Cascade, onUpdate: NoAction, map: "declarations_id_entreprise_fkey")
+  contribuables                contribuables?   @relation(fields: [id_contribuable], references: [id_contribuable], onDelete: Cascade, onUpdate: NoAction, map: "declarations_id_entreprise_fkey")
+  rapprochements               rapprochements[]
+  relances                     relances[]
 
-  @@unique([id_contribuable, annee], map: "declarations_id_entreprise_annee_key")
+  @@unique([id_contribuable, periode, type_declaration], map: "declarations_contribuable_periode_type_key")
   @@index([annee], map: "idx_declarations_annee")
   @@index([id_contribuable], map: "idx_declarations_entreprise")
   @@index([statut], map: "idx_declarations_statut")
+  @@index([periode], map: "idx_declarations_periode")
 }
 
 model recoupements {
-  id_recoupement       Int            @id @default(autoincrement())
+  id_recoupement       Int              @id @default(autoincrement())
   id_contribuable      Int?
-  source               String         @db.VarChar(50)
-  merchandise_sold     Decimal?       @default(0) @db.Decimal(15, 2)
-  goods_purchased      Decimal?       @default(0) @db.Decimal(15, 2)
-  services_purchased   Decimal?       @default(0) @db.Decimal(15, 2)
-  third_party_payments Decimal?       @default(0) @db.Decimal(15, 2)
-  local_products       Decimal?       @default(0) @db.Decimal(15, 2)
-  import_expenses      Decimal?       @default(0) @db.Decimal(15, 2)
-  somme_recoupee       Decimal?       @default(0) @db.Decimal(15, 2)
-  date_creation        DateTime?      @default(now()) @db.Timestamp(6)
-  contribuables        contribuables? @relation(fields: [id_contribuable], references: [id_contribuable], onDelete: Cascade, onUpdate: NoAction, map: "recoupements_id_entreprise_fkey")
+  source               String           @db.VarChar(50)
+  merchandise_sold     Decimal?         @default(0) @db.Decimal(15, 2)
+  goods_purchased      Decimal?         @default(0) @db.Decimal(15, 2)
+  services_purchased   Decimal?         @default(0) @db.Decimal(15, 2)
+  third_party_payments Decimal?         @default(0) @db.Decimal(15, 2)
+  local_products       Decimal?         @default(0) @db.Decimal(15, 2)
+  import_expenses      Decimal?         @default(0) @db.Decimal(15, 2)
+  somme_recoupee       Decimal?         @default(0) @db.Decimal(15, 2)
+  date_creation        DateTime?        @default(now()) @db.Timestamp(6)
+  periode              String?          @db.VarChar(7)
+  reference            String?          @db.VarChar(100)
+  type_operation       String?          @db.VarChar(30)
+  nif_tiers            String?          @db.VarChar(50)
+  date_operation       DateTime?        @db.Date
+  montant_declare      Decimal?         @default(0) @db.Decimal(15, 2)
+  montant_tva          Decimal?         @default(0) @db.Decimal(15, 2)
+  montant_ttc          Decimal?         @default(0) @db.Decimal(15, 2)
+  rapprochements       rapprochements[]
+  contribuables        contribuables?   @relation(fields: [id_contribuable], references: [id_contribuable], onDelete: Cascade, onUpdate: NoAction, map: "recoupements_id_entreprise_fkey")
 
   @@index([id_contribuable], map: "idx_recoupements_entreprise")
+  @@index([periode], map: "idx_recoupements_periode")
 }
-// contribuables model represents the taxpayers or companies in the system. It contains fields for unique identification, contact information, and relationships to declarations and recoupements. The model includes indexes for efficient querying based on the NIF (tax identification number).
+
 model contribuables {
-  id_contribuable   Int            @id(map: "entreprises_pkey") @default(autoincrement())
-  id_centre         Int?
-  nif               String         @unique(map: "entreprises_nif_key") @db.VarChar(50)
-  raison_sociale    String         @db.VarChar(255)
-  secteur_activite  String         @db.VarChar(100)
+  id_contribuable   Int                 @id(map: "entreprises_pkey") @default(autoincrement())
+  nif               String              @unique(map: "entreprises_nif_key") @db.VarChar(50)
+  raison_sociale    String              @db.VarChar(255)
+  secteur_activite  String              @db.VarChar(100)
   adresse           String?
-  telephone         String?        @db.VarChar(20)
-  email             String?        @db.VarChar(100)
-  regime_fiscal     String?        @db.VarChar(10)
-  date_creation     DateTime?      @default(now()) @db.Timestamp(6)
-  date_modification DateTime?      @db.Timestamp(6)
+  telephone         String?             @db.VarChar(20)
+  email             String?             @db.VarChar(100)
+  regime_fiscal     String?             @db.VarChar(10)
+  date_creation     DateTime?           @default(now()) @db.Timestamp(6)
+  date_modification DateTime?           @db.Timestamp(6)
+  id_centre         Int?
+  centre_fiscal_ref String?             @db.VarChar(255)
+  centres           centres?            @relation(fields: [id_centre], references: [id_centre], onUpdate: NoAction)
   declarations      declarations[]
+  etat_contribuable etat_contribuable[]
   recoupements      recoupements[]
   relances          relances[]
-  centres           centres?       @relation(fields: [id_centre], references: [id_centre], onDelete: SetNull, onUpdate: NoAction)
 
   @@index([nif], map: "idx_entreprises_nif")
   @@index([id_centre], map: "idx_contribuables_centre")
+  @@index([centre_fiscal_ref], map: "idx_contribuables_centre_fiscal_ref")
 }
 
 model centres {
-  id_centre      Int            @id @default(autoincrement())
-  nom_centre     String         @db.VarChar(255)
-  type_centre    String         @db.VarChar(30)
-  numero_centre  String         @unique @db.VarChar(50)
-  email_centre   String?        @db.VarChar(255)
-  telephone_centre String?      @db.VarChar(30)
-  date_creation  DateTime?      @default(now()) @db.Timestamp(6)
-  date_modification DateTime?  @db.Timestamp(6)
-  contribuables  contribuables[]
+  id_centre         Int             @id @default(autoincrement())
+  nom_centre        String          @db.VarChar(255)
+  type_centre       String          @db.VarChar(30)
+  numero_centre     String          @unique @db.VarChar(50)
+  email_centre      String?         @db.VarChar(255)
+  date_creation     DateTime?       @default(now()) @db.Timestamp(6)
+  date_modification DateTime?       @db.Timestamp(6)
+  telephone_centre  String?         @db.VarChar(30)
+  contribuables     contribuables[]
 
   @@index([type_centre], map: "idx_centres_type")
 }
@@ -139,11 +159,49 @@ model relances {
   observations        String?
   date_creation       DateTime      @default(now()) @db.Timestamp(6)
   date_modification   DateTime?     @db.Timestamp(6)
+  agents              agents?       @relation(fields: [id_agent], references: [id_agent], onUpdate: NoAction)
   contribuables       contribuables @relation(fields: [id_contribuable], references: [id_contribuable], onDelete: Cascade, onUpdate: NoAction)
-  declarations        declarations? @relation(fields: [id_declaration], references: [id_declaration], onDelete: SetNull, onUpdate: NoAction)
-  agents              agents?       @relation(fields: [id_agent], references: [id_agent], onDelete: SetNull, onUpdate: NoAction)
+  declarations        declarations? @relation(fields: [id_declaration], references: [id_declaration], onUpdate: NoAction)
 
-  @@index([id_contribuable, date_emission], map: "idx_relances_contribuable_date")
+  @@index([id_contribuable, date_emission(sort: Desc)], map: "idx_relances_contribuable_date")
   @@index([statut], map: "idx_relances_statut")
   @@index([id_declaration], map: "idx_relances_declaration")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model etat_contribuable {
+  id_etat           Int           @id @default(autoincrement())
+  id_contribuable   Int
+  statut_activite   String        @default("Actif") @db.VarChar(50)
+  statut_conformite String        @default("En règle") @db.VarChar(50)
+  date_modification DateTime?     @default(now()) @db.Timestamp(6)
+  id_agent          Int?
+  motif             String?
+  agents            agents?       @relation(fields: [id_agent], references: [id_agent], onUpdate: NoAction, map: "fk_etat_agent")
+  contribuables     contribuables @relation(fields: [id_contribuable], references: [id_contribuable], onDelete: Cascade, onUpdate: NoAction, map: "fk_etat_contribuable")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model rapprochements {
+  id_rapprochement   Int           @id @default(autoincrement())
+  id_controle        Int?
+  id_declaration     Int?
+  id_recoupement     Int?
+  type_rapprochement String        @default("exact") @db.VarChar(30)
+  score              Decimal?      @default(0) @db.Decimal(5, 2)
+  montant_declare    Decimal?      @default(0) @db.Decimal(15, 2)
+  montant_recoupe    Decimal?      @default(0) @db.Decimal(15, 2)
+  ecart              Decimal?      @default(0) @db.Decimal(15, 2)
+  statut             String        @default("a_verifier") @db.VarChar(30)
+  motif              String?
+  date_rapprochement DateTime?     @default(now()) @db.Timestamp(6)
+  controles          controles?    @relation(fields: [id_controle], references: [id_controle], onDelete: Cascade, onUpdate: NoAction)
+  declarations       declarations? @relation(fields: [id_declaration], references: [id_declaration], onDelete: Cascade, onUpdate: NoAction)
+  recoupements       recoupements? @relation(fields: [id_recoupement], references: [id_recoupement], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id_controle], map: "idx_rapprochements_controle")
+  @@index([id_declaration], map: "idx_rapprochements_declaration")
+  @@index([id_recoupement], map: "idx_rapprochements_recoupement")
+  @@index([statut], map: "idx_rapprochements_statut")
 }

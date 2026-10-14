@@ -7,6 +7,7 @@ const NAVIGATION_LINKS = [
   { to: '/decisionnel', label: 'Tableau décisionnel' },
   { to: '/suivi', label: 'Suivi fiscal' },
   { to: '/contribuables', label: 'Contribuables' },
+  { to: '/centres-fiscaux', label: 'Centres' },
   { to: '/relance', label: 'Relance fiscale' },
 ];
 
@@ -40,6 +41,9 @@ export default function Header({
     if (link.to === '/contribuables') {
       return pathname.startsWith('/contribuables');
     }
+    if (link.to === '/centres-fiscaux') {
+      return pathname.startsWith('/centres-fiscaux');
+    }
     if (link.to === '/relance') {
       return pathname.startsWith('/relance');
     }
@@ -63,15 +67,17 @@ export default function Header({
       </Link>
 
       <nav aria-label="Navigation principale">
-        {links.map((link) => (
-          <Link
-            key={link.to}
-            to={link.to}
-            className={isLinkActive(link) ? 'active' : ''}
-          >
-            {link.label}
-          </Link>
-        ))}
+        {links.map((link) => {
+          return (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={isLinkActive(link) ? 'active' : ''}
+            >
+              {link.label}
+            </Link>
+          );
+        })}
 
         {/* Onglets de sous-modules lors de la saisie de collecte */}
         {pathname === '/collecte' && modules.length > 0 && (

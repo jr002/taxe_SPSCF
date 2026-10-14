@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 
-import { createDeclaration, getContribuableById, getErrorMessage } from '../../api/api';
+import { createDeclaration, createRecoupement, getContribuableById, getErrorMessage } from '../../api/api';
 import { getRegime } from '../../utils/decisionnel.utils';
 import { toNumber } from '../../utils/formatters';
 import { getCategorie, getFicheCategorie } from '../../utils/contribuable.utils';
@@ -12,6 +12,7 @@ import ContribuableOverview from './components/ContribuableOverview';
 import DeclarationForm from './components/DeclarationForm';
 import DeclarationHistory from './components/DeclarationHistory';
 import RelancePanel from './components/RelancePanel';
+import RecoupementForm from './components/RecoupementForm';
 import { countExportRows, exportFicheContribuable } from './utils/exportFicheContribuable';
 
 const HISTORY_KEY = 'relance_historique';
@@ -46,12 +47,20 @@ const REQUIRED_DECLARATION_FIELDS = [
 ];
 
 const initialDeclarationForm = () => ({
+  periode: '',
+  type_declaration: 'TVA',
   annee: String(new Date().getFullYear()),
   ca: '',
   benefice: '',
   tva_collectee: '',
   tva_deductible: '',
   tva_payee: '',
+});
+
+const initialRecoupementForm = () => ({
+  source: 'tiers_declarant', periode: '', reference: '', type_operation: 'vente', nif_tiers: '', date_operation: '',
+  merchandise_sold: '', goods_purchased: '', services_purchased: '', third_party_payments: '', local_products: '',
+  import_expenses: '', montant_declare: '', montant_tva: '', montant_ttc: '',
 });
 
 function getActiveTab(pathname) {
@@ -63,6 +72,7 @@ function getActiveTab(pathname) {
 
 function isDeclarationFormValid(form) {
   return (
+    /^\d{4}-\d{2}$/.test(form.periode) &&
     !REQUIRED_DECLARATION_FIELDS.some(
       (field) => form[field] === '' || Number(form[field]) < 0,
     ) &&
@@ -85,10 +95,15 @@ export default function ContribuableDetail() {
   const [loading, setLoading] = useState(!sourceContribuable);
   const [error, setError] = useState('');
   const [showDeclarationForm, setShowDeclarationForm] = useState(false);
+  const [showRecoupementForm, setShowRecoupementForm] = useState(false);
   const [declarationForm, setDeclarationForm] = useState(initialDeclarationForm);
   const [declarationError, setDeclarationError] = useState('');
   const [declarationSuccess, setDeclarationSuccess] = useState('');
   const [declarationSubmitting, setDeclarationSubmitting] = useState(false);
+  const [recoupementForm, setRecoupementForm] = useState(initialRecoupementForm);
+  const [recoupementError, setRecoupementError] = useState('');
+  const [recoupementSuccess, setRecoupementSuccess] = useState('');
+  const [recoupementSubmitting, setRecoupementSubmitting] = useState(false);
   const [relanceHistory, setRelanceHistory] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]');
@@ -197,6 +212,12 @@ export default function ContribuableDetail() {
     setDeclarationSuccess('');
   };
 
+  const handleRecoupementInputChange = ({ target: { name, value } }) => {
+    setRecoupementForm((previous) => ({ ...previous, [name]: value }));
+    setRecoupementError('');
+    setRecoupementSuccess('');
+  };
+
   const handleDeclarationSubmit = async (event) => {
     event.preventDefault();
     setDeclarationError('');
@@ -204,7 +225,7 @@ export default function ContribuableDetail() {
 
     if (!isDeclarationFormValid(declarationForm)) {
       setDeclarationError(
-        'Veuillez renseigner une année entre 2000 et 2100 et des montants positifs.',
+        'Veuillez renseigner une période, une année entre 2000 et 2100 et des montants positifs.',
       );
       return;
     }
@@ -214,6 +235,8 @@ export default function ContribuableDetail() {
     try {
       const result = await createDeclaration({
         id_contribuable: Number(id),
+        periode: declarationForm.periode,
+        type_declaration: declarationForm.type_declaration,
         annee: Number(declarationForm.annee),
         ca: Number(declarationForm.ca),
         benefice: Number(declarationForm.benefice),
@@ -235,6 +258,48 @@ export default function ContribuableDetail() {
       setDeclarationError(getErrorMessage(requestError));
     } finally {
       setDeclarationSubmitting(false);
+    }
+  };
+
+  const handleRecoupementSubmit = async (event) => {
+    event.preventDefault();
+    setRecoupementError('');
+    setRecoupementSuccess('');
+
+    if (!/^\d{4}-\d{2}$/.test(recoupementForm.periode)) {
+      setRecoupementError('Veuillez renseigner une période au format AAAA-MM.');
+      return;
+    }
+
+    const amountFields = [
+      'merchandise_sold', 'goods_purchased', 'services_purchased', 'third_party_payments',
+      'local_products', 'import_expenses', 'montant_declare', 'montant_tva', 'montant_ttc',
+    ];
+    const payload = {
+      id_contribuable: Number(id),
+      source: recoupementForm.source.trim(),
+      periode: recoupementForm.periode,
+      reference: recoupementForm.reference.trim() || undefined,
+      type_operation: recoupementForm.type_operation,
+      nif_tiers: recoupementForm.nif_tiers.trim() || undefined,
+      date_operation: recoupementForm.date_operation || undefined,
+    };
+    amountFields.forEach((field) => { payload[field] = Number(recoupementForm[field] || 0); });
+    payload.somme_recoupee = [
+      payload.merchandise_sold, payload.goods_purchased, payload.services_purchased,
+      payload.third_party_payments, payload.local_products, payload.import_expenses,
+    ].reduce((total, value) => total + value, 0);
+
+    setRecoupementSubmitting(true);
+    try {
+      await createRecoupement(payload);
+      setRecoupementForm(initialRecoupementForm());
+      setRecoupementSuccess('Le recoupement a été enregistré pour ce contribuable.');
+      setShowRecoupementForm(false);
+    } catch (requestError) {
+      setRecoupementError(getErrorMessage(requestError));
+    } finally {
+      setRecoupementSubmitting(false);
     }
   };
 
@@ -335,6 +400,12 @@ export default function ContribuableDetail() {
     setDeclarationSuccess('');
   };
 
+  const toggleRecoupementForm = () => {
+    setShowRecoupementForm((previous) => !previous);
+    setRecoupementError('');
+    setRecoupementSuccess('');
+  };
+
   const exportPayload = {
     activeTab,
     annualData,
@@ -396,6 +467,9 @@ export default function ContribuableDetail() {
         >
           ⚖️ Ouvrir la confrontation
         </Link>
+        <button type="button" className="primary detail-back" onClick={toggleRecoupementForm}>
+          {showRecoupementForm ? 'Annuler le recoupement' : '+ Ajouter un recoupement'}
+        </button>
 
         {declarationSuccess && (
           <p className="success form-submit-message" role="status">
@@ -409,6 +483,12 @@ export default function ContribuableDetail() {
           </p>
         )}
 
+        {recoupementSuccess && (
+          <p className="success form-submit-message" role="status">
+            {recoupementSuccess}
+          </p>
+        )}
+
         {activeTab === 'declarations' && showDeclarationForm && (
           <DeclarationForm
             contribuable={contribuable}
@@ -417,6 +497,24 @@ export default function ContribuableDetail() {
             onChange={handleDeclarationInputChange}
             onSubmit={handleDeclarationSubmit}
             submitting={declarationSubmitting}
+          />
+        )}
+
+        {showRecoupementForm && (
+          <RecoupementForm
+            contribuable={contribuable}
+            error={recoupementError}
+            form={{
+              ...recoupementForm,
+              somme_recoupee: [
+                recoupementForm.merchandise_sold, recoupementForm.goods_purchased,
+                recoupementForm.services_purchased, recoupementForm.third_party_payments,
+                recoupementForm.local_products, recoupementForm.import_expenses,
+              ].reduce((total, value) => total + Number(value || 0), 0),
+            }}
+            onChange={handleRecoupementInputChange}
+            onSubmit={handleRecoupementSubmit}
+            submitting={recoupementSubmitting}
           />
         )}
 

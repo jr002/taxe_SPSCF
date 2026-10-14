@@ -82,12 +82,93 @@ export const resetAgentPassword = (id, password) =>
 export const deleteAgent = (id) =>
   api.delete(`/agents/${id}`).then((res) => res.data);
 
+export const updateDeclaration = (id, payload) =>
+  api.put(`/declarations/${id}`, payload).then((res) => res.data.data);
+
 // ==================== RECOUPEMENTS ====================
+export const getRecoupements = (params = {}) =>
+  api.get('/recoupements', { params }).then((res) => res.data.data);
+
+export const getRecoupementById = (id) =>
+  api.get(`/recoupements/${id}`).then((res) => res.data.data);
+
 export const createRecoupement = (payload) =>
   api.post('/recoupements', payload).then((res) => res.data.data);
 
+export const updateRecoupement = (id, payload) =>
+  api.put(`/recoupements/${id}`, payload).then((res) => res.data.data);
+
+export const deleteRecoupement = (id) =>
+  api.delete(`/recoupements/${id}`).then((res) => res.data);
+
 export const getRecoupementsByContribuable = (idContribuable) =>
   api.get(`/recoupements/${idContribuable}/analyser`).then((res) => res.data.data);
+
+export const getRecoupementSourceStats = () =>
+  api.get('/recoupements/stats/sources').then((res) => res.data.data);
+
+// ==================== RAPPROCHEMENTS ====================
+export const getRapprochements = (params = {}) =>
+  api.get('/rapprochements', { params }).then((res) => res.data.data);
+
+export const getRapprochementById = (id) =>
+  api.get(`/rapprochements/${id}`).then((res) => res.data.data);
+
+export const getRapprochementStats = () =>
+  api.get('/rapprochements/stats').then((res) => res.data.data);
+
+export const createRapprochement = (payload) =>
+  api.post('/rapprochements', payload).then((res) => res.data.data);
+
+export const confronterRapprochement = (payload) =>
+  api.post('/rapprochements/confronter', payload).then((res) => res.data.data);
+
+export const autoRapprocherContribuable = (idContribuable, params = {}) =>
+  api.post(`/rapprochements/auto/${idContribuable}`, null, { params }).then((res) => res.data.data);
+
+export const updateRapprochementStatut = (id, payload) =>
+  api.patch(`/rapprochements/${id}/statut`, payload).then((res) => res.data.data);
+
+export const updateRapprochement = (id, payload) =>
+  api.put(`/rapprochements/${id}`, payload).then((res) => res.data.data);
+
+export const deleteRapprochement = (id) =>
+  api.delete(`/rapprochements/${id}`).then((res) => res.data);
+
+// ==================== ÉTAT CONTRIBUABLE ====================
+export const getEtatsContribuable = (params = {}) =>
+  api.get('/etat-contribuable', { params }).then((res) => res.data.data);
+
+export const getHistoriqueEtatContribuable = (idContribuable) =>
+  api.get(`/contribuables/${idContribuable}/etat`).then((res) => res.data.data);
+
+export const getDernierEtatContribuable = (idContribuable) =>
+  api.get(`/etat-contribuable/contribuable/${idContribuable}/latest`).then((res) => res.data.data);
+
+export const createEtatContribuable = (idContribuable, payload) =>
+  api.post(`/contribuables/${idContribuable}/etat`, payload).then((res) => res.data.data);
+
+export const getEtatStats = () =>
+  api.get('/etat-contribuable/stats').then((res) => res.data.data);
+
+// ==================== RELANCES ====================
+export const getRelances = (params = {}) =>
+  api.get('/relances', { params }).then((res) => res.data.data);
+
+export const getRelanceById = (id) =>
+  api.get(`/relances/${id}`).then((res) => res.data.data);
+
+export const getRelancesByContribuable = (idContribuable) =>
+  api.get(`/contribuables/${idContribuable}/relances`).then((res) => res.data.data);
+
+export const createRelance = (payload) =>
+  api.post('/relances', payload).then((res) => res.data.data);
+
+export const updateRelance = (id, payload) =>
+  api.put(`/relances/${id}`, payload).then((res) => res.data.data);
+
+export const getRelanceStats = () =>
+  api.get('/relances/stats').then((res) => res.data.data);
 
 // ==================== CONTRÔLES ====================
 export const effectuerControle = (idDeclaration, payload = {}) =>

@@ -5,7 +5,11 @@ class DeclarationController {
   // Créer une déclaration avec calcul auto
   static async create(req, res) {
     try {
-      const { id_contribuable, annee, ca, benefice, tva_collectee, tva_deductible, tva_payee, regime_fiscal } = req.body;
+      const { 
+        id_contribuable, annee, ca, benefice, 
+        tva_collectee, tva_deductible, tva_payee, 
+        regime_fiscal, type_declaration, periode 
+      } = req.body;
       
       // Calculer la TVA théorique
       const tvaTheorique = FiscalService.calculerTVATheorique(ca, benefice, regime_fiscal);
@@ -18,6 +22,8 @@ class DeclarationController {
       const declaration = await DeclarationModel.create({
         id_contribuable,
         annee,
+        type_declaration,
+        periode,
         ca,
         benefice,
         tva_collectee,
@@ -53,13 +59,15 @@ class DeclarationController {
   // Liste des déclarations
   static async findAll(req, res) {
     try {
-      const { page, limit, search, statut, annee } = req.query;
+      const { page, limit, search, statut, annee, type_declaration, periode } = req.query;
       const result = await DeclarationModel.findAll({
         page: parseInt(page) || 1,
         limit: parseInt(limit) || 20,
         search: search || '',
         statut: statut || '',
-        annee: annee || ''
+        annee: annee || '',
+        type_declaration: type_declaration || '',
+        periode: periode || ''
       });
       
       res.json({
@@ -221,6 +229,32 @@ class DeclarationController {
       res.status(400).json({
         success: false,
         message: error.message || "Erreur lors de l'imputation du crédit d'impôt",
+        error: error.message,
+      });
+    }
+  }
+
+  // Mettre à jour une déclaration
+  static async update(req, res) {
+    try {
+      const { id } = req.params;
+      const updated = await DeclarationModel.update(id, req.body);
+      if (!updated) {
+        return res.status(404).json({
+          success: false,
+          message: 'Déclaration non trouvée',
+        });
+      }
+      res.json({
+        success: true,
+        data: updated,
+        message: 'Déclaration mise à jour avec succès',
+      });
+    } catch (error) {
+      console.error('Erreur mise à jour déclaration:', error);
+      res.status(500).json({
+        success: false,
+        message: 'Erreur lors de la mise à jour de la déclaration',
         error: error.message,
       });
     }

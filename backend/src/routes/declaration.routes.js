@@ -7,6 +7,7 @@ router.get('/', DeclarationController.findAll);
 router.get('/stats', DeclarationController.getStats);
 router.get('/:id', DeclarationController.findById);
 router.post('/', validate(declarationValidators), DeclarationController.create);
+router.put('/:id', DeclarationController.update);
 
 // Procédure contradictoire & Redressements (CGI LFI 2026)
 router.post('/:id/notification-primitive', DeclarationController.emettreNotificationPrimitive);

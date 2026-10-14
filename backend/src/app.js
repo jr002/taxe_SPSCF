@@ -14,6 +14,9 @@ const recoupementRoutes = require('./routes/recoupement.routes');
 const centreRoutes = require('./routes/centre.routes');
 const authRoutes = require('./routes/auth.routes');
 const agentRoutes = require('./routes/agent.routes');
+const rapprochementRoutes = require('./routes/rapprochement.routes');
+const etatContribuableRoutes = require('./routes/etat-contribuable.routes');
+const relanceRoutes = require('./routes/relance.routes');
 const { authenticate } = require('./middlewares/auth.middleware');
 
 // Middleware d'erreur
@@ -64,6 +67,9 @@ app.use('/api/controles', controleRoutes);
 app.use('/api/recoupements', recoupementRoutes);
 app.use('/api/centres', centreRoutes);
 app.use('/api/agents', agentRoutes);
+app.use('/api/rapprochements', rapprochementRoutes);
+app.use('/api/etat-contribuable', etatContribuableRoutes);
+app.use('/api/relances', relanceRoutes);
 app.get('/api-docs/swagger.json', (req, res) => {
   res.json(swaggerSpec);
 });

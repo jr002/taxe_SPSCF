@@ -25,6 +25,8 @@ Toutes les routes protégées ci-dessous sont des enfants du layout authentifié
 | `/decisionnel` | `TableauDecisionnel` | [`decisionnel/TableauDecisionnel.jsx`](decisionnel/TableauDecisionnel.jsx) |
 | `/register` | `Register` | [`centres/Register.jsx`](centres/Register.jsx) |
 | `/centres/:id` | `CentreDetail` | [`centres/CentreDetail.jsx`](centres/CentreDetail.jsx) |
+| `/centres-fiscaux` | `CentreListe` | [`centres/CentreListe.jsx`](centres/CentreListe.jsx) |
+| `/centres-fiscaux/:type/:index` | `UniteFiscaleDetail` | [`centres/UniteFiscaleDetail.jsx`](centres/UniteFiscaleDetail.jsx) |
 | `/suivi` | `SuiviFiscal` | [`suivi-fiscal/SuiviFiscal.jsx`](suivi-fiscal/SuiviFiscal.jsx) |
 | `/suivi/:id` | `DeclarationDetail` | [`suivi-fiscal/DeclarationDetail.jsx`](suivi-fiscal/DeclarationDetail.jsx) |
 | `/contribuables` | `Contribuables` | [`contribuables/Contribuables.jsx`](contribuables/Contribuables.jsx) |
@@ -73,6 +75,9 @@ Toutes les routes protégées ci-dessous sont des enfants du layout authentifié
 ### 6. 🏛️ Centres Fiscaux & Registre (`centres/`)
 * **[`Register.jsx`](centres/Register.jsx)** (`/register`) : Registre des centres fiscaux (Centre Fiscal, SRE, DGE, autre) avec recherche, filtre par type, tri et pagination de 10 lignes.
 * **[`CentreDetail.jsx`](centres/CentreDetail.jsx)** (`/centres/:id`) : Fiche d'un centre fiscal et liste de ses contribuables rattachés.
+* **[`CentreListe.jsx`](centres/CentreListe.jsx)** (`/centres-fiscaux`) : Annuaire des unités opérationnelles (DGE, SRE, Centres fiscaux) issu de `unitefiscal.json`.
+* **[`UniteFiscaleDetail.jsx`](centres/UniteFiscaleDetail.jsx)** (`/centres-fiscaux/:type/:index`) : Fiche détaillée d'une unité opérationnelle territoriale.
+* Détails dans le [`README`](centres/README.md) du domaine.
 
 ### 7. 📊 Tableau Décisionnel (`decisionnel/`)
 * **[`TableauDecisionnel.jsx`](decisionnel/TableauDecisionnel.jsx)** (`/decisionnel`) : Tableau de bord décisionnel avec KPIs clés (déclarations traitées, dossiers à risque, écart total, TVA théorique totale) et graphiques de pilotage consolidés sur 5 ans.

@@ -4,7 +4,17 @@ class ContribuableController {
   // Créer un contribuable
   static async create(req, res) {
     try {
-      const { nif, raison_sociale, secteur_activite, adresse, telephone, email, regime_fiscal, id_centre } = req.body;
+      const {
+        nif,
+        raison_sociale,
+        secteur_activite,
+        adresse,
+        telephone,
+        email,
+        regime_fiscal,
+        id_centre,
+        centre_fiscal_ref,
+      } = req.body;
       
       // Vérifier si le NIF existe déjà
       const existing = await ContribuableModel.findByNif(nif);
@@ -16,7 +26,15 @@ class ContribuableController {
       }
       
       const contribuable = await ContribuableModel.create({
-        nif, raison_sociale, secteur_activite, adresse, telephone, email, regime_fiscal, id_centre
+        nif,
+        raison_sociale,
+        secteur_activite,
+        adresse,
+        telephone,
+        email,
+        regime_fiscal,
+        id_centre,
+        centre_fiscal_ref,
       });
       
       res.status(201).json({
@@ -40,11 +58,12 @@ class ContribuableController {
   // Liste des contribuables
   static async findAll(req, res) {
     try {
-      const { page, limit, search } = req.query;
+      const { page, limit, search, centre_fiscal_ref } = req.query;
       const result = await ContribuableModel.findAll({
         page: parseInt(page) || 1,
         limit: parseInt(limit) || 20,
-        search: search || ''
+        search: search || '',
+        centre_fiscal_ref,
       });
       
       res.json({

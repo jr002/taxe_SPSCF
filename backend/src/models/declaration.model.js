@@ -6,13 +6,24 @@ class DeclarationModel {
     const { 
       id_contribuable, annee, ca, benefice, 
       tva_collectee, tva_deductible, tva_payee,
-      tva_theorique, statut 
+      tva_theorique, statut,
+      type_declaration = 'TVA',
+      periode
     } = data;
+
+    let parsedAnnee = parseInt(annee, 10);
+    if (isNaN(parsedAnnee) && periode) {
+      const yearFromPeriode = parseInt(periode.substring(0, 4), 10);
+      if (!isNaN(yearFromPeriode)) parsedAnnee = yearFromPeriode;
+    }
+    if (isNaN(parsedAnnee)) parsedAnnee = new Date().getFullYear();
     
     return await prisma.declarations.create({
       data: {
         id_contribuable: id_contribuable ? parseInt(id_contribuable, 10) : null,
-        annee: parseInt(annee, 10),
+        annee: parsedAnnee,
+        type_declaration: type_declaration || 'TVA',
+        periode: periode || null,
         ca: ca !== undefined ? ca : 0,
         benefice: benefice !== undefined ? benefice : 0,
         tva_collectee: tva_collectee !== undefined ? tva_collectee : 0,
@@ -40,6 +51,7 @@ class DeclarationModel {
             secteur_activite: true,
           },
         },
+        rapprochements: true,
       },
     });
 
@@ -61,12 +73,12 @@ class DeclarationModel {
 
     return await prisma.declarations.findMany({
       where: { id_contribuable: numericId },
-      orderBy: { annee: 'desc' },
+      orderBy: [{ annee: 'desc' }, { date_creation: 'desc' }],
     });
   }
 
   // Liste avec filtres et pagination
-  static async findAll({ page = 1, limit = 20, search = '', statut = '', annee = '' } = {}) {
+  static async findAll({ page = 1, limit = 20, search = '', statut = '', annee = '', type_declaration = '', periode = '' } = {}) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 20);
     const offset = (pageNum - 1) * limitNum;
@@ -77,6 +89,12 @@ class DeclarationModel {
     }
     if (annee) {
       where.annee = parseInt(annee, 10);
+    }
+    if (type_declaration) {
+      where.type_declaration = type_declaration;
+    }
+    if (periode) {
+      where.periode = periode;
     }
     if (search) {
       where.contribuables = {
@@ -132,7 +150,9 @@ class DeclarationModel {
     const numericId = parseInt(id, 10);
     if (isNaN(numericId)) return null;
 
+    const updateData = {};
     const allowedFields = [
+      'annee', 'type_declaration', 'periode',
       'ca', 'benefice', 'tva_collectee', 'tva_deductible', 'tva_payee', 'tva_theorique', 'statut',
       'date_notification_primitive', 'date_limite_reponse', 'prorogation_jours',
       'date_notification_definitive', 'montant_redressement', 'credit_impot',
@@ -140,7 +160,11 @@ class DeclarationModel {
     ];
     for (const field of allowedFields) {
       if (data[field] !== undefined) {
-        updateData[field] = data[field];
+        if (field === 'annee' || field === 'prorogation_jours') {
+          updateData[field] = data[field] !== null ? parseInt(data[field], 10) : null;
+        } else {
+          updateData[field] = data[field];
+        }
       }
     }
     updateData.date_modification = new Date();

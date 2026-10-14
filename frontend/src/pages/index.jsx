@@ -29,6 +29,8 @@ export { default as DeclarationDetail } from './suivi-fiscal/DeclarationDetail';
 // Registre & Centres fiscaux
 export { default as Register } from './centres/Register';
 export { default as CentreDetail } from './centres/CentreDetail';
+export { default as CentreListe } from './centres/CentreListe';
+export { default as UniteFiscaleDetail } from './centres/UniteFiscaleDetail';
 
 // Tableau de bord décisionnel & KPIs
 export { default as TableauDecisionnel } from './decisionnel/TableauDecisionnel';

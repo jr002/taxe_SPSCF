@@ -8,8 +8,8 @@ Composants transversaux de l'interface : la navigation principale et le document
 
 Export par défaut `Header`. En-tête rendu par `App.jsx` pour toutes les routes protégées.
 
-* Liens statiques déclarés dans `NAVIGATION_LINKS` : `/acceuil` (Accueil), `/collecte` (Collecte TVA), `/decisionnel` (Tableau décisionnel), `/suivi` (Suivi fiscal), `/contribuables` (Contribuables), `/relance` (Relance fiscale).
-* État actif calculé avec `useLocation()` : correspondance exacte sur `pathname`, sauf `/contribuables` et `/relance` qui restent actifs sur tout sous-chemin (`startsWith`).
+* Liens statiques déclarés dans `NAVIGATION_LINKS` : `/acceuil` (Accueil), `/collecte` (Collecte TVA), `/decisionnel` (Tableau décisionnel), `/suivi` (Suivi fiscal), `/contribuables` (Contribuables), `/centres-fiscaux` (Centres avec `<datalist>` de recherche rapide vers `CentreListe` et chaque unité opérationnelle), `/relance` (Relance fiscale).
+* État actif calculé avec `useLocation()` : correspondance exacte sur `pathname`, sauf `/contribuables`, `/centres-fiscaux` et `/relance` qui restent actifs sur tout sous-chemin (`startsWith`).
 * Logo `logodgi.jpg` importé depuis [`../../assets/logodgi.jpg`](../../assets/logodgi.jpg).
 * Onglets de sous-modules affichés uniquement lorsque `pathname === '/collecte'` et que `modules.length > 0` ; chaque onglet appelle `onSelectModule?.(module.id)`.
 * Bouton de bascule du thème (`onToggleTheme`) avec libellé accessible selon `isDarkMode`, et bouton « Déconnexion » (`onLogout`).
