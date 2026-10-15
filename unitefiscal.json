@@ -5,14 +5,22 @@
   "source_sre": "https://orinasa.edbm.mg/Articles_10/",
   "note": "14 DRI couvrant les 23 régions. Les SRE gèrent principalement les entreprises de taille intermédiaire ; null = information non vérifiée publiquement. Fichier restructuré en trois unités opérationnelles : DGE, SRE, Centre Fiscal.",
   "unites_operationnelles": {
-    "dge": [
-      {
-        "type": "DGE",
-        "nom": "Direction des Grandes Entreprises (DGE)",
-        "region": "Analamanga",
-        "adresse": "Rue Razafindratantadra, Amparibe, Antananarivo"
+    "direction_des_grandes_entreprises": {
+      "sigle": "DGE",
+      "nom_complet": "Direction des Grandes Entreprises",
+      "rattachement": "Direction Générale des Impôts (DGI)",
+      "role": "Gestion fiscale des grandes entreprises",
+      "critere_rattachement": "CAAHT >= 4000000000 Ariary",
+      "portail": "https://entreprises.impots.mg",
+      "teledeclaration": "https://e-hetra.impots.mg",
+      "support_email": "ehetra@impots.mg",
+      "support_telephone": ["032 01 504", "032 12 012 21"],
+      "dgi_contact": {
+        "adresse": "Immeuble MFB, Antaninarenina, Antananarivo 101",
+        "telephone": "020 85 287 08",
+        "email": "dgimpots@moov.mg"
       }
-    ],
+    },
     "sre": [
       {
         "type": "SRE",

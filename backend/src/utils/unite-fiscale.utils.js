@@ -1,5 +1,19 @@
 const fiscalData = require('../../../unitefiscal.json');
 
+const dgeData = fiscalData.unites_operationnelles?.direction_des_grandes_entreprises;
+const legacyDgeName = dgeData
+  ? `${dgeData.nom_complet} (${dgeData.sigle})`
+  : '';
+
+const getOperationalUnits = (type) => {
+  if (type === 'dge') {
+    return dgeData ? [{ ...dgeData, nom: legacyDgeName }, { ...dgeData, nom: dgeData.nom_complet }] : [];
+  }
+
+  const units = fiscalData.unites_operationnelles?.[type];
+  return Array.isArray(units) ? units : [];
+};
+
 const isValidCentreFiscalRef = (reference) => {
   if (typeof reference !== 'string') return false;
 
@@ -8,9 +22,9 @@ const isValidCentreFiscalRef = (reference) => {
 
   const type = reference.slice(0, separatorIndex);
   const nom = reference.slice(separatorIndex + 1);
-  const unites = fiscalData.unites_operationnelles?.[type];
+  const unites = getOperationalUnits(type);
 
-  return Array.isArray(unites) && unites.some((unite) => unite.nom === nom);
+  return unites.some((unite) => unite.nom === nom);
 };
 
 module.exports = { isValidCentreFiscalRef };

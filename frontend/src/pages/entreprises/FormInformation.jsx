@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createContribuable, getErrorMessage } from '../../api/api';
-import uniteFiscale from '../../../../unitefiscal.json';
+import { getOperationalUnits } from '../../utils/uniteFiscale.utils';
 
 const CENTRES_BY_STRUCTURE = {
-  centre_fiscal: uniteFiscale.unites_operationnelles.centres_fiscaux,
-  sre: uniteFiscale.unites_operationnelles.sre,
-  dge: uniteFiscale.unites_operationnelles.dge,
+  centre_fiscal: getOperationalUnits('centres_fiscaux'),
+  sre: getOperationalUnits('sre'),
+  dge: getOperationalUnits('dge'),
 };
 
 const normalizeCentreText = (value) => value

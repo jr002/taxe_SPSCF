@@ -445,7 +445,7 @@ export default function ContribuableDetail() {
 
   return (
     <>
-      <section className="page declaration-page">
+      <section className="page declaration-page contribuable-detail-page">
         <ContribuableHeader
           activeTab={activeTab}
           contribuable={contribuable}

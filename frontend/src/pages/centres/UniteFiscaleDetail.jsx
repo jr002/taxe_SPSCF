@@ -1,7 +1,7 @@
   import { useEffect, useMemo, useState } from 'react';
   import { Link, useNavigate, useParams } from 'react-router-dom';
   import { getContribuables, getErrorMessage } from '../../api/api';
-  import fiscalData from '../../../../unitefiscal.json';
+  import { getOperationalUnits } from '../../utils/uniteFiscale.utils';
 
 const TYPE_LABELS = {
   dge: 'Direction des Grandes Entreprises',
@@ -21,7 +21,7 @@ export default function UniteFiscaleDetail() {
   const { type, index } = useParams();
   const navigate = useNavigate();
   const numericIndex = Number(index);
-  const unites = fiscalData.unites_operationnelles[type];
+  const unites = getOperationalUnits(type);
   const unite = Number.isInteger(numericIndex) && numericIndex >= 0
     ? unites?.[numericIndex]
     : null;
@@ -128,10 +128,26 @@ export default function UniteFiscaleDetail() {
         </div>
         <dl className="unite-fiscale-details">
           <div><dt>Région(s) couverte(s)</dt><dd>{regions}</dd></div>
-          {unite.dri && <div><dt>DRI de rattachement</dt><dd>{unite.dri}</dd></div>}
+          {(unite.dri || unite.rattachement) && (
+            <div>
+              <dt>{unite.dri ? 'DRI de rattachement' : 'Rattachement'}</dt>
+              <dd>{unite.dri || unite.rattachement}</dd>
+            </div>
+          )}
           <div><dt>Adresse</dt><dd>{unite.adresse || 'Non renseignée'}</dd></div>
           <div><dt>Téléphone</dt><dd>{formatTelephone(unite.telephone)}</dd></div>
           <div><dt>E-mail</dt><dd>{unite.email || 'Non renseigné'}</dd></div>
+          {type === 'dge' && (
+            <>
+              <div><dt>Rôle</dt><dd>{unite.role}</dd></div>
+              <div><dt>Critère de rattachement</dt><dd>{unite.critere_rattachement}</dd></div>
+              <div><dt>Portail</dt><dd><a href={unite.portail} target="_blank" rel="noreferrer">{unite.portail}</a></dd></div>
+              <div><dt>Télédéclaration</dt><dd><a href={unite.teledeclaration} target="_blank" rel="noreferrer">{unite.teledeclaration}</a></dd></div>
+              <div><dt>Contact DGI</dt><dd>{unite.dgi_contact.adresse}</dd></div>
+              <div><dt>Téléphone DGI</dt><dd>{unite.dgi_contact.telephone}</dd></div>
+              <div><dt>E-mail DGI</dt><dd><a href={`mailto:${unite.dgi_contact.email}`}>{unite.dgi_contact.email}</a></dd></div>
+            </>
+          )}
         </dl>
       </div>
 

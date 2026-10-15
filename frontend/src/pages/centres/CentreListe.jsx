@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import fiscalData from '../../../../unitefiscal.json';
+import { getAllOperationalUnits } from '../../utils/uniteFiscale.utils';
 
 const PAGE_SIZE = 10;
 const TYPE_LABELS = {
@@ -27,7 +28,7 @@ const getSortableValue = (centre, field) => {
   if (field === 'telephone') return getTelephone(centre.item.telephone);
   if (field === 'email') return centre.item.email || '';
   if (field === 'adresse') return centre.item.adresse || '';
-  if (field === 'dri') return centre.item.dri || '';
+  if (field === 'dri') return centre.item.dri || centre.item.rattachement || '';
   if (field === 'type') return centre.item.type || TYPE_LABELS[centre.type];
   return centre.item.nom || '';
 };
@@ -39,11 +40,7 @@ export default function CentreListe() {
   const [sort, setSort] = useState({ field: 'nom', direction: 'asc' });
   const [page, setPage] = useState(1);
 
-  const centres = useMemo(() => (
-    Object.entries(fiscalData.unites_operationnelles || {}).flatMap(([type, items]) =>
-      (items || []).map((item, index) => ({ item, type, index }))
-    )
-  ), []);
+  const centres = useMemo(() => getAllOperationalUnits(), []);
 
   const filteredCentres = useMemo(() => {
     const normalizedSearch = normalizeText(search.trim());
@@ -54,6 +51,7 @@ export default function CentreListe() {
           item.nom,
           item.type || TYPE_LABELS[type],
           item.dri,
+          item.rattachement,
           item.region,
           ...(item.regions_couvertes || []),
           item.adresse,
@@ -103,7 +101,7 @@ export default function CentreListe() {
     ['nom', 'Nom du centre'],
     ['type', 'Type'],
     ['regions', 'Région(s)'],
-    ['dri', 'DRI'],
+    ['dri', 'DRI / rattachement'],
     ['adresse', 'Adresse'],
     ['telephone', 'Téléphone'],
     ['email', 'E-mail'],
@@ -172,7 +170,7 @@ export default function CentreListe() {
                 <td><strong>{centre.item.nom}</strong></td>
                 <td>{centre.item.type || TYPE_LABELS[centre.type]}</td>
                 <td>{getRegions(centre.item)}</td>
-                <td>{centre.item.dri || '—'}</td>
+                <td>{centre.item.dri || centre.item.rattachement || '—'}</td>
                 <td>{centre.item.adresse || '—'}</td>
                 <td>{getTelephone(centre.item.telephone)}</td>
                 <td>{centre.item.email || '—'}</td>
