@@ -43,7 +43,7 @@ export default function Signin({ onAuthenticated }) {
             <section className="login-brand-panel" aria-label="Direction Générale des Impôts">
                 <img src={logoDgi} alt="Logo de la Direction Générale des Impôts" />
                 <p className="login-kicker">République de Madagascar · DGI</p>
-                <h1>TAXE<span>•</span>SSIF</h1>
+                <h1>Hetra<span>•</span>SSIF</h1>
                 <h1 className="login-brand-caption">S <span>•</span> P <span>•</span> S <span>•</span> C <span>•</span> F</h1>
                 <div className="login-panel-rule" />
                 <p className="login-brand-note">Acces à la plateforme du systeme de pilotage et du suivi de la conformite fiscale.</p>

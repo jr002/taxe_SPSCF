@@ -1,7 +1,13 @@
 const bcrypt = require('bcryptjs');
 const { AgentModel, AGENT_STATUTS, AGENT_ROLES } = require('../models/agent.model');
+const HistoriqueUtilisateurModel = require('../models/historique-utilisateur.model');
 
 const isSelf = (req, id) => String(req.user?.id ?? '') === String(id);
+
+const getAuteur = (req) => ({
+  id: req.user?.id || null,
+  nom: [req.user?.prenom, req.user?.nom].filter(Boolean).join(' ') || req.user?.email || 'Administrateur',
+});
 
 class AgentController {
   // Liste des comptes agents (filtres facultatifs : search, statut, role)
@@ -57,6 +63,24 @@ class AgentController {
 
       const updated = await AgentModel.updateStatut(id, statut);
 
+      const auteur = getAuteur(req);
+      const typeAction = statut === 'actif' ? 'ACTIVATION' : 'BLOCAGE';
+      const description = statut === 'actif'
+        ? `Activation du compte (${agent.email})`
+        : `Désactivation / blocage du compte (${agent.email})`;
+
+      await HistoriqueUtilisateurModel.enregistrerAction({
+        id_agent_auteur: auteur.id,
+        nom_auteur: auteur.nom,
+        id_agent_cible: agent.id_agent,
+        cible_nom: `${agent.prenom} ${agent.nom}`.trim(),
+        cible_email: agent.email,
+        type_action: typeAction,
+        description,
+        anciennes_valeurs: { statut: agent.statut },
+        nouvelles_valeurs: { statut },
+      });
+
       return res.json({
         success: true,
         data: updated,
@@ -111,6 +135,19 @@ class AgentController {
 
       const updated = await AgentModel.updateRole(id, role);
 
+      const auteur = getAuteur(req);
+      await HistoriqueUtilisateurModel.enregistrerAction({
+        id_agent_auteur: auteur.id,
+        nom_auteur: auteur.nom,
+        id_agent_cible: agent.id_agent,
+        cible_nom: `${agent.prenom} ${agent.nom}`.trim(),
+        cible_email: agent.email,
+        type_action: 'ROLE_CHANGE',
+        description: `Modification du rôle de ${agent.email} : ${agent.role} ➔ ${role}`,
+        anciennes_valeurs: { role: agent.role },
+        nouvelles_valeurs: { role },
+      });
+
       return res.json({
         success: true,
         data: updated,
@@ -145,6 +182,17 @@ class AgentController {
 
       const hashedPassword = await bcrypt.hash(password, 12);
       const updated = await AgentModel.updatePassword(id, hashedPassword);
+
+      const auteur = getAuteur(req);
+      await HistoriqueUtilisateurModel.enregistrerAction({
+        id_agent_auteur: auteur.id,
+        nom_auteur: auteur.nom,
+        id_agent_cible: agent.id_agent,
+        cible_nom: `${agent.prenom} ${agent.nom}`.trim(),
+        cible_email: agent.email,
+        type_action: 'MDP_RESET',
+        description: `Réinitialisation administrative du mot de passe pour ${agent.email}`,
+      });
 
       return res.json({
         success: true,
@@ -189,6 +237,23 @@ class AgentController {
 
       const deleted = await AgentModel.delete(id);
 
+      const auteur = getAuteur(req);
+      await HistoriqueUtilisateurModel.enregistrerAction({
+        id_agent_auteur: auteur.id,
+        nom_auteur: auteur.nom,
+        id_agent_cible: agent.id_agent,
+        cible_nom: `${agent.prenom} ${agent.nom}`.trim(),
+        cible_email: agent.email,
+        type_action: 'SUPPRESSION',
+        description: `Suppression définitive du compte de ${agent.email}`,
+        anciennes_valeurs: {
+          id: agent.id_agent,
+          email: agent.email,
+          role: agent.role,
+          statut: agent.statut,
+        },
+      });
+
       return res.json({
         success: true,
         data: deleted,
@@ -199,6 +264,21 @@ class AgentController {
       return res.status(500).json({
         success: false,
         message: "Erreur lors de la suppression de l'utilisateur",
+      });
+    }
+  }
+
+  // Journal d'historique et d'audit des actions sur les utilisateurs
+  static async getHistorique(req, res) {
+    try {
+      const { search, type_action, limit } = req.query;
+      const data = await HistoriqueUtilisateurModel.findAll({ search, type_action, limit });
+      return res.json({ success: true, data });
+    } catch (error) {
+      console.error('Erreur getHistorique:', error);
+      return res.status(500).json({
+        success: false,
+        message: 'Erreur lors de la récupération du journal d’historique',
       });
     }
   }

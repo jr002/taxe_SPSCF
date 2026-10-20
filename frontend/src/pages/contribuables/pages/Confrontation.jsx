@@ -26,7 +26,14 @@ export default function Confrontation() {
   const [detailId, setDetailId] = useState(null); const [detail, setDetail] = useState(null); const [detailLoading, setDetailLoading] = useState(false); const [detailError, setDetailError] = useState('');
   const [modal, setModal] = useState(null); const [motif, setMotif] = useState(''); const [actionLoading, setActionLoading] = useState(false); const [actionSuccess, setActionSuccess] = useState(''); const [actionError, setActionError] = useState('');
 
-  useEffect(() => { if (contribuable) return; getContribuableById(id).then(setContribuable).catch((error) => setContribuableError(getErrorMessage(error))).finally(() => setContribuableLoading(false)); }, [contribuable, id]);
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (contribuable) return;
+    getContribuableById(id)
+      .then(setContribuable)
+      .catch((error) => setContribuableError(getErrorMessage(error)))
+      .finally(() => setContribuableLoading(false));
+  }, [contribuable, id]);
 
   const loadList = useCallback(async () => { setListLoading(true); setListError(''); try { const response = await getRapprochements({ id_contribuable: id, page, limit: 15, ...(filters.statut && { statut: filters.statut }), ...(filters.type && { type_rapprochement: filters.type }) }); const items = response?.rapprochements || response?.data || response || []; const pagination = response?.pagination || {}; setRows(Array.isArray(items) ? items : []); setTotal(pagination.total ?? response?.total ?? items.length); setTotalPages(pagination.pages ?? response?.totalPages ?? 1); } catch (error) { setListError(getErrorMessage(error)); } finally { setListLoading(false); } }, [filters.statut, filters.type, id, page]);
   useEffect(() => { if (tab === 'liste') loadList(); }, [loadList, tab]);
@@ -34,6 +41,7 @@ export default function Confrontation() {
   const loadStats = useCallback(async () => { setStatsLoading(true); setStatsError(''); try { const response = await getRapprochements({ id_contribuable: id, page: 1, limit: 1000 }); const items = response?.rapprochements || response?.data || response || []; setStats(buildStats((Array.isArray(items) ? items : []).filter((row) => !statsPeriod || periodOf(row).startsWith(statsPeriod)))); } catch (error) { setStatsError(getErrorMessage(error)); } finally { setStatsLoading(false); } }, [id, statsPeriod]);
   useEffect(() => { if (tab === 'tableau-bord' || tab === 'statistiques') loadStats(); }, [loadStats, tab]);
   useEffect(() => { if (!detailId) return; setDetailLoading(true); setDetailError(''); getRapprochementById(detailId).then(setDetail).catch((error) => setDetailError(getErrorMessage(error))).finally(() => setDetailLoading(false)); }, [detailId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const launchConfrontation = async () => { setLaunch({ loading: true, result: null, error: '' }); try { const result = await autoRapprocherContribuable(id, { periode }); setLaunch({ loading: false, result, error: '' }); } catch (error) { setLaunch({ loading: false, result: null, error: getErrorMessage(error) }); } };
   const openDetail = (row) => { setDetailId(row.id_rapprochement); setDetail(null); setTab('detail'); };

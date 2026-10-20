@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DossierFiscalNavigation from '../../components/common/DossierFiscalNavigation';
 import { getDeclarations, getContribuables, getErrorMessage } from '../../api/api';
 import { toNumber } from '../../utils/formatters.jsx';
 import RelanceKPICards from './components/RelanceKPICards';
@@ -231,6 +232,8 @@ export default function RelanceFiscale() {
         </p>
       </div>
 
+      <DossierFiscalNavigation />
+
       {/* KPI Cards */}
       <RelanceKPICards stats={stats} />
 
@@ -458,7 +461,7 @@ function NonEnRegleList({ rows, onVoirDossier }) {
 }
 
 // ─── Sous-composant : historique ─────────────────────────────────────────
-function HistoriqueList({ rows, onVoirDossier }) {
+function HistoriqueList({ rows }) {
   const fmt = (v) =>
     new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(Number(v) || 0);
 

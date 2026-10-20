@@ -55,7 +55,7 @@ button, input, textarea { font: inherit; }
 .login-success { margin: 1rem 0 0; color: #237a43; font-size: .82rem; line-height: 1.5; }
 .auth-link { display: block; margin-top: 1rem; color: #1769aa; font-size: .85rem; font-weight: 700; text-align: center; }
 .login-security-note { margin: 1.5rem 0 0; color: #657083; font-size: .75rem; text-align: center; }
-.logout-button { border: 1px solid #f0c2bc; border-radius: 10px; padding: 0.6rem 1.05rem; color: #b42318; background: #fff5f3; font-size: 0.92rem; font-weight: 700; letter-spacing: 0.01em; cursor: pointer; transition: color 180ms ease, background 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
+.logout-button { border: 1px solid #f0c2bc; border-radius: 8px; padding: 0.45rem 0.75rem; color: #b42318; background: #fff5f3; font-size: 0.82rem; font-weight: 700; letter-spacing: 0.01em; cursor: pointer; transition: color 180ms ease, background 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
 .logout-button:hover { color: #fff; background: #b42318; border-color: #b42318; transform: translateY(-1px); box-shadow: 0 6px 14px rgba(180, 35, 24, 0.24); }
 .logout-button:active { transform: translateY(0); box-shadow: none; }
 
@@ -82,6 +82,10 @@ button, input, textarea { font: inherit; }
 .module-tabs { display: flex; gap: 0.25rem; padding: 0.25rem; border-radius: 12px; background: #f1f4f8; }
 .module-tabs button { padding: 0.45rem 0.75rem; font-size: 0.88rem; }
 .module-tabs button.active { background: #fff; box-shadow: 0 1px 4px rgba(24, 45, 72, 0.12); }
+.domain-page-switch { display: flex; flex-wrap: wrap; gap: 0.25rem; width: fit-content; margin: 0 0 1.25rem; padding: 0.25rem; border: 1px solid #dfe5ed; border-radius: 10px; background: #f4f7fb; }
+.domain-page-switch a { padding: 0.55rem 0.9rem; border-radius: 7px; color: #5a6577; font-size: 0.88rem; font-weight: 700; text-decoration: none; transition: color 160ms ease, background 160ms ease; }
+.domain-page-switch a:hover { color: #12558c; background: #eaf3fb; }
+.domain-page-switch a.active { color: #fff; background: #1769aa; }
 
 .workspace { width: min(100%, 980px); margin: 0 auto; padding: 0.5rem 0 2rem; }
 .form-card, .page, .workspace > section { border: 1px solid #dfe5ed; border-radius: 14px; background: #fff; box-shadow: 0 12px 30px rgba(24, 45, 72, 0.07); }
@@ -192,6 +196,10 @@ button, input, textarea { font: inherit; }
 .dark-theme .topbar nav > a.active, .dark-theme .module-tabs button.active { color: #bae6fd; background: #26445f; box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.28); }
 .dark-theme .module-tabs { background: #111827; }
 .dark-theme .module-tabs button.active { background: #273449; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
+.dark-theme .domain-page-switch { border-color: #2d3a4d; background: #111827; }
+.dark-theme .domain-page-switch a { color: #9caabd; }
+.dark-theme .domain-page-switch a:hover { color: #bae6fd; background: #203b55; }
+.dark-theme .domain-page-switch a.active { color: #0f172a; background: #7dd3fc; }
 
 .dark-theme .form-card, .dark-theme .page, .dark-theme .workspace > section, .dark-theme .panel { border-color: #2d3a4d; background: #182231; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18); }
 .dark-theme .section-heading { border-color: #2d3a4d; }
@@ -265,10 +273,10 @@ body:has(.dark-theme) { background: #111827; }
 
 @media (max-width: 1024px) {
   .app-main { padding: 1rem; }
-  .topbar { padding-inline: 1rem; gap: 1rem; }
-  /* Entre 761 px et 1024 px : textes de navigation légèrement réduits pour
-     éviter que la barre passe sur deux lignes avec les tailles agrandies. */
-  .topbar nav { gap: 0.3rem; }
+  .topbar { flex-wrap: wrap; padding-inline: 1rem; gap: 0.5rem 1rem; }
+  /* Sur tablette, la navigation occupe sa propre ligne et revient à la ligne. */
+  .topbar nav { flex: 1 0 100%; justify-content: flex-start; flex-wrap: wrap; overflow: visible; gap: 0.3rem; }
+  .topbar nav > :first-child { margin-left: 0; }
   .topbar nav > a, .module-tabs button { padding: 0.5rem 0.7rem; font-size: 0.88rem; }
   .brand strong { font-size: 1.1rem; }
   .classification-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }

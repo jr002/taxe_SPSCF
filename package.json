@@ -1,9 +1,11 @@
 {
+  "name": "ssif",
+  "private": true,
+  "packageManager": "pnpm@11.20.0",
   "scripts": {
-    "dev": "concurrently \"npm run dev --prefix frontend\" \"npm run dev --prefix backend\"",
-    "build": "npm run build --prefix frontend"
-  },
-  "devDependencies": {
-    "concurrently": "^9.2.1"
+    "setup:project": "pnpm install --frozen-lockfile && pnpm run prisma:deploy",
+    "prisma:deploy": "pnpm --filter backend run prisma:deploy",
+    "dev": "pnpm --parallel --filter backend --filter frontend run dev",
+    "build": "pnpm --filter frontend run build"
   }
 }

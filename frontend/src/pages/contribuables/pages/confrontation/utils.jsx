@@ -1,4 +1,4 @@
-import React from 'react';
+/* eslint-disable react-refresh/only-export-components */
 
 export const formatAriary = (value) => {
   if (value === null || value === undefined || value === '') return '—';

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import DossierFiscalNavigation from '../../components/common/DossierFiscalNavigation';
 import { getDeclarations, getErrorMessage } from '../../api/api';
 import { formatAriary, toNumber } from '../../utils/formatters';
 
@@ -140,6 +141,8 @@ export default function SuiviFiscal() {
         <h1>Suivi fiscal</h1>
         <p>Historique consolidé des déclarations, filtrable par NIF ou raison sociale.</p>
       </div>
+
+      <DossierFiscalNavigation />
 
       <div className="datatable-toolbar">
         <input

@@ -205,3 +205,21 @@ model rapprochements {
   @@index([id_recoupement], map: "idx_rapprochements_recoupement")
   @@index([statut], map: "idx_rapprochements_statut")
 }
+
+model historique_utilisateurs {
+  id_historique     Int       @id @default(autoincrement())
+  id_agent_auteur   Int?
+  nom_auteur        String?   @db.VarChar(255)
+  id_agent_cible    Int?
+  cible_nom         String?   @db.VarChar(255)
+  cible_email       String?   @db.VarChar(255)
+  type_action       String    @db.VarChar(50)
+  description       String
+  anciennes_valeurs Json?
+  nouvelles_valeurs Json?
+  date_action       DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([id_agent_cible], map: "idx_historique_cible")
+  @@index([type_action], map: "idx_historique_action")
+  @@index([date_action], map: "idx_historique_date")
+}

@@ -5,10 +5,9 @@ const NAVIGATION_LINKS = [
   { to: '/acceuil', label: 'Accueil' },
   { to: '/collecte', label: 'Collecte TVA' },
   { to: '/decisionnel', label: 'Tableau décisionnel' },
-  { to: '/suivi', label: 'Suivi fiscal' },
+  { to: '/suivi', label: 'Dossier fiscal' },
   { to: '/contribuables', label: 'Contribuables' },
   { to: '/centres-fiscaux', label: 'Centres' },
-  { to: '/relance', label: 'Relance fiscale' },
 ];
 
 /**
@@ -38,14 +37,17 @@ export default function Header({
   const homePath = isAdmin ? ADMIN_LINKS[0].to : '/acceuil';
 
   const isLinkActive = (link) => {
+    if (link.to === '/suivi') {
+      return pathname.startsWith('/suivi') || pathname.startsWith('/relance');
+    }
+    if (link.to === '/collecte') {
+      return pathname.startsWith('/collecte');
+    }
     if (link.to === '/contribuables') {
       return pathname.startsWith('/contribuables');
     }
     if (link.to === '/centres-fiscaux') {
       return pathname.startsWith('/centres-fiscaux');
-    }
-    if (link.to === '/relance') {
-      return pathname.startsWith('/relance');
     }
     return pathname === link.to;
   };

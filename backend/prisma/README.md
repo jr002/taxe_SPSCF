@@ -64,33 +64,33 @@ contrainte `declarations_id_entreprise_fkey`.
 Depuis `backend/` :
 
 ```bash
-npm install
-npm run prisma:generate
+pnpm --filter backend exec prisma generate
 ```
 
-Relancez `npm run prisma:generate` après chaque modification de
+Relancez `pnpm --filter backend run prisma:generate` après chaque modification de
 [`schema.prisma`](schema.prisma), avant de démarrer l'API.
 
 ## Migrations Prisma
 
-Le dossier [`migrations/`](migrations/) contient deux migrations versionnées :
+Le dossier [`migrations/`](migrations/) contient les migrations versionnées :
 
 | Migration | Contenu |
 | --- | --- |
 | [`0_init/migration.sql`](migrations/0_init/migration.sql) | migration initiale (baseline) correspondant aux modèles `agents`, `controles`, `declarations`, `recoupements`, `contribuables` et `centres` |
 | [`20260922120000_add_relances/migration.sql`](migrations/20260922120000_add_relances/migration.sql) | création de la table `relances`, de ses clés étrangères et de ses index |
+| [`20261013110000_add_json_fiscal_centre_ref/migration.sql`](migrations/20261013110000_add_json_fiscal_centre_ref/migration.sql) | ajout du rattachement fiscal textuel `centre_fiscal_ref` |
 
 - **Si la base PostgreSQL est déjà existante et à jour**, marquez la migration
   initiale comme déjà appliquée sans réexécuter le SQL :
   ```bash
-  npx prisma migrate resolve --applied 0_init
+  pnpm --filter backend exec prisma migrate resolve --applied 0_init
   ```
 
 - **Si vous partez d'une base vide**, appliquez les migrations directement :
   ```bash
-  npx prisma migrate deploy
+  pnpm --filter backend exec prisma migrate deploy
   # ou pour le développement
-  npx prisma migrate dev
+  pnpm --filter backend exec prisma migrate dev
   ```
 
 Des scripts SQL historiques ponctuels sont également conservés dans

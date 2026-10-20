@@ -5,18 +5,17 @@ utilise Node.js, Express, PostgreSQL et Prisma.
 
 ## 1. Prérequis
 
-- Node.js 18 ou une version plus récente ;
-- npm ;
+- Node.js 20.19 ou une version plus récente ;
+- pnpm 11 (depuis la racine du workspace) ;
 - PostgreSQL 14 ou une version plus récente ;
 - une base de données PostgreSQL créée pour le projet.
 
 ## 2. Installation
 
-Depuis ce dossier :
+Depuis la racine du projet, après avoir configuré `backend/.env` :
 
 ```bash
-npm install
-npm run prisma:generate
+pnpm run setup:project
 ```
 
 Le fichier `.env` doit se trouver directement dans `backend/`. Il contient les
@@ -74,17 +73,17 @@ Ces scripts ne sont pas gérés par Prisma. Les instructions y utilisent
 le renommage de colonnes échoue au second passage. Sauvegardez la base et
 vérifiez chaque script avant de l'appliquer. Les migrations de référence du
 schéma se trouvent dans [`prisma/migrations/`](prisma/migrations/) et
-s'appliquent avec `npm run prisma:deploy` (voir
+s'appliquent avec `pnpm --filter backend run prisma:deploy` (voir
 [`prisma/README.md`](prisma/README.md)).
 
 ## 3. Démarrer le serveur
 
 ```bash
 # Développement : redémarre automatiquement après une modification
-npm run dev
+pnpm --filter backend run dev
 
 # Démarrage normal
-npm start
+pnpm --filter backend start
 ```
 
 Par défaut, l'API écoute sur `http://localhost:5000`.
@@ -99,7 +98,7 @@ $env:AGENT_EMAIL = "agent@example.com"
 $env:AGENT_PASSWORD = "un-mot-de-passe-de-12-caracteres-minimum"
 $env:AGENT_FIRST_NAME = "Prenom"
 $env:AGENT_LAST_NAME = "Nom"
-npm run agent:create
+pnpm --filter backend run agent:create
 ```
 
 Le script [`scripts/create-agent.js`](scripts/create-agent.js) refuse un mot de
@@ -264,7 +263,7 @@ Les relations et contraintes sont détaillées dans
 régénérer le client :
 
 ```bash
-npm run prisma:generate
+pnpm --filter backend run prisma:generate
 ```
 
 ## 7. Sécurité et dépannage
@@ -290,19 +289,19 @@ npm run prisma:generate
   pièces jointes sont ajoutées).
 - Les dépendances `multer`, `pdfkit`, `xlsx` et `pg-pool` sont déclarées dans
   `package.json` mais ne sont utilisées par aucun fichier du backend.
-- `npm test` est encore un script placeholder : aucun test automatisé n'est
+- `pnpm --filter backend run test` est encore un script placeholder : aucun test automatisé n'est
   actuellement configuré dans le backend.
 
-## Scripts npm
+## Scripts pnpm
 
 | Commande | Utilité |
 | --- | --- |
-| `npm install` | installe les dépendances |
-| `npm run prisma:generate` | génère le client Prisma |
-| `npm run prisma:migrate` | crée/applique une migration en développement |
-| `npm run prisma:deploy` | applique les migrations existantes |
-| `npm run prisma:studio` | ouvre Prisma Studio |
-| `npm run agent:create` | crée un compte agent à partir des variables `AGENT_*` |
-| `npm run dev` | lance le serveur avec nodemon |
-| `npm start` | lance le serveur en mode normal |
-| `npm test` | placeholder, aucun test configuré |
+| `pnpm run setup:project` (racine) | installe les dépendances, applique les migrations et génère Prisma |
+| `pnpm --filter backend run prisma:generate` | génère le client Prisma |
+| `pnpm --filter backend run prisma:migrate` | crée/applique une migration en développement |
+| `pnpm --filter backend run prisma:deploy` | applique les migrations puis génère Prisma |
+| `pnpm --filter backend run prisma:studio` | ouvre Prisma Studio |
+| `pnpm --filter backend run agent:create` | crée un compte agent à partir des variables `AGENT_*` |
+| `pnpm --filter backend run dev` | lance le serveur avec nodemon |
+| `pnpm --filter backend start` | lance le serveur en mode normal |
+| `pnpm --filter backend run test` | placeholder, aucun test configuré |

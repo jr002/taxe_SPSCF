@@ -4,7 +4,7 @@ import { getRegime, getRegimePercentage } from '../../utils/decisionnel.utils';
 /**
  * Calcule les coordonnées SVG d'une polyligne à partir d'un tableau de valeurs
  */
-export const buildChartPoints = (values = [], max = 1, min = 0) => {
+const buildChartPoints = (values = [], max = 1, min = 0) => {
   const safeRange = Math.max(max - min, 1);
   return values
     .map((value, index) => {

@@ -82,6 +82,9 @@ export const resetAgentPassword = (id, password) =>
 export const deleteAgent = (id) =>
   api.delete(`/agents/${id}`).then((res) => res.data);
 
+export const getHistoriqueAgents = (params = {}) =>
+  api.get('/agents/historique', { params }).then((res) => res.data.data);
+
 export const updateDeclaration = (id, payload) =>
   api.put(`/declarations/${id}`, payload).then((res) => res.data.data);
 

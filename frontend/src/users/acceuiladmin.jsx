@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getAgents, getErrorMessage } from '../api/api';
+import CamembertUtilisateurs from './CamembertUtilisateurs';
 
 /** Statuts affichés dans la répartition, avec leur couleur. */
 const STATUTS = [
@@ -138,42 +139,8 @@ export default function AccueilAdmin({ currentUser }) {
 
           <div className="dashboard-grid" style={{ marginTop: '1.5rem' }}>
             <div className="panel">
-              <h2>Répartition des comptes</h2>
-
-              <div className="admin-repartition">
-                {STATUTS.map(([key, label, couleur]) => {
-                  const valeur = stats.parStatut[key] || 0;
-                  const pourcentage = stats.total ? Math.round((valeur / stats.total) * 100) : 0;
-
-                  return (
-                    <div key={key} className="admin-repartition-ligne">
-                      <div className="admin-repartition-entete">
-                        <span>
-                          <i className="admin-repartition-puce" style={{ background: couleur }} />
-                          {label}
-                        </span>
-                        <strong>
-                          {valeur} <small>({pourcentage} %)</small>
-                        </strong>
-                      </div>
-                      <div className="admin-repartition-barre">
-                        <span style={{ width: `${pourcentage}%`, background: couleur }} />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              <div className="declaration-summary" style={{ marginTop: '1.25rem', marginBottom: 0 }}>
-                <div>
-                  <span>Administrateurs</span>
-                  <strong>{stats.administrateurs}</strong>
-                </div>
-                <div>
-                  <span>Agents simples</span>
-                  <strong>{stats.agentsSimples}</strong>
-                </div>
-              </div>
+              <h2>Répartition des utilisateurs</h2>
+              <CamembertUtilisateurs stats={stats} agents={agents} />
             </div>
 
             <div className="panel">

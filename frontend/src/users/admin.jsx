@@ -9,6 +9,7 @@ import {
   updateAgentRole,
   updateAgentStatut,
 } from '../api/api';
+import HistoriqueUtilisateurs from './HistoriqueUtilisateurs';
 
 /** Statut d'un compte : libellé, pastille et couleur de ligne. */
 const STATUTS = {
@@ -56,8 +57,8 @@ export default function Admin({ currentUser }) {
   const [success, setSuccess] = useState('');
   const [busyId, setBusyId] = useState(null);
   const [filter, setFilter] = useState('');
-  // Le tableau de bord peut ouvrir la liste déjà filtrée (ex. « en_attente »)
   const [statutFilter, setStatutFilter] = useState(location.state?.statut || 'Tous');
+  const [activeMainTab, setActiveMainTab] = useState('utilisateurs');
   const [passwordTarget, setPasswordTarget] = useState(null);
   const [passwordValue, setPasswordValue] = useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
@@ -231,25 +232,47 @@ export default function Admin({ currentUser }) {
 
       <div className="page-heading">
         <p className="eyebrow">Administration</p>
-        <h1>Utilisateurs</h1>
+        <h1>Gestion des Utilisateurs & Audit</h1>
         <p>
-          Activez les demandes d'accès, bloquez ou réactivez un compte, attribuez un
-          rôle, réinitialisez un mot de passe ou supprimez un compte.
+          Gérez les comptes d'accès, les statuts et les rôles, et consultez l'historique complet des modifications administratives.
         </p>
       </div>
 
-      <div className="categorie-tabs">
-        {FILTRES.map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            className={`categorie-tab${statutFilter === value ? ' active' : ''}`}
-            onClick={() => setStatutFilter(value)}
-          >
-            {value === 'Tous' ? `Tous (${agents.length})` : `${label} (${counts[value] || 0})`}
-          </button>
-        ))}
+      <div className="admin-main-tabs" style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--border-color, #e5e7eb)', paddingBottom: '0.5rem' }}>
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('utilisateurs')}
+          className={`categorie-tab${activeMainTab === 'utilisateurs' ? ' active' : ''}`}
+          style={{ fontSize: '0.95rem', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: activeMainTab === 'utilisateurs' ? 700 : 500 }}
+        >
+          👥 Utilisateurs & Comptes ({agents.length})
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveMainTab('historique')}
+          className={`categorie-tab${activeMainTab === 'historique' ? ' active' : ''}`}
+          style={{ fontSize: '0.95rem', padding: '0.5rem 1rem', borderRadius: '8px', fontWeight: activeMainTab === 'historique' ? 700 : 500 }}
+        >
+          📋 Historique & Journal des Modifications
+        </button>
       </div>
+
+      {activeMainTab === 'historique' ? (
+        <HistoriqueUtilisateurs />
+      ) : (
+        <>
+          <div className="categorie-tabs">
+            {FILTRES.map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                className={`categorie-tab${statutFilter === value ? ' active' : ''}`}
+                onClick={() => setStatutFilter(value)}
+              >
+                {value === 'Tous' ? `Tous (${agents.length})` : `${label} (${counts[value] || 0})`}
+              </button>
+            ))}
+          </div>
 
       <div className="datatable-toolbar contribuables-toolbar flex-wrap gap-2">
         <input
@@ -439,6 +462,8 @@ export default function Admin({ currentUser }) {
             </tbody>
           </table>
         </div>
+      )}
+      </>
       )}
     </section>
   );

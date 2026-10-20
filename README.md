@@ -22,56 +22,58 @@ Documentation transverse :
 
 | Côté | Technologies |
 | --- | --- |
-| Backend | Node.js 18+, Express 5, Prisma 6, PostgreSQL 14+, JWT (`jsonwebtoken`), `bcryptjs`, Swagger UI |
+| Backend | Node.js 20.19+, Express 5, Prisma 6, PostgreSQL 14+, JWT (`jsonwebtoken`), `bcryptjs`, Swagger UI |
 | Frontend | React 19, Vite 8, React Router 7, Axios, Tailwind CSS 4 |
 
 ## Prérequis
 
-- Node.js 18 ou plus récent, et npm ;
+- Node.js 20.19 ou plus récent, avec Corepack et pnpm 11 ;
 - PostgreSQL 14 ou plus récent, avec une base créée pour le projet ;
 - un compte agent créé en base pour pouvoir se connecter à l'interface.
 
 ## Démarrage
 
-1. Configurer `backend/.env` (base de données, `PORT`, `JWT_SECRET`). Le détail
-   des variables est décrit dans [`backend/README.md`](backend/README.md).
-2. Installer les dépendances et préparer la base depuis `backend/` :
+1. Activer pnpm si nécessaire :
 
    ```bash
-   cd backend
-   npm install
-   npm run prisma:generate
+   corepack enable
    ```
 
-3. Créer le premier compte agent (les inscriptions publiques ne sont pas
+2. Copier `backend/.env.example` vers `backend/.env`, puis renseigner les
+   identifiants PostgreSQL et un `JWT_SECRET` privé. La base PostgreSQL doit
+   exister et être accessible avant de lancer la préparation.
+
+3. Depuis la racine du projet, installer les dépendances du frontend et du
+   backend, appliquer les migrations Prisma, et générer le client Prisma avec
+   une seule commande :
+
+   ```bash
+   pnpm run setup:project
+   ```
+
+   Cette commande applique les migrations aux bases neuves. Si vous restaurez
+   une base déjà créée sans historique Prisma, suivez d'abord les instructions
+   de baseline dans [`backend/prisma/README.md`](backend/prisma/README.md).
+
+4. Créer le premier compte agent (les inscriptions publiques ne sont pas
    ouvertes) :
 
    ```powershell
    $env:AGENT_EMAIL = "agent@example.com"
-   $env:AGENT_PASSWORD = "un-mot-de-passe-de-12-caracteres-minimum"
-   $env:AGENT_FIRST_NAME = "Prenom"
-   $env:AGENT_LAST_NAME = "Nom"
-   cd backend
-   npm run agent:create
+   $env:AGENT_PASSWORD = "mot_de_passe
+   $env:AGENT_FIRST_NAME = "testeur"
+   $env:AGENT_LAST_NAME = "testeur"
+   pnpm --filter backend run agent:create
    ```
 
-4. Installer les dépendances du frontend :
+5. Lancer les deux applications depuis la racine :
 
    ```bash
-   cd frontend
-   npm install
+   pnpm run dev
    ```
 
-5. Lancer les deux applications :
-
-   ```bash
-   # depuis la racine : frontend et backend en parallèle
-   npm install
-   npm run dev
-   ```
-
-   Ou séparément : `npm run dev` dans `backend/` (nodemon, port 5000) et dans
-   `frontend/` (Vite, port 5173).
+   Ou séparément : `pnpm --filter backend run dev` (port 5000) et
+   `pnpm --filter frontend run dev` (port 5173).
 
 L'interface est servie sur `http://localhost:5173` et redirige vers l'écran de
 connexion tant qu'aucune session valide n'est présente. En développement, Vite
@@ -89,13 +91,15 @@ Vérification rapide de l'API : `GET http://localhost:5000/health`.
 - Les agents sont créés hors de l'interface web (script `agent:create`) et leur
   mot de passe est stocké haché avec bcrypt.
 
-## Scripts npm utiles
+## Scripts pnpm utiles
 
 | Emplacement | Commande | Utilité |
 | --- | --- | --- |
-| racine | `npm run dev` | lance frontend et backend en parallèle |
-| racine | `npm run build` | construit le frontend de production |
-| `backend/` | `npm run dev` / `npm start` | démarre l'API avec nodemon / en mode normal |
-| `backend/` | `npm run prisma:generate`, `prisma:migrate`, `prisma:deploy`, `prisma:studio` | gestion du schéma et de la base |
-| `backend/` | `npm run agent:create` | crée un compte agent |
-| `frontend/` | `npm run dev`, `npm run build`, `npm run lint`, `npm run preview` | cycle de vie de l'interface |
+| racine | `pnpm run setup:project` | installe les dépendances, applique les migrations et génère Prisma |
+| racine | `pnpm run dev` | lance frontend et backend en parallèle |
+| racine | `pnpm run build` | construit le frontend de production |
+| racine | `pnpm run prisma:deploy` | applique les migrations et régénère Prisma |
+| `backend/` | `pnpm --filter backend run dev` / `start` | démarre l'API avec nodemon / en mode normal |
+| `backend/` | `pnpm --filter backend run prisma:migrate`, `prisma:deploy`, `prisma:studio` | gestion du schéma et de la base |
+| `backend/` | `pnpm --filter backend run agent:create` | crée un compte agent |
+| `frontend/` | `pnpm --filter frontend run dev`, `build`, `lint`, `preview` | cycle de vie de l'interface |

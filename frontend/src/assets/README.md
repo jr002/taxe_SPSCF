@@ -6,7 +6,7 @@ Ce dossier est réservé aux ressources graphiques locales destinées à être i
 
 ## Contenu réel du dossier
 
-* `logodgi.jpg` : logo de la Direction Générale des Impôts.
+* `logodgi.jpg` : logo de la Direction Générale des Impôts, également utilisé comme favicon dans `public/favicon.jpg`.
 * [`README.md`](README.md) : le présent fichier.
 
 Il n'y a ni icône SVG, ni illustration, ni police locale dans ce dossier.
