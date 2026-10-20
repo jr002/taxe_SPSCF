@@ -1,7 +1,15 @@
-# SSIF — Système de suivi et de contrôle fiscal
+# 🏛️ SSIF — Système de suivi et de contrôle fiscal
 
-Application de suivi et de contrôle fiscaux (SP2CF / TVA•SSIF) composée d'une
-API Node.js/Express adossée à PostgreSQL et d'une interface web React/Vite.
+> **SSIF** (Système de Pilotage et de Suivi du Contrôle Fiscal / TVA•SSIF) est une application web moderne conçue pour assister les inspecteurs et agents des administrations fiscales dans le suivi, la collecte, le contrôle des déclarations de TVA et la gestion des défaillants.
+
+## ✨ Fonctionnalités Clés
+
+- 📊 **Tableau de Bord & Décisionnel** : Visualisation en temps réel des indicateurs clés, taux de déclaration et statistiques de recouvrement.
+- 🏢 **Gestion des Contribuables & Entreprises** : Répertoire complet des entreprises assujetties, classification par unité fiscale et historique déclaratif.
+- 💰 **Suivi de la Collecte & Déclarations** : Enregistrement, traitement et analyse des déclarations périodiques de TVA.
+- 🚨 **Détection d'Anomalies & Contrôle Fiscal** : Alertes automatiques sur les incohérences déclaratives, sélection des dossiers à risque et programmation des vérifications.
+- 📩 **Gestion des Relances** : Automatisation du suivi des défaillants (défaut de déclaration ou de paiement) et émission des relances.
+- 🔐 **Sécurité & Rôles** : Authentification stricte par session JWT sécurisée (`httpOnly`), hachage bcrypt et gestion des droits des agents.
 
 ## Repères rapides
 
