@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getErrorMessage, getHistoriqueAgents } from '@/api/api';
+import { getErrorMessage, getHistoriqueAgents } from '@/api';
 import Pagination from '@/components/common/Pagination';
 import { useTablePagination } from '@/hooks/useTablePagination';
 

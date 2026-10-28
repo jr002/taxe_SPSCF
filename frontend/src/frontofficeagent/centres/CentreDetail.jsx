@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { getCentreById, getContribuables, getErrorMessage } from '@/api/api';
+import { getCentreById, getContribuables, getErrorMessage } from '@/api';
 
 export default function CentreDetail() {
   const { id } = useParams();

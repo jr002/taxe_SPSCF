@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getDroitsCommunication, getErrorMessage } from '@/api/api';
+import { getDroitsCommunication, getErrorMessage } from '@/api';
 
 const STATUTS = {
   demande: { label: 'Demande', badge: 'badge surveillance' },

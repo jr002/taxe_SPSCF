@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { createContribuable, createDeclaration, getCentres, getErrorMessage } from '@/api/api';
+import { createContribuable, createDeclaration, getCentres, getErrorMessage } from '@/api';
 import { formatAriary } from '@/utils/formatters';
 import { useModalA11y } from '@/hooks/useModalA11y';
 

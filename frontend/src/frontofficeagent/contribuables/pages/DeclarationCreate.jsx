@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { createDeclaration, getContribuableById, getErrorMessage } from '@/api/api';
+import { createDeclaration, getContribuableById, getErrorMessage } from '@/api';
 import { getRegime } from '@/utils/decisionnel.utils';
 import DeclarationForm from '@/frontofficeagent/contribuables/components/DeclarationForm';
 

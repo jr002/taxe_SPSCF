@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api, { getErrorMessage } from '@/api/api';
+import { getErrorMessage, inscrireAgent } from '@/api';
 import logoDgi from '@/assets/logodgi.jpg';
 
 export default function Signup() {
@@ -24,7 +24,7 @@ export default function Signup() {
 
         setIsSubmitting(true);
         try {
-            await api.post('/auth/register', { nom, prenom, email, password });
+            await inscrireAgent({ nom, prenom, email, password });
             // L'écran dédié tient lieu de confirmation : la demande y est
             // récapitulée avec le bouton de retour vers la connexion.
             navigate('/attente-activation', {

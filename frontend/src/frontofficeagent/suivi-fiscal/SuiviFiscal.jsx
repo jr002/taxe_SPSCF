@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import DossierFiscalNavigation from '@/components/common/DossierFiscalNavigation';
-import { getDeclarations, getErrorMessage } from '@/api/api';
+import { getDeclarations, getErrorMessage } from '@/api';
 import { formatAriary, toNumber } from '@/utils/formatters';
 import { readSearchParam, updateSearchParams } from '@/utils/searchParams.utils';
 

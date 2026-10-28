@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { createRecoupement, getContribuableById, getErrorMessage } from '@/api/api';
+import { createRecoupement, getContribuableById, getErrorMessage } from '@/api';
 import RecoupementForm from '@/frontofficeagent/contribuables/components/RecoupementForm';
 
 const AMOUNT_FIELDS = [

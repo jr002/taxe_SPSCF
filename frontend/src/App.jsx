@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
-import api from './api/api';
+import { deconnexion, getMoi } from '@/api';
 
 // Composants communs
 import Header from './components/common/Header';
@@ -69,9 +69,9 @@ export default function App() {
   useEffect(() => {
     if (estPortailContribuable) return undefined;
 
-    api.get('/auth/me')
-      .then((response) => {
-        setCurrentUser(response.data?.user || null);
+    getMoi()
+      .then((donnees) => {
+        setCurrentUser(donnees?.user || null);
         setIsAuthenticated(true);
       })
       .catch(() => {
@@ -89,8 +89,8 @@ export default function App() {
     setCurrentUser(authenticatedUser);
 
     if (!authenticatedUser) {
-      api.get('/auth/me')
-        .then((response) => setCurrentUser(response.data?.user || null))
+      getMoi()
+        .then((donnees) => setCurrentUser(donnees?.user || null))
         .catch(() => setCurrentUser(null));
     }
 
@@ -99,7 +99,7 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await api.post('/auth/logout');
+      await deconnexion();
     } finally {
       setCurrentUser(null);
       setIsAuthenticated(false);

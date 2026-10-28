@@ -5,7 +5,7 @@ import {
   getErrorMessage,
   getStatutAccesContribuable,
   ouvrirAccesContribuable,
-} from '@/api/api';
+} from '@/api';
 import logoDgi from '@/assets/logodgi.jpg';
 import SituationFiscale from './components/SituationFiscale';
 

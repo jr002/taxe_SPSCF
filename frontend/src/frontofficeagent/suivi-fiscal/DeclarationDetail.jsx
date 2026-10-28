@@ -8,7 +8,7 @@ import {
   getRelances,
   createRelance,
   getErrorMessage,
-} from '@/api/api';
+} from '@/api';
 import { formatAriary, toNumber } from '@/utils/formatters';
 import NotificationModal from '@/components/common/NotificationModal';
 import DemandeEclaircissementModal from '@/components/common/DemandeEclaircissementModal';

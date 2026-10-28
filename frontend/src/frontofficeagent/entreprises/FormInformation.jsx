@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createContribuable, getErrorMessage } from '@/api/api';
+import { createContribuable, getErrorMessage } from '@/api';
 import { getOperationalUnits } from '@/utils/uniteFiscale.utils';
 
 const CENTRES_BY_STRUCTURE = {

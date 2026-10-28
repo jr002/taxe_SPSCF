@@ -1,6 +1,6 @@
   import { useEffect, useMemo, useState } from 'react';
   import { Link, useNavigate, useParams } from 'react-router-dom';
-  import { getContribuables, getErrorMessage } from '@/api/api';
+  import { getContribuables, getErrorMessage } from '@/api';
   import { getOperationalUnits } from '@/utils/uniteFiscale.utils';
 
 const TYPE_LABELS = {

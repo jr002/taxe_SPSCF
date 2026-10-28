@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { changeOwnPassword, getErrorMessage } from '@/api/api';
+import { changerSonMotDePasse, getErrorMessage } from '@/api';
 import { roleDefinition } from '@/backofficeadmin/utils/roles.utils';
 import { initialsOf } from '@/utils/session.utils';
 import ModaleConfirmation from './ModaleConfirmation';
@@ -90,7 +90,7 @@ export default function UserProfile({ user, onLogout, isDarkMode, onToggleTheme 
     setEnCours(true);
 
     try {
-      const reponse = await changeOwnPassword({
+      const reponse = await changerSonMotDePasse({
         password_actuel: champs.actuel,
         password_nouveau: champs.nouveau,
         password_confirmation: champs.confirmation,

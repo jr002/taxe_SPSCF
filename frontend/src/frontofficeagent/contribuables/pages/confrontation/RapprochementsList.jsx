@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
 
-import { exportRapprochementsPdf, getErrorMessage } from '@/api/api';
+import { exportRapprochementsPdf, getErrorMessage } from '@/api';
 import {
   buildPeriodOptions,
   declarationOf,

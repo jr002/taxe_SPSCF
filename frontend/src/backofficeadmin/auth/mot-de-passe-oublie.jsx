@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import api, { getErrorMessage } from '@/api/api';
+import { demanderReinitialisationMotDePasse, getErrorMessage } from '@/api';
 import logoDgi from '@/assets/logodgi.jpg';
 
 /**
@@ -24,8 +24,8 @@ export default function MotDePasseOublie({ isDarkMode = false, onToggleTheme }) 
         setIsSubmitting(true);
 
         try {
-            const response = await api.post('/auth/reset-request', { email });
-            setFeedback({ tone: 'success', message: response.data?.message });
+            const reponse = await demanderReinitialisationMotDePasse(email);
+            setFeedback({ tone: 'success', message: reponse?.message });
         } catch (resetError) {
             setFeedback({ tone: 'error', message: getErrorMessage(resetError) });
         } finally {

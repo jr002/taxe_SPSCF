@@ -11,7 +11,7 @@ import {
   updateAgentIdentite,
   updateAgentRole,
   updateAgentStatut,
-} from '@/api/api';
+} from '@/api';
 import ModaleConfirmation from '@/components/common/ModaleConfirmation';
 import Pagination from '@/components/common/Pagination';
 import { useTablePagination } from '@/hooks/useTablePagination';

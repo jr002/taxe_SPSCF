@@ -5,7 +5,7 @@ import {
   createDroitCommunication,
   getContribuableById,
   getErrorMessage,
-} from '@/api/api';
+} from '@/api';
 import DroitCommunicationForm from '@/frontofficeagent/contribuables/components/DroitCommunicationForm';
 
 const today = () => new Date().toISOString().slice(0, 10);

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getContribuables } from '@/api/api';
+import { getContribuables } from '@/api';
 import Pagination from '@/components/common/Pagination';
 import { useTablePagination } from '@/hooks/useTablePagination';
 import AdminNav from '@/backofficeadmin/components/AdminNav';

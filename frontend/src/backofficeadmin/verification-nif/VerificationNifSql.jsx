@@ -11,7 +11,7 @@ import {
   pushHistorique,
   verifierNifSql,
 } from './verification.utils';
-import { getErrorMessage } from '@/api/api';
+import { getErrorMessage } from '@/api';
 
 /** Une saisie qui commence par `SELECT` et ne désigne aucun NIF est une liste. */
 const EST_SELECT = /^\s*select\b/i;

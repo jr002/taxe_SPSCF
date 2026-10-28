@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api, { getErrorMessage } from '@/api/api';
+import { connexion, getErrorMessage } from '@/api';
 import { getLandingPath } from '@/utils/session.utils';
 import logoDgi from '@/assets/logodgi.jpg';
 
@@ -26,8 +26,7 @@ export default function Signin({ onAuthenticated, isDarkMode = false, onToggleTh
         setIsSubmitting(true);
 
         try {
-            const response = await api.post('/auth/login', { email, password });
-            const user = response.data?.user;
+            const { user } = await connexion(email, password);
             onAuthenticated(user);
             navigate(getLandingPath(user), { replace: true });
         } catch (loginError) {

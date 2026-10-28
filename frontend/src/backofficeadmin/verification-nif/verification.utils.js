@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx';
 import catalogue from '@/data/referentiel-unites';
-import { getContribuableByNif, getContribuables } from '@/api/api';
+import { getContribuableByNif, getContribuables } from '@/api';
 
 /** Clé du référentiel NIF partagé par les pages de vérification. */
 export const REFERENTIEL_KEY = 'referentiel_nif_admin';

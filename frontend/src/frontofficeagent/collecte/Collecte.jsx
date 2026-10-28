@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { getErrorMessage } from '@/api/api';
+import { getErrorMessage } from '@/api';
 import CollecterDeductible from './modules/CollecterDeductible';
 import TheoreticalForm from './modules/TheoreticalForm';
 import ReconciliationForm from './modules/ReconciliationForm';

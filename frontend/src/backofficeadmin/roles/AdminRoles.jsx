@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getAgents, getCentres, getErrorMessage, updateAgentCentre, updateAgentRole } from '@/api/api';
+import { getAgents, getCentres, getErrorMessage, updateAgentCentre, updateAgentRole } from '@/api';
 import Pagination from '@/components/common/Pagination';
 import { useTablePagination } from '@/hooks/useTablePagination';
 import AdminNav from '@/backofficeadmin/components/AdminNav';

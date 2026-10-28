@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getContribuables, getErrorMessage } from '@/api/api';
+import { getContribuables, getErrorMessage } from '@/api';
 import { getCategorie } from '@/utils/contribuable.utils';
 import { readSearchParam, updateSearchParams } from '@/utils/searchParams.utils';
 

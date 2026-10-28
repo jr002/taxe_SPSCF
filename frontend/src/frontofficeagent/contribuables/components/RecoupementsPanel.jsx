@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getErrorMessage, getRecoupements } from '@/api/api';
+import { getErrorMessage, getRecoupements } from '@/api';
 import { formatAriary } from '@/utils/formatters';
 
 const SOURCE_LABELS = {

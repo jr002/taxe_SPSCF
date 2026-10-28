@@ -7,7 +7,7 @@ import {
   getErrorMessage,
   getRelancesByContribuable,
   updateRelance,
-} from '@/api/api';
+} from '@/api';
 import { getRegime } from '@/utils/decisionnel.utils';
 import { formatDateRelance, relanceType } from '@/utils/relance.utils';
 import { toNumber } from '@/utils/formatters';
