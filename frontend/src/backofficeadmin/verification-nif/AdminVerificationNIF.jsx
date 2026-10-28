@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { getContribuables } from '../../api/api';
-import Pagination from '../../components/common/Pagination';
-import { useTablePagination } from '../../hooks/useTablePagination';
-import AdminNav from '../components/AdminNav';
+import { getContribuables } from '@/api/api';
+import Pagination from '@/components/common/Pagination';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import AdminNav from '@/backofficeadmin/components/AdminNav';
 import {
   formatDateHeure,
   loadHistorique,

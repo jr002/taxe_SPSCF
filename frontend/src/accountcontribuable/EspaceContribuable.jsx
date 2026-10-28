@@ -5,8 +5,8 @@ import {
   getErrorMessage,
   getStatutAccesContribuable,
   ouvrirAccesContribuable,
-} from '../api/api';
-import logoDgi from '../assets/logodgi.jpg';
+} from '@/api/api';
+import logoDgi from '@/assets/logodgi.jpg';
 import SituationFiscale from './components/SituationFiscale';
 
 const formatDate = (value) => {

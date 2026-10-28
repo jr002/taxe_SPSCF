@@ -1,15 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getAgents, getCentres, getErrorMessage, updateAgentCentre, updateAgentRole } from '../../api/api';
-import Pagination from '../../components/common/Pagination';
-import { useTablePagination } from '../../hooks/useTablePagination';
-import AdminNav from '../components/AdminNav';
+import { getAgents, getCentres, getErrorMessage, updateAgentCentre, updateAgentRole } from '@/api/api';
+import Pagination from '@/components/common/Pagination';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import AdminNav from '@/backofficeadmin/components/AdminNav';
 import {
   ROLES_AGENTS,
   centreResume,
   getRoleLabel,
   isCentreScoped,
   roleDefinition,
-} from '../utils/roles.utils';
+} from '@/backofficeadmin/utils/roles.utils';
 
 export default function AdminRoles({ currentUser }) {
   const isAdmin = currentUser?.role === 'admin';

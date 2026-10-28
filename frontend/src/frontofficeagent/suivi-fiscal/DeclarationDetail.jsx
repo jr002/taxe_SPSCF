@@ -8,10 +8,10 @@ import {
   getRelances,
   createRelance,
   getErrorMessage,
-} from '../../api/api';
-import { formatAriary, toNumber } from '../../utils/formatters';
-import NotificationModal from '../../components/common/NotificationModal';
-import DemandeEclaircissementModal from '../../components/common/DemandeEclaircissementModal';
+} from '@/api/api';
+import { formatAriary, toNumber } from '@/utils/formatters';
+import NotificationModal from '@/components/common/NotificationModal';
+import DemandeEclaircissementModal from '@/components/common/DemandeEclaircissementModal';
 import DeclarationSummaryCards from './components/DeclarationSummaryCards';
 import ProcedureContradictoireTimeline from './components/ProcedureContradictoireTimeline';
 import ProcedureActionForms from './components/ProcedureActionForms';

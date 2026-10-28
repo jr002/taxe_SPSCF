@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getDeclarationStats, getDeclarations, getErrorMessage } from '../api/api';
+import { getDeclarationStats, getDeclarations, getErrorMessage } from '@/api/api';
 
 /**
  * Hook personnalisé pour charger les statistiques globales et la liste des déclarations

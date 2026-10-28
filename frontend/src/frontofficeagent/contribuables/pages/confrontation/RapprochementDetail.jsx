@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import ModaleConfirmation from '../../../../components/common/ModaleConfirmation';
+import ModaleConfirmation from '@/components/common/ModaleConfirmation';
 import {
   declarationOf,
   ecartSens,

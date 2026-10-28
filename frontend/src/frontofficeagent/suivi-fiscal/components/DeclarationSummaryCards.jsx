@@ -1,4 +1,4 @@
-import { formatAriary } from '../../../utils/formatters';
+import { formatAriary } from '@/utils/formatters';
 
 /**
  * Cartes de synthèse financière et détails déclaratifs d'une déclaration

@@ -1,4 +1,4 @@
-import { formatAriary, formatNumber } from '../../../utils/formatters';
+import { formatAriary, formatNumber } from '@/utils/formatters';
 
 // VSP / CSP n'est pas stocké en base : une procédure est tenue pour « vérification sur
 // place » dès que la déclaration a été notifiée ou qu'un redressement a été notifié.

@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import logoDgi from '../../assets/logodgi.jpg';
+import logoDgi from '@/assets/logodgi.jpg';
 import UserProfile from './UserProfile';
 
 const NAVIGATION_LINKS = [

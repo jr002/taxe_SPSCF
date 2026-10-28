@@ -1,4 +1,4 @@
-import { formatAriary, toNumber } from '../../../utils/formatters';
+import { formatAriary, toNumber } from '@/utils/formatters';
 
 const DECLARATION_STATUS_LABELS = {
   conforme: 'Conforme',

@@ -1,4 +1,4 @@
-import AdminNav from '../components/AdminNav';
+import AdminNav from '@/backofficeadmin/components/AdminNav';
 import HistoriqueUtilisateurs from './HistoriqueUtilisateurs';
 
 export default function AdminHistorique({ currentUser }) {

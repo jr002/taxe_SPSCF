@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import AdminNav from '../components/AdminNav';
+import AdminNav from '@/backofficeadmin/components/AdminNav';
 
 /**
  * Gabarit des trois pages dédiées de vérification NIF (`/sql`, `/excel`, `/json`) :

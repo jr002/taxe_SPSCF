@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import useDecisionnelData from '../../hooks/useDecisionnelData';
-import { formatAriary, toNumber } from '../../utils/formatters';
+import useDecisionnelData from '@/hooks/useDecisionnelData';
+import { formatAriary, toNumber } from '@/utils/formatters';
 
 const ACTIONS_RAPIDES = [
   {

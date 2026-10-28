@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import DossierFiscalNavigation from '../../components/common/DossierFiscalNavigation';
-import { getDeclarations, getContribuables, getErrorMessage, getRelances } from '../../api/api';
-import { toNumber } from '../../utils/formatters.jsx';
-import { readSearchParam, updateSearchParams } from '../../utils/searchParams.utils';
-import { formatDateRelance, relanceStatut, relanceType } from '../../utils/relance.utils';
+import DossierFiscalNavigation from '@/components/common/DossierFiscalNavigation';
+import { getDeclarations, getContribuables, getErrorMessage, getRelances } from '@/api/api';
+import { toNumber } from '@/utils/formatters.jsx';
+import { readSearchParam, updateSearchParams } from '@/utils/searchParams.utils';
+import { formatDateRelance, relanceStatut, relanceType } from '@/utils/relance.utils';
 import RelanceKPICards from './components/RelanceKPICards';
 
 /**

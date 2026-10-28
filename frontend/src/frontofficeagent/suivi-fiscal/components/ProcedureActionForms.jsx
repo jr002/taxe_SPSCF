@@ -1,4 +1,4 @@
-import { formatAriary, toNumber } from '../../../utils/formatters';
+import { formatAriary, toNumber } from '@/utils/formatters';
 
 /**
  * Boutons d'actions et formulaires pliables pour la procédure contradictoire :

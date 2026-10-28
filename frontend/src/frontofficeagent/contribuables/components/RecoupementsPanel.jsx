@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getErrorMessage, getRecoupements } from '../../../api/api';
-import { formatAriary } from '../../../utils/formatters';
+import { getErrorMessage, getRecoupements } from '@/api/api';
+import { formatAriary } from '@/utils/formatters';
 
 const SOURCE_LABELS = {
   tiers_declarant: 'Tiers déclarant',

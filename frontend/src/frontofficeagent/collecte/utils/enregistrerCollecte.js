@@ -15,7 +15,7 @@ import {
   getContribuableByNif,
   getDeclarations,
   updateDeclaration,
-} from '../../../api/api';
+} from '@/api/api';
 
 /**
  * Seuils d'écart de la DGI (< 25 % conforme, ≤ 50 % alerte, au-delà critique).

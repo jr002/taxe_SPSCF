@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
-import { getAgents, getErrorMessage } from '../../api/api';
-import Pagination from '../../components/common/Pagination';
-import { useTablePagination } from '../../hooks/useTablePagination';
-import AdminNav from '../components/AdminNav';
+import { getAgents, getErrorMessage } from '@/api/api';
+import Pagination from '@/components/common/Pagination';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import AdminNav from '@/backofficeadmin/components/AdminNav';
 import CamembertUtilisateurs from './CamembertUtilisateurs';
 
 /** Statuts affichés dans la répartition, avec leur couleur. */

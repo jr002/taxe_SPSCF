@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import DossierFiscalNavigation from '../../components/common/DossierFiscalNavigation';
-import { getDeclarations, getErrorMessage } from '../../api/api';
-import { formatAriary, toNumber } from '../../utils/formatters';
-import { readSearchParam, updateSearchParams } from '../../utils/searchParams.utils';
+import DossierFiscalNavigation from '@/components/common/DossierFiscalNavigation';
+import { getDeclarations, getErrorMessage } from '@/api/api';
+import { formatAriary, toNumber } from '@/utils/formatters';
+import { readSearchParam, updateSearchParams } from '@/utils/searchParams.utils';
 
 /**
  * Détermine le statut de contrôle en fonction du statut juridique et de l'écart constaté

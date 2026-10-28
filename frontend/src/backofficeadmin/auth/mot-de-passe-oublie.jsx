@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import api, { getErrorMessage } from '../../api/api';
-import logoDgi from '../../assets/logodgi.jpg';
+import api, { getErrorMessage } from '@/api/api';
+import logoDgi from '@/assets/logodgi.jpg';
 
 /**
  * Écran public de demande de réinitialisation du mot de passe, atteint depuis le

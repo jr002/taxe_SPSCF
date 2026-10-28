@@ -11,9 +11,9 @@
  */
 import * as XLSX from 'xlsx';
 
-import { SEUIL_GRAND, SEUIL_MOYEN } from '../../../utils/contribuable.utils';
-import { toNumber } from '../../../utils/formatters';
-import { formatDateRelance, relanceStatut, relanceType } from '../../../utils/relance.utils';
+import { SEUIL_GRAND, SEUIL_MOYEN } from '@/utils/contribuable.utils';
+import { toNumber } from '@/utils/formatters';
+import { formatDateRelance, relanceStatut, relanceType } from '@/utils/relance.utils';
 
 const AMOUNT_FORMAT = '#,##0 "Ar"';
 

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { getErrorMessage, getHistoriqueAgents } from '../../api/api';
-import Pagination from '../../components/common/Pagination';
-import { useTablePagination } from '../../hooks/useTablePagination';
+import { getErrorMessage, getHistoriqueAgents } from '@/api/api';
+import Pagination from '@/components/common/Pagination';
+import { useTablePagination } from '@/hooks/useTablePagination';
 
 const TYPES_ACTION = [
   { id: 'TOUS', label: 'Toutes les actions' },

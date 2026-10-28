@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import IdentityFields from '../../../components/forms/IdentityFields';
-import AmountField from '../../../components/forms/AmountField';
-import ControlResult from '../../../components/forms/ControlResult';
-import { formatAriary, toNumber } from '../../../utils/formatters';
+import IdentityFields from '@/components/forms/IdentityFields';
+import AmountField from '@/components/forms/AmountField';
+import ControlResult from '@/components/forms/ControlResult';
+import { formatAriary, toNumber } from '@/utils/formatters';
 
 /**
  * Module B : Insertion des données de la déclaration fiscale officielle

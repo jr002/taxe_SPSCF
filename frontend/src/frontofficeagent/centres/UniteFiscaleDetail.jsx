@@ -1,7 +1,7 @@
   import { useEffect, useMemo, useState } from 'react';
   import { Link, useNavigate, useParams } from 'react-router-dom';
-  import { getContribuables, getErrorMessage } from '../../api/api';
-  import { getOperationalUnits } from '../../utils/uniteFiscale.utils';
+  import { getContribuables, getErrorMessage } from '@/api/api';
+  import { getOperationalUnits } from '@/utils/uniteFiscale.utils';
 
 const TYPE_LABELS = {
   dge: 'Direction des Grandes Entreprises',

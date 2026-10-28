@@ -10,7 +10,7 @@ import {
   getRapprochements,
   getRapprochementStats,
   updateRapprochementStatut,
-} from '../../../api/api';
+} from '@/api/api';
 import ConfrontationLaunch from './confrontation/ConfrontationLaunch';
 import RapprochementsList from './confrontation/RapprochementsList';
 import RapprochementDetail from './confrontation/RapprochementDetail';

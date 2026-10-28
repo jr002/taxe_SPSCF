@@ -2,12 +2,12 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
-import ExcelImportModal from '../../components/forms/ExcelImportModal';
+import ExcelImportModal from '@/components/forms/ExcelImportModal';
 import ContribuablesFilters from './components/ContribuablesFilters';
 import ContribuablesStatistiques from './components/ContribuablesStatistiques';
 import ContribuablesTable from './components/ContribuablesTable';
-import Pagination from '../../components/common/Pagination';
-import DossierFiscalNavigation from '../../components/common/DossierFiscalNavigation';
+import Pagination from '@/components/common/Pagination';
+import DossierFiscalNavigation from '@/components/common/DossierFiscalNavigation';
 import useContribuablesList from './hooks/useContribuablesList';
 
 const vues = [

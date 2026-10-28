@@ -7,13 +7,13 @@ import {
   getErrorMessage,
   getRelancesByContribuable,
   updateRelance,
-} from '../../api/api';
-import { getRegime } from '../../utils/decisionnel.utils';
-import { formatDateRelance, relanceType } from '../../utils/relance.utils';
-import { toNumber } from '../../utils/formatters';
-import { getCategorie, getFicheCategorie } from '../../utils/contribuable.utils';
-import DossierFiscalNavigation from '../../components/common/DossierFiscalNavigation';
-import RappelOrdreModal from '../relance/components/RappelOrdreModal';
+} from '@/api/api';
+import { getRegime } from '@/utils/decisionnel.utils';
+import { formatDateRelance, relanceType } from '@/utils/relance.utils';
+import { toNumber } from '@/utils/formatters';
+import { getCategorie, getFicheCategorie } from '@/utils/contribuable.utils';
+import DossierFiscalNavigation from '@/components/common/DossierFiscalNavigation';
+import RappelOrdreModal from '@/frontofficeagent/relance/components/RappelOrdreModal';
 import ClassificationPanel from './components/ClassificationPanel';
 import ContribuableHeader from './components/ContribuableHeader';
 import ContribuableOverview from './components/ContribuableOverview';

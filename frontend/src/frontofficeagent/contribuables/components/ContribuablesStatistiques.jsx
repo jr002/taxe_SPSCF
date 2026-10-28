@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
-import { Camembert, Histogramme } from '../../../components/charts/Diagrammes';
-import { formatAriary, formatNumber } from '../../../utils/formatters';
-import { PROCEDURES, buildStatistiques } from '../utils/statistiques.utils';
+import { Camembert, Histogramme } from '@/components/charts/Diagrammes';
+import { formatAriary, formatNumber } from '@/utils/formatters';
+import { PROCEDURES, buildStatistiques } from '@/frontofficeagent/contribuables/utils/statistiques.utils';
 
 const series = PROCEDURES.map((procedure) => ({
   key: procedure.key,

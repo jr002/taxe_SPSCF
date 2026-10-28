@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getCentres, getErrorMessage } from '../../api/api';
+import { getCentres, getErrorMessage } from '@/api/api';
 
 const PAGE_SIZE = 10;
 

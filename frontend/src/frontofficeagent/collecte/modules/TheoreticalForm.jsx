@@ -1,9 +1,9 @@
 import { useState } from 'react';
-import IdentityFields from '../../../components/forms/IdentityFields';
-import AmountField from '../../../components/forms/AmountField';
-import ControlResult from '../../../components/forms/ControlResult';
-import { formatAriary, toNumber } from '../../../utils/formatters';
-import NotificationModal from '../../../components/common/NotificationModal';
+import IdentityFields from '@/components/forms/IdentityFields';
+import AmountField from '@/components/forms/AmountField';
+import ControlResult from '@/components/forms/ControlResult';
+import { formatAriary, toNumber } from '@/utils/formatters';
+import NotificationModal from '@/components/common/NotificationModal';
 
 /**
  * Module B : Formulaire de calcul et simulation de la TVA Théorique et des redressements

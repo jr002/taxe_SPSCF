@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ROLES_AGENTS } from '../utils/roles.utils';
+import { ROLES_AGENTS } from '@/backofficeadmin/utils/roles.utils';
 
 /**
  * Calcule les coordonnées d'un point sur le cercle

@@ -1,4 +1,4 @@
-import { useModalA11y } from '../../hooks/useModalA11y';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 /**
  * Boîte de dialogue de confirmation : aucune modification du back-office n'est

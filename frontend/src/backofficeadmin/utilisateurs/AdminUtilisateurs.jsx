@@ -11,19 +11,19 @@ import {
   updateAgentIdentite,
   updateAgentRole,
   updateAgentStatut,
-} from '../../api/api';
-import ModaleConfirmation from '../../components/common/ModaleConfirmation';
-import Pagination from '../../components/common/Pagination';
-import { useTablePagination } from '../../hooks/useTablePagination';
-import { initialsOf } from '../../utils/session.utils';
-import AdminNav from '../components/AdminNav';
+} from '@/api/api';
+import ModaleConfirmation from '@/components/common/ModaleConfirmation';
+import Pagination from '@/components/common/Pagination';
+import { useTablePagination } from '@/hooks/useTablePagination';
+import { initialsOf } from '@/utils/session.utils';
+import AdminNav from '@/backofficeadmin/components/AdminNav';
 import {
   ROLES_AGENTS,
   centreResume,
   getRoleLabel,
   isCentreScoped,
   roleDefinition,
-} from '../utils/roles.utils';
+} from '@/backofficeadmin/utils/roles.utils';
 
 /** Statut d'un compte : libellé, pastille et couleur de ligne. */
 const STATUTS = {

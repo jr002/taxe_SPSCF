@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 
-import { genererAccesContribuable, getErrorMessage } from '../../../api/api';
-import { useModalA11y } from '../../../hooks/useModalA11y';
+import { genererAccesContribuable, getErrorMessage } from '@/api/api';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 const formatDate = (value) => {
   if (!value) return '—';

@@ -1,6 +1,6 @@
 import { useRef } from 'react';
-import { formatAriary } from '../../utils/formatters';
-import { useModalA11y } from '../../hooks/useModalA11y';
+import { formatAriary } from '@/utils/formatters';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 /**
  * Modal d'affichage et d'impression du document officiel de Notification (Primitive ou Définitive)

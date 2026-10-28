@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import logoDgi from '../../assets/logodgi.jpg';
+import logoDgi from '@/assets/logodgi.jpg';
 
 /**
  * Écran « compte en attente d'activation », commun à deux chemins : la fin d'une

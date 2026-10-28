@@ -1,4 +1,4 @@
-import fiscalData from '../../../unitefiscal.json';
+import fiscalData from '@/data/referentiel-unites';
 
 const dgeData = fiscalData.unites_operationnelles?.direction_des_grandes_entreprises;
 

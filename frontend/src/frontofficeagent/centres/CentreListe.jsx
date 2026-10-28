@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import fiscalData from '../../../../unitefiscal.json';
-import { getAllOperationalUnits } from '../../utils/uniteFiscale.utils';
+import fiscalData from '@/data/referentiel-unites';
+import { getAllOperationalUnits } from '@/utils/uniteFiscale.utils';
 
 const PAGE_SIZE = 10;
 const TYPE_LABELS = {

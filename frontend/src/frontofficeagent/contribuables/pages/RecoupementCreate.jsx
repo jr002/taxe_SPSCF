@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
-import { createRecoupement, getContribuableById, getErrorMessage } from '../../../api/api';
-import RecoupementForm from '../components/RecoupementForm';
+import { createRecoupement, getContribuableById, getErrorMessage } from '@/api/api';
+import RecoupementForm from '@/frontofficeagent/contribuables/components/RecoupementForm';
 
 const AMOUNT_FIELDS = [
   'merchandise_sold', 'goods_purchased', 'services_purchased', 'third_party_payments',

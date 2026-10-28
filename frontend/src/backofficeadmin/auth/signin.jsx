@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api, { getErrorMessage } from '../../api/api';
-import { getLandingPath } from '../../utils/session.utils';
-import logoDgi from '../../assets/logodgi.jpg';
+import api, { getErrorMessage } from '@/api/api';
+import { getLandingPath } from '@/utils/session.utils';
+import logoDgi from '@/assets/logodgi.jpg';
 
 /**
  * Redirection après connexion : `getLandingPath` envoie un agent dont le rôle

@@ -1,4 +1,4 @@
-import { formatAriary } from '../../../utils/formatters';
+import { formatAriary } from '@/utils/formatters';
 
 export default function ClassificationPanel({ fiche }) {
   return <div className="classification-panel" style={{ borderLeftColor: fiche.couleur }}>

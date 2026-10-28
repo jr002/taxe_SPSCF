@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { createContribuable, getErrorMessage } from '../../api/api';
-import { getOperationalUnits } from '../../utils/uniteFiscale.utils';
+import { createContribuable, getErrorMessage } from '@/api/api';
+import { getOperationalUnits } from '@/utils/uniteFiscale.utils';
 
 const CENTRES_BY_STRUCTURE = {
   centre_fiscal: getOperationalUnits('centres_fiscaux'),

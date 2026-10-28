@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 
-import { formatAriary, toNumber } from '../../utils/formatters';
+import { formatAriary, toNumber } from '@/utils/formatters';
 
 const STATUT_DECLARATION = {
   conforme: { label: 'Conforme', badge: 'conforme' },

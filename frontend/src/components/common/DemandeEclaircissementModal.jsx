@@ -1,5 +1,5 @@
-import { formatAriary } from '../../utils/formatters';
-import { useModalA11y } from '../../hooks/useModalA11y';
+import { formatAriary } from '@/utils/formatters';
+import { useModalA11y } from '@/hooks/useModalA11y';
 
 /**
  * Modal d'affichage et d'impression de la Demande d'Éclaircissements et de

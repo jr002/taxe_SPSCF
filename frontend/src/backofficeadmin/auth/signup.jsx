@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import api, { getErrorMessage } from '../../api/api';
-import logoDgi from '../../assets/logodgi.jpg';
+import api, { getErrorMessage } from '@/api/api';
+import logoDgi from '@/assets/logodgi.jpg';
 
 export default function Signup() {
     const navigate = useNavigate();
