@@ -39,9 +39,9 @@ Détail : [`charts/README.md`](charts/README.md).
 | Composant | Importé par |
 | --- | --- |
 | `Header` | `src/App.jsx` |
-| `ModaleConfirmation` | `src/backofficeadmin/utilisateurs/AdminUtilisateurs.jsx`, `src/components/common/UserProfile.jsx` |
-| `NotificationModal` | `src/frontofficeagent/suivi-fiscal/DeclarationDetail.jsx`, `src/frontofficeagent/collecte/modules/TheoreticalForm.jsx` |
-| `AmountField`, `IdentityFields`, `ControlResult` | `src/frontofficeagent/collecte/modules/` (TheoreticalForm, ReconciliationForm, InsertionDeclaration, CollecterDeductible) |
-| `ExcelImportModal` | `src/frontofficeagent/contribuables/Contribuables.jsx` |
-| `VolumeChart`, `RegimeChart`, `CurveChart` | `src/frontofficeagent/decisionnel/TableauDecisionnel.jsx` |
+| `ModaleConfirmation` | `src/backofficeadmin/utilisateurs/pages/AdminUtilisateurs.jsx`, `src/components/common/UserProfile.jsx` |
+| `NotificationModal` | `src/frontofficeagent/suivi-fiscal/pages/DeclarationDetail.jsx`, `src/frontofficeagent/collecte/components/TheoreticalForm.jsx` |
+| `AmountField`, `IdentityFields`, `ControlResult` | `src/frontofficeagent/collecte/components/` (TheoreticalForm, ReconciliationForm, InsertionDeclaration, CollecterDeductible) |
+| `ExcelImportModal` | `src/frontofficeagent/contribuables/pages/Contribuables.jsx` |
+| `VolumeChart`, `RegimeChart`, `CurveChart` | `src/frontofficeagent/decisionnel/pages/TableauDecisionnel.jsx` |
 | `ContribVolumeChart`, `ContribComparisonChart` | `src/frontofficeagent/contribuables/components/ContribuableOverview.jsx` |

@@ -1,6 +1,6 @@
 # Graphiques
 
-Composants SVG de visualisation des indicateurs fiscaux. [`Diagrammes.jsx`](Diagrammes.jsx) est le seul fichier du sous-dossier ; il n'exporte que des symboles nommés (aucun export par défaut), n'utilise aucune bibliothèque de graphiques, et s'appuie sur [`../../utils/formatters.jsx`](../../utils/formatters.jsx) (`formatAxisValue`, `formatCompact`) et [`../../utils/decisionnel.utils.jsx`](../../utils/decisionnel.utils.jsx) (`getRegime`, `getRegimePercentage`).
+Composants SVG de visualisation des indicateurs fiscaux. [`Diagrammes.jsx`](Diagrammes.jsx) est le seul fichier du sous-dossier ; il n'exporte que des symboles nommés (aucun export par défaut), n'utilise aucune bibliothèque de graphiques, et s'appuie sur [`../../utils/formatters.js`](../../utils/formatters.js) (`formatAxisValue`, `formatCompact`) et [`../../frontofficeagent/decisionnel/utils/decisionnel.utils.js`](../../frontofficeagent/decisionnel/utils/decisionnel.utils.js) (`getRegime`, `getRegimePercentage`).
 
 ---
 
@@ -16,7 +16,7 @@ Sparkline SVG. `data` est un tableau d'objets portant un champ `amount` ; `color
 
 ### `polarToCartesian()` et `describeArc()`
 
-Fonctions internes de géométrie d'anneau : `describeArc(cx, cy, innerRadius, outerRadius, startAngle, endAngle)` renvoie le chemin SVG d'un segment en couronne, avec un angle complet borné à 359,999° pour éviter l'arc nul et un `largeArcFlag` calculé sur l'amplitude. (`src/backofficeadmin/dashboard/CamembertUtilisateurs.jsx` porte sa propre copie de ce couple de fonctions.)
+Fonctions internes de géométrie d'anneau : `describeArc(cx, cy, innerRadius, outerRadius, startAngle, endAngle)` renvoie le chemin SVG d'un segment en couronne, avec un angle complet borné à 359,999° pour éviter l'arc nul et un `largeArcFlag` calculé sur l'amplitude. (`src/backofficeadmin/dashboard/components/CamembertUtilisateurs.jsx` porte sa propre copie de ce couple de fonctions.)
 
 ### `formatPercentage(value)`
 
@@ -68,7 +68,7 @@ Comparaison par courbes de la TVA théorique et de la TVA payée d'un contribuab
 
 | Composant | Importé par |
 | --- | --- |
-| `VolumeChart`, `RegimeChart`, `CurveChart` | `src/frontofficeagent/decisionnel/TableauDecisionnel.jsx` |
+| `VolumeChart`, `RegimeChart`, `CurveChart` | `src/frontofficeagent/decisionnel/pages/TableauDecisionnel.jsx` |
 | `ContribVolumeChart`, `ContribComparisonChart` | `src/frontofficeagent/contribuables/components/ContribuableOverview.jsx` |
 | `Camembert`, `Histogramme` | `src/frontofficeagent/contribuables/components/ContribuablesStatistiques.jsx` |
 | `buildChartPoints` | Interne au fichier (`ContribComparisonChart`) |

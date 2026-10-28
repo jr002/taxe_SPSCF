@@ -14,48 +14,54 @@ et les cinq pages d'administration montées sous `/admin…`, rendues à l'inté
 du layout protégé. Les pages admin partagent une barre de navigation interne,
 [`components/AdminNav.jsx`](components/AdminNav.jsx), qui les relie entre elles.
 
+Les domaines de l'espace (`auth`, `dashboard`, `utilisateurs`, `roles`,
+`verification-nif`, `historique`) suivent la même grille que le front-office :
+`pages/` pour les écrans routés, `components/` pour les vues internes,
+`utils/` pour ce qui ne sert qu'à eux, et un `index.js` par domaine. La règle
+complète est dans [`../README.md`](../README.md#comment-le-code-est-organisé).
+
 ## Arborescence
 
 ```text
 backofficeadmin/
-├── auth/            signin.jsx, signup.jsx, attente-activation.jsx,
-│                     mot-de-passe-oublie.jsx, login.jsx (écran de connexion)
+├── index.js         porte d'entrée de l'espace : ré-exporte les portes des domaines
+├── auth/            pages/ Signin.jsx, Signup.jsx, AttenteActivation.jsx,
+│                     MotDePasseOublie.jsx   (+ index.js)
 ├── components/      AdminNav.jsx (navigation interne des pages admin)
-├── dashboard/       AdminDashboard.jsx, CamembertUtilisateurs.jsx
-├── utilisateurs/    AdminUtilisateurs.jsx
-├── roles/           AdminRoles.jsx
+├── dashboard/       pages/AdminDashboard.jsx, components/CamembertUtilisateurs.jsx
+├── utilisateurs/    pages/AdminUtilisateurs.jsx
+├── roles/           pages/AdminRoles.jsx
 ├── utils/           roles.utils.js (référentiel des rôles partagé)
-├── verification-nif/ AdminVerificationNIF.jsx, VerificationNifLayout.jsx,
-│                     VerificationNifSql.jsx / Excel.jsx / Json.jsx,
+├── verification-nif/ pages/AdminVerificationNIF.jsx, VerificationNifSql.jsx /
+│                     Excel.jsx / Json.jsx, components/VerificationNifLayout.jsx,
 │                     HistoriqueVerification.jsx, ErreursVerification.jsx,
-│                     verification.utils.js
-└── historique/      AdminHistorique.jsx, HistoriqueUtilisateurs.jsx
+│                     utils/verification.utils.js
+└── historique/      pages/AdminHistorique.jsx, components/HistoriqueUtilisateurs.jsx
 ```
 
 ## Fichiers
 
 | Fichier | Composant | Route | État |
 | --- | --- | --- | --- |
-| [`auth/signin.jsx`](auth/signin.jsx) | `Signin({ onAuthenticated, isDarkMode, onToggleTheme })` | `/` | **utilisé** |
-| [`auth/signup.jsx`](auth/signup.jsx) | `Signup()` | `/signup` | **utilisé** |
-| [`auth/attente-activation.jsx`](auth/attente-activation.jsx) | `AttenteActivation()` | `/attente-activation` | **utilisé** |
-| [`auth/mot-de-passe-oublie.jsx`](auth/mot-de-passe-oublie.jsx) | `MotDePasseOublie({ isDarkMode, onToggleTheme })` | `/mot-de-passe-oublie` | **utilisé** |
-| [`auth/login.jsx`](auth/login.jsx) | `Login({ onAuthenticated })` | aucune | **non importé** (doublon) |
-| [`dashboard/AdminDashboard.jsx`](dashboard/AdminDashboard.jsx) | `AccueilAdmin({ currentUser })` | `/admin` | **utilisé** (administrateurs) |
-| [`dashboard/CamembertUtilisateurs.jsx`](dashboard/CamembertUtilisateurs.jsx) | `CamembertUtilisateurs({ stats, agents })` | sous-composant de `/admin` | **utilisé** |
-| [`utilisateurs/AdminUtilisateurs.jsx`](utilisateurs/AdminUtilisateurs.jsx) | `Admin({ currentUser })` | `/admin/utilisateurs` | **utilisé** (administrateurs) |
-| [`roles/AdminRoles.jsx`](roles/AdminRoles.jsx) | `AdminRoles({ currentUser })` | `/admin/roles` | **utilisé** (administrateurs) |
+| [`auth/pages/Signin.jsx`](auth/pages/Signin.jsx) | `Signin({ onAuthenticated, isDarkMode, onToggleTheme })` | `/` | **utilisé** |
+| [`auth/pages/Signup.jsx`](auth/pages/Signup.jsx) | `Signup()` | `/signup` | **utilisé** |
+| [`auth/pages/AttenteActivation.jsx`](auth/pages/AttenteActivation.jsx) | `AttenteActivation()` | `/attente-activation` | **utilisé** |
+| [`auth/pages/MotDePasseOublie.jsx`](auth/pages/MotDePasseOublie.jsx) | `MotDePasseOublie({ isDarkMode, onToggleTheme })` | `/mot-de-passe-oublie` | **utilisé** |
+| [`dashboard/pages/AdminDashboard.jsx`](dashboard/pages/AdminDashboard.jsx) | `AdminDashboard({ currentUser })` | `/admin` | **utilisé** (administrateurs) |
+| [`dashboard/components/CamembertUtilisateurs.jsx`](dashboard/components/CamembertUtilisateurs.jsx) | `CamembertUtilisateurs({ stats, agents })` | sous-composant de `/admin` | **utilisé** |
+| [`utilisateurs/pages/AdminUtilisateurs.jsx`](utilisateurs/pages/AdminUtilisateurs.jsx) | `AdminUtilisateurs({ currentUser })` | `/admin/utilisateurs` | **utilisé** (administrateurs) |
+| [`roles/pages/AdminRoles.jsx`](roles/pages/AdminRoles.jsx) | `AdminRoles({ currentUser })` | `/admin/roles` | **utilisé** (administrateurs) |
 | [`utils/roles.utils.js`](utils/roles.utils.js) | — (`ROLES_AGENTS`, `roleDefinition`, `isCentreScoped`, `getRoleLabel`, `CENTRE_TEXTES`, `centreResume`) | — | **utilisé** (Utilisateurs, Rôles, camembert, profil de l'en-tête) |
-| [`verification-nif/AdminVerificationNIF.jsx`](verification-nif/AdminVerificationNIF.jsx) | `AdminVerificationNIF({ currentUser })` | `/admin/verification-nif` | **utilisé** (administrateurs) |
-| [`verification-nif/VerificationNifLayout.jsx`](verification-nif/VerificationNifLayout.jsx) | `VerificationNifLayout({ currentUser, eyebrow, titre, description, children })` | conteneur des 3 pages dédiées | **utilisé** |
-| [`verification-nif/VerificationNifSql.jsx`](verification-nif/VerificationNifSql.jsx) | `VerificationNifSql({ currentUser })` | `/admin/verification-nif/sql` | **utilisé** (administrateurs) |
-| [`verification-nif/VerificationNifExcel.jsx`](verification-nif/VerificationNifExcel.jsx) | `VerificationNifExcel({ currentUser })` | `/admin/verification-nif/excel` | **utilisé** (administrateurs) |
-| [`verification-nif/VerificationNifJson.jsx`](verification-nif/VerificationNifJson.jsx) | `VerificationNifJson({ currentUser })` | `/admin/verification-nif/json` | **utilisé** (administrateurs) |
-| [`verification-nif/HistoriqueVerification.jsx`](verification-nif/HistoriqueVerification.jsx) | `HistoriqueVerification({ entries, emptyLabel })` | sous-composant des 3 pages | **utilisé** |
-| [`verification-nif/ErreursVerification.jsx`](verification-nif/ErreursVerification.jsx) | `ErreursVerification({ entries, onClear })` | sous-composant des 3 pages | **utilisé** |
-| [`verification-nif/verification.utils.js`](verification-nif/verification.utils.js) | — (fonctions utilitaires) | — | **utilisé** |
-| [`historique/AdminHistorique.jsx`](historique/AdminHistorique.jsx) | `AdminHistorique({ currentUser })` | `/admin/historique` | **utilisé** (wrapper de page) |
-| [`historique/HistoriqueUtilisateurs.jsx`](historique/HistoriqueUtilisateurs.jsx) | `HistoriqueUtilisateurs()` | rendue par `AdminHistorique` | **utilisé** |
+| [`verification-nif/pages/AdminVerificationNIF.jsx`](verification-nif/pages/AdminVerificationNIF.jsx) | `AdminVerificationNIF({ currentUser })` | `/admin/verification-nif` | **utilisé** (administrateurs) |
+| [`verification-nif/components/VerificationNifLayout.jsx`](verification-nif/components/VerificationNifLayout.jsx) | `VerificationNifLayout({ currentUser, eyebrow, titre, description, children })` | conteneur des 3 pages dédiées | **utilisé** |
+| [`verification-nif/pages/VerificationNifSql.jsx`](verification-nif/pages/VerificationNifSql.jsx) | `VerificationNifSql({ currentUser })` | `/admin/verification-nif/sql` | **utilisé** (administrateurs) |
+| [`verification-nif/pages/VerificationNifExcel.jsx`](verification-nif/pages/VerificationNifExcel.jsx) | `VerificationNifExcel({ currentUser })` | `/admin/verification-nif/excel` | **utilisé** (administrateurs) |
+| [`verification-nif/pages/VerificationNifJson.jsx`](verification-nif/pages/VerificationNifJson.jsx) | `VerificationNifJson({ currentUser })` | `/admin/verification-nif/json` | **utilisé** (administrateurs) |
+| [`verification-nif/components/HistoriqueVerification.jsx`](verification-nif/components/HistoriqueVerification.jsx) | `HistoriqueVerification({ entries, emptyLabel })` | sous-composant des 3 pages | **utilisé** |
+| [`verification-nif/components/ErreursVerification.jsx`](verification-nif/components/ErreursVerification.jsx) | `ErreursVerification({ entries, onClear })` | sous-composant des 3 pages | **utilisé** |
+| [`verification-nif/utils/verification.utils.js`](verification-nif/utils/verification.utils.js) | — (fonctions utilitaires) | — | **utilisé** |
+| [`historique/pages/AdminHistorique.jsx`](historique/pages/AdminHistorique.jsx) | `AdminHistorique({ currentUser })` | `/admin/historique` | **utilisé** (wrapper de page) |
+| [`historique/components/HistoriqueUtilisateurs.jsx`](historique/components/HistoriqueUtilisateurs.jsx) | `HistoriqueUtilisateurs()` | rendue par `AdminHistorique` | **utilisé** |
 | [`components/AdminNav.jsx`](components/AdminNav.jsx) | `AdminNav()` | rendue par les 5 pages admin | **utilisé** |
 
 ## Routes
@@ -67,7 +73,7 @@ backofficeadmin/
 | `/signup` | `Signup` | public |
 | `/attente-activation` | `AttenteActivation` — statut « en attente d'activation » après une inscription ou une connexion refusée pour ce motif | public |
 | `/mot-de-passe-oublie` | `MotDePasseOublie` — demande de réinitialisation du mot de passe (`POST /api/auth/reset-request`) | public |
-| `/admin` | `AccueilAdmin` — tableau de bord des comptes agents et camembert de répartition | protégé, réservé aux administrateurs |
+| `/admin` | `AdminDashboard` — tableau de bord des comptes agents et camembert de répartition | protégé, réservé aux administrateurs |
 | `/admin/utilisateurs` | `Admin` — gestion des comptes | protégé, réservé aux administrateurs |
 | `/admin/roles` | `AdminRoles` — rôles des agents et périmètre par centre fiscal | protégé, réservé aux administrateurs |
 | `/admin/verification-nif` | `AdminVerificationNIF` — synthèse des trois types de vérification et tableau du référentiel NIF | protégé, réservé aux administrateurs |
@@ -137,7 +143,7 @@ Deux règles de rédaction imposées par ESLint :
 En dessous de 10 lignes, `Pagination` ne rend rien : une base de quatre comptes
 n'affiche donc aucune barre.
 
-## `auth/signin.jsx` — connexion
+## `auth/pages/Signin.jsx` — connexion
 
 Écran affiché sur `/` tant qu'aucune session valide n'est détectée. Il :
 
@@ -145,8 +151,10 @@ n'affiche donc aucune barre.
   Madagascar · DGI », titre TVA•SSIF et rappel du sigle du projet) et un
   formulaire e-mail + mot de passe ;
 - conserve les champs et l'état d'envoi avec `useState` ;
-- soumet via `api.post('/auth/login', { email, password })` (instance Axios de
-  [`../api/api.js`](../api/api.js)) ;
+- soumet `connexion(email, password)` — fonction de
+  [`../api/auth.js`](../api/auth.js) ré-exportée par le barrel `@/api`, qui envoie
+  `POST /auth/login` sur l'instance Axios de
+  [`../api/client.js`](../api/client.js)) ;
 - affiche l'erreur renvoyée par l'API avec `getErrorMessage` dans un paragraphe
   `role="alert"` et désactive le bouton pendant l'envoi ; **sauf** si la réponse
   porte `code: 'COMPTE_EN_ATTENTE'` : `navigate('/attente-activation', { state:
@@ -182,7 +190,7 @@ et leurs variantes `.dark-theme .login-*`.
 Le bloc « Attendre les autorisations de l'administrateur du site. » rappelle que
 les comptes sont activés manuellement (voir la section API ci-dessous).
 
-## `auth/mot-de-passe-oublie.jsx` — demande de réinitialisation
+## `auth/pages/MotDePasseOublie.jsx` — demande de réinitialisation
 
 Page publique montée sur `/mot-de-passe-oublie`, atteinte par le lien « Mot de
 passe oublié ? » de `/` et par celui de `/attente-activation`. Elle reprend
@@ -210,7 +218,7 @@ intégralement la mise en page de `/`, `/signup` et `/attente-activation`
 
 La page d'arrivée est calculée par `getLandingPath`, exportée par
 [`../utils/session.utils.js`](../utils/session.utils.js) et utilisée à la fois
-par `signin.jsx` et par la route `/` de `App.jsx` :
+par `Signin.jsx` et par la route `/` de `App.jsx` :
 
 ```js
 export const getLandingPath = (user) => (user?.role === 'admin' ? '/admin' : '/acceuil');
@@ -220,7 +228,7 @@ export const getLandingPath = (user) => (user?.role === 'admin' ? '/admin' : '/a
 - **tout autre rôle** → `/acceuil`, le tableau de bord agent.
 
 Les deux appels sont obligatoires : si `/` redirigeait tout seul vers `/acceuil`
-pendant que `signin.jsx` navigue vers `/admin`, la redirection de `/` écrasait la
+pendant que `Signin.jsx` navigue vers `/admin`, la redirection de `/` écrasait la
 destination et un administrateur débarquait sur l'espace agent avant d'atteindre
 son backoffice. Le chemin d'arrivée vient d'un seul helper, donc les deux
 redirections ne peuvent plus se contredire.
@@ -237,7 +245,7 @@ côté API).
 > `npm run agent:create` dans `backend/` (ou promu depuis la base), après quoi
 > les rôles se gèrent directement depuis `/admin`.
 
-## `auth/signup.jsx` — demande de création de compte
+## `auth/pages/Signup.jsx` — demande de création de compte
 
 Formulaire public d'enregistrement d'une demande d'accès. Le composant ne prend
 **aucune propriété** et ne connecte pas l'utilisateur : il enregistre la demande
@@ -268,7 +276,7 @@ Déroulement :
 
 Le lien « Déjà inscrit ? Se connecter » ramène vers `/`.
 
-## `auth/attente-activation.jsx` — compte en attente d'activation
+## `auth/pages/AttenteActivation.jsx` — compte en attente d'activation
 
 Écran public de statut, atteint par deux chemins et par aucune autre voie : la
 fin d'une inscription (`/signup`) et une connexion refusée parce que le compte
@@ -293,7 +301,7 @@ donnée depuis l'URL : tout vient de `useLocation().state`.
   secondaires `.auth-link` : « Mot de passe oublié ? » vers `/mot-de-passe-oublie`
   et « Créer un autre compte » vers `/signup`.
 
-## `dashboard/AdminDashboard.jsx` — tableau de bord de l'administrateur
+## `dashboard/pages/AdminDashboard.jsx` — tableau de bord de l'administrateur
 
 Page d'accueil de l'espace admin (`/admin`) : c'est là qu'arrive tout
 administrateur après sa connexion. Elle présente :
@@ -311,7 +319,7 @@ administrateur après sa connexion. Elle présente :
 Toutes les statistiques sont agrégées dans la page à partir de `getAgents()` :
 aucun endpoint de statistiques n'existe côté serveur.
 
-## `utilisateurs/AdminUtilisateurs.jsx` — gestion des utilisateurs
+## `utilisateurs/pages/AdminUtilisateurs.jsx` — gestion des utilisateurs
 
 Page de gestion des comptes montée sur `/admin/utilisateurs`, **à l'intérieur du
 layout protégé**. C'est l'espace de l'administrateur : quand
@@ -398,7 +406,7 @@ création ; chacun change son propre mot de passe depuis le profil de l'en-tête
 Le serveur, lui, refuse de désactiver, de rétrograder ou de supprimer le dernier
 administrateur actif.
 
-## `roles/AdminRoles.jsx` — rôles et périmètre par centre
+## `roles/pages/AdminRoles.jsx` — rôles et périmètre par centre
 
 Page `/admin/roles`, réservée aux administrateurs comme les autres pages du
 backoffice. Elle charge `getAgents()` et `getCentres()` en parallèle
@@ -465,7 +473,7 @@ opérations** de son type sous le formulaire.
 | --- | --- | --- |
 | `sql` — requête | `/admin/verification-nif/sql` | carte verte « certifié » ou rouge « introuvable » après `getContribuableByNif(nif)` et repli sur le référentiel local ; **ou** petit tableau de lignes quand la saisie est un `SELECT … FROM contribuables` sans NIF |
 | `excel` — fichier | `/admin/verification-nif/excel` | lecture client (`XLSX.read` / `sheet_to_json`), colonnes reconnues `NIF`/`nif`/`Numero`, `RaisonSociale`/`Nom`/`raison_sociale`, `Centre`/`centre`, puis fusion dans le référentiel |
-| `json` — catalogue | `/admin/verification-nif/json` | synchronisation avec le catalogue des unités fiscales importé en module (`../../../../unitefiscal.json`) : le nom de la DGE + trois NIF de contrôle |
+| `json` — catalogue | `/admin/verification-nif/json` | synchronisation avec le catalogue des unités fiscales importé en module ([`@/data/referentiel-unites`](../data/referentiel-unites.js)) : le nom de la DGE + trois NIF de contrôle |
 
 ### Gabarits, journal d'erreurs et API JSON
 
@@ -498,7 +506,7 @@ opérations** de son type sous le formulaire.
   `.table-wrap`. Une autre table, une projection sans colonne servie ou un
   `SELECT` incomplet remontent dans le journal d'erreurs ; une requête qui
   désigne un NIF garde la carte de vérification.
-* **Journal d'erreurs.** [`ErreursVerification.jsx`](ErreursVerification.jsx)
+* **Journal d'erreurs.** [`verification-nif/components/ErreursVerification.jsx`](verification-nif/components/ErreursVerification.jsx)
   rend le bloc `.verif-erreurs` (`role="alert"`, titre + détail par ligne,
   bouton « ✕ Effacer le journal ») sur les trois pages : saisie non reconnue,
   NIF absent des deux sources, appel API en échec, classeur refusé, adresse
@@ -514,14 +522,14 @@ opérations** de son type sous le formulaire.
 
 ### Structure
 
-* [`verification-nif/verification.utils.js`](verification-nif/verification.utils.js) concentre **toute** la logique
+* [`verification-nif/utils/verification.utils.js`](verification-nif/utils/verification.utils.js) concentre **toute** la logique
   (référentiel, historique, les trois opérations, les gabarits et les API JSON).
   La carte de synthèse et la page dédiée appellent les mêmes fonctions : elles ne
   peuvent pas diverger.
-* [`verification-nif/VerificationNifLayout.jsx`](verification-nif/VerificationNifLayout.jsx) est le conteneur commun
+* [`verification-nif/components/VerificationNifLayout.jsx`](verification-nif/components/VerificationNifLayout.jsx) est le conteneur commun
   des trois pages : garde `role === 'admin'`, `AdminNav`, titre et lien
   « ← Retour à la vérification NIF ».
-* [`verification-nif/HistoriqueVerification.jsx`](verification-nif/HistoriqueVerification.jsx) rend le tableau
+* [`verification-nif/components/HistoriqueVerification.jsx`](verification-nif/components/HistoriqueVerification.jsx) rend le tableau
   « Trois dernières vérifications » (Date & heure · Opération · Résultat) avec un
   badge `conforme` / `critique` selon `entry.reussi`.
 
@@ -577,7 +585,7 @@ des actions administratives : date, action, utilisateur ciblé, détails, auteur
 ## Contrat avec l'API
 
 Les écrans de connexion et d'inscription s'appuient sur les routes publiques de
-[`backend/src/routes/auth.routes.js`](../../../backend/src/routes/auth.routes.js) :
+[`../../../backend/src/routes/auth.routes.js`](../../../backend/src/routes/auth.routes.js) :
 
 | Appel | Corps | Codes et effet |
 | --- | --- | --- |
@@ -597,7 +605,7 @@ Contraintes appliquées côté serveur (miroir des attributs HTML) :
   `role = "agent"` et `statut = "en_attente"`.
 
 La page `/admin` consomme les routes protégées de
-[`backend/src/routes/agent.routes.js`](../../../backend/src/routes/agent.routes.js),
+[`../../../backend/src/routes/agent.routes.js`](../../../backend/src/routes/agent.routes.js),
 toutes réservées au rôle `admin` (middleware `requireAdmin`) :
 
 | Méthode et appel | Corps | Effet |
@@ -639,9 +647,10 @@ dernier administrateur actif.
 
 - **Aucun jeton n'est stocké côté frontend** : la session repose sur le cookie
   `fiscal_session` posé par le backend et sur `withCredentials: true` de
-  l'instance Axios. Aucune fonction d'authentification n'est exportée par
-  [`../api/api.js`](../api/api.js), les appels `/auth/*` utilisent
-  directement l'instance par défaut.
+  l'instance Axios. Les appels `/auth/*` passent par les fonctions de
+  [`../api/auth.js`](../api/auth.js) (`connexion`, `inscrireAgent`, `getMoi`,
+  `deconnexion`, `demanderReinitialisationMotDePasse`,
+  `changerSonMotDePasse`), importées depuis le barrel `@/api`.
 - **Un compte fraîchement créé ne peut pas se connecter** : `register` pose le
   statut `en_attente`, alors que `login` refuse tout statut différent de
   `actif` en renvoyant le même message qu'un mot de passe erroné. L'activation
@@ -650,12 +659,8 @@ dernier administrateur actif.
   actif.
 - **Seuil de mot de passe incohérent** : l'inscription publique accepte 4
   caractères, alors que `scripts/create-agent.js` en exige 12. La chaîne
-  « 4 caractères minimum » affichée dans `signup.jsx` et la règle serveur
+  « 4 caractères minimum » affichée dans `pages/Signup.jsx` et la règle serveur
   devront être alignées si la politique change.
-- **`login.jsx` est un doublon non monté** : le fichier n'est importé par aucun
-  module, son titre est « Connexion » (celui de `signin.jsx` est « Sign in ») et
-  il ne contient pas le lien vers `/signup`. Il peut être supprimé, ou remis en
-  service après mise à jour.
 - Les styles de ces trois écrans (`.login-page`, `.login-brand-panel`,
   `.login-kicker`, `.login-brand-caption`, `.login-panel-rule`,
   `.login-brand-note`, `.login-form-panel`, `.login-form`, `.login-intro`,

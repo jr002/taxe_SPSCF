@@ -7,10 +7,10 @@ contribuable du front-office agent.
 ## 1. Parcour complet
 
 1. Un agent, contrôleur, inspecteur ou chef de centre ouvre
-   [`../frontofficeagent/contribuables/ContribuableDetail.jsx`](../frontofficeagent/contribuables/ContribuableDetail.jsx)
+   [`../frontofficeagent/contribuables/pages/ContribuableDetail.jsx`](../frontofficeagent/contribuables/pages/ContribuableDetail.jsx)
    et clique « Lien contribuable » (bouton `secondary` de
-   [`ContribuableHeader.jsx`](../frontofficeagent/contribuables/components/ContribuableHeader.jsx)).
-2. [`LienAccesModal.jsx`](../frontofficeagent/contribuables/components/LienAccesModal.jsx)
+   [`../frontofficeagent/contribuables/components/ContribuableHeader.jsx`](../frontofficeagent/contribuables/components/ContribuableHeader.jsx)).
+2. [`../frontofficeagent/contribuables/components/LienAccesModal.jsx`](../frontofficeagent/contribuables/components/LienAccesModal.jsx)
    appelle `POST /api/contribuables/:id/acces-contribuable` (`admin`, `chef_centre`,
    `inspecteur`, `controleur`, `agent` ; un compte `contribuable` ou `autre` reçoit `403`).
    La modale affiche l'URL complète, la date d'expiration et l'e-mail masqué du
@@ -28,7 +28,7 @@ contribuable du front-office agent.
 
 | Fichier | Rôle |
 | --- | --- |
-| [`EspaceContribuable.jsx`](EspaceContribuable.jsx) | lit le jeton depuis l'URL, affiche l'en-tête DGI, le thème, les trois états du lien (vérification, indisponible, formulaire d'identité) et monte `SituationFiscale` après confirmation. Le composant interne est rendu avec `key={token}` : changer de lien repart d'un état neuf, sans dossier conservé en mémoire |
+| [`pages/EspaceContribuable.jsx`](pages/EspaceContribuable.jsx) | lit le jeton depuis l'URL, affiche l'en-tête DGI, le thème, les trois états du lien (vérification, indisponible, formulaire d'identité) et monte `SituationFiscale` après confirmation. Le composant interne est rendu avec `key={token}` : changer de lien repart d'un état neuf, sans dossier conservé en mémoire |
 | [`components/SituationFiscale.jsx`](components/SituationFiscale.jsx) | dossier complet en lecture seule |
 
 ### Compteur de tentatives du formulaire d'identité
@@ -80,7 +80,7 @@ Aucune feuille dédiée : la page réutilise les classes du projet — `.panel`,
 `.kpis`, `.table-wrap`, `.badge`, `.bar-chart`, `.rule-box`, `.dossier-lecture`,
 `.procedure-more`, `.declaration-detail-grid`, `.secondary`, `.empty`,
 `.login-field`, `.login-submit` — et les règles `.portail-*` ajoutées dans
-[`../../App.css`](../../App.css), y compris les variantes `.dark-theme` et le
+[`../App.css`](../App.css), y compris les variantes `.dark-theme` et le
 bloc `@media print` (boutons et bascule de thème masqués, panneaux et tableaux
 non coupés).
 

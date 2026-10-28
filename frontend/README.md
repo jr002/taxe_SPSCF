@@ -12,7 +12,7 @@ authentification d'un agent.
 | React | 19 (`react`, `react-dom`) |
 | Vite | 8, avec `@vitejs/plugin-react` |
 | Routage | `react-router-dom` 7 (`BrowserRouter`, `Routes`, `Outlet`) |
-| Requêtes HTTP | `axios`, instance centralisée dans `src/api/api.js` |
+| Requêtes HTTP | `axios`, instance unique dans `src/api/client.js`, fonctions d'appel réparties par domaine dans `src/api/` |
 | Styles | Tailwind CSS 4 via `@tailwindcss/vite`, complété par `src/index.css` et `src/App.css` |
 | Import Excel | `xlsx` (côté client) |
 | Qualité | ESLint 10 (`eslint.config.js`) |
@@ -132,7 +132,13 @@ Aucune de ces commandes n'est alignée dans la barre.
 
 ## 5. Appels à l'API
 
-[`src/api/api.js`](src/api/api.js) crée une instance Axios unique :
+[`src/api/client.js`](src/api/client.js) crée l'unique instance Axios ; les
+fonctions d'appel sont réparties par domaine dans [`src/api/`](src/api/)
+(`declarations.js`, `contribuables.js`, `centres.js`, `recoupements.js`,
+`droits-communication.js`, `rapprochements.js`, `etats-contribuable.js`,
+`relances.js`, `controles.js`, `procedure-contradictoire.js`, `agents.js`,
+`acces-contribuable.js`, `auth.js`) et réexportées par
+[`src/api/index.js`](src/api/index.js) :
 
 - `baseURL` = `import.meta.env.VITE_API_URL` ou `/api` ;
 - `withCredentials: true`, indispensable car la session repose sur le cookie
@@ -174,7 +180,7 @@ La liste complète des fonctions et leur endpoint est dans
   `401` et `App.jsx`, qui ouvre l'application par `GET /api/auth/me`, retombe sur
   l'écran de connexion.
 - « Mot de passe oublié ? » sur `/` est un lien vers la page publique
-  `/mot-de-passe-oublie` ([`MotDePasseOublie`](src/backofficeadmin/auth/mot-de-passe-oublie.jsx)),
+  `/mot-de-passe-oublie` ([`MotDePasseOublie`](src/backofficeadmin/auth/pages/MotDePasseOublie.jsx)),
   qui reprend la mise en page de l'écran de connexion et envoie
   `POST /api/auth/reset-request` : aucune carte SMTP n'existant dans le projet,
   la demande est seulement consignée dans le journal d'audit et un
@@ -185,7 +191,7 @@ La liste complète des fonctions et leur endpoint est dans
   `/attente-activation` n'ont pas de bouton propre mais héritent du thème
   enregistré. Le bouton « Masquer / Afficher » reste propre au champ mot de passe
   de `/`.
-- La route publique `/signup` ([`Signup`](src/backofficeadmin/auth/signup.jsx)) envoie
+- La route publique `/signup` ([`Signup`](src/backofficeadmin/auth/pages/Signup.jsx)) envoie
   `POST /api/auth/register` (nom, prénom, e-mail, mot de passe confirmé côté
   client). La demande crée un agent au statut `en_attente` : elle n'ouvre pas de
   session, et la connexion reste refusée jusqu'à l'activation du compte par un

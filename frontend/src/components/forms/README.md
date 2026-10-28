@@ -40,11 +40,11 @@ Carte récapitulative d'un contrôle (`<aside className="result-card ...">`) ave
 | `alert` | `boolean` | `false` | Bascule l'état visuel |
 | `rows` | `Array<[string, any]>` | `[]` | Lignes `[libellé, valeur]` ; toute valeur de type `number` est formatée par `formatAriary` |
 
-Le formatage provient de [`../../utils/formatters.jsx`](../../utils/formatters.jsx).
+Le formatage provient de [`../../utils/formatters.js`](../../utils/formatters.js).
 
 ## [`ExcelImportModal.jsx`](ExcelImportModal.jsx)
 
-Modale d'import par lot de contribuables et de déclarations depuis un fichier `.xlsx`, `.xls` ou `.csv`. Elle utilise la bibliothèque `xlsx` (`XLSX.read`, `XLSX.utils.sheet_to_json`, `XLSX.utils.json_to_sheet`, `XLSX.writeFile`) et les fonctions `createContribuable`, `createDeclaration` et `getErrorMessage` de [`../../api/api.js`](../../api/api.js).
+Modale d'import par lot de contribuables et de déclarations depuis un fichier `.xlsx`, `.xls` ou `.csv`. Elle utilise la bibliothèque `xlsx` (`XLSX.read`, `XLSX.utils.sheet_to_json`, `XLSX.utils.json_to_sheet`, `XLSX.writeFile`) et les fonctions `createContribuable`, `createDeclaration` et `getErrorMessage` importées depuis le barrel [`@/api`](../../api/).
 
 | Prop | Type | Rôle |
 | --- | --- | --- |
@@ -61,7 +61,7 @@ Fonctionnement :
 * **Modèle** : `handleDownloadTemplate` génère `Modele_Import_Contribuables_DGI.xlsx` avec deux lignes d'exemple.
 * **Import** : les lignes valides sont traitées séquentiellement ; un contribuable est créé, puis une déclaration est créée si `id_contribuable`, `annee` et `ca` sont présents (l'échec de la déclaration n'interrompt pas la boucle et n'est signalé que par `console.warn`). Une barre de progression reflète l'avancement et les erreurs sont listées en fin de traitement. En cas de succès complet, `onSuccess` et `onClose` sont appelés après 1,5 s.
 
-Utilisé par `src/frontofficeagent/contribuables/Contribuables.jsx`.
+Utilisé par `src/frontofficeagent/contribuables/pages/Contribuables.jsx`.
 
 Accessibilité : le conteneur interne (`.bg-white.rounded-2xl`) porte
 `role="dialog"`, `aria-modal="true"`, `aria-label` et `tabIndex={-1}` — l'arrière
@@ -75,7 +75,7 @@ du focus dans la boîte de dialogue et sa restitution au bouton déclencheur.
 
 | Composant | Importé par |
 | --- | --- |
-| `AmountField`, `IdentityFields`, `ControlResult` | `src/frontofficeagent/collecte/modules/` : `TheoreticalForm.jsx`, `ReconciliationForm.jsx`, `InsertionDeclaration.jsx`, `CollecterDeductible.jsx` |
-| `ExcelImportModal` | `src/frontofficeagent/contribuables/Contribuables.jsx` |
+| `AmountField`, `IdentityFields`, `ControlResult` | `src/frontofficeagent/collecte/components/` : `TheoreticalForm.jsx`, `ReconciliationForm.jsx`, `InsertionDeclaration.jsx`, `CollecterDeductible.jsx` |
+| `ExcelImportModal` | `src/frontofficeagent/contribuables/pages/Contribuables.jsx` |
 
 Les classes de style de `AmountField` (`field`, `input-wrap`) et de `ControlResult` (`result-card`, `result-header`, `status-indicator`, `success-dot`, `alert-dot`, `result-rows`, `result-row`, `monetary-val`) sont définies dans [`../../App.css`](../../App.css). En revanche, `IdentityFields.jsx` emploie `identity-block` (absente de `App.css`, qui fournit `identity-grid`, `company-grid` et `financial-grid`) et `grid two` : `two` n'a aucune règle CSS et seule l'utilitaire Tailwind `grid` s'applique au conteneur, qui n'est donc pas mis en deux colonnes. `ExcelImportModal` s'appuie principalement sur des classes utilitaires Tailwind.

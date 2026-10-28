@@ -86,12 +86,18 @@ spscf/                          ← Racine du monorepo (pnpm workspaces)
 │   └── scripts/
 │       └── create-agent.js     ← Création de comptes agents (CLI)
 ├── frontend/                   ← Interface Web (React / Vite)
-│   └── src/
-│       ├── pages/              ← Pages par domaine fonctionnel
-│       ├── components/         ← Composants réutilisables
-│       ├── backofficeadmin/    ← Espace d'administration
-│       ├── api/api.js          ← Client Axios centralisé
-│       └── App.jsx             ← Routeur principal React
+│   ├── src/
+│   │   ├── api/                ← Client Axios (`client.js`) + fonctions par domaine, barrel `index.js`
+│   │   ├── frontofficeagent/   ← Espace des rôles opérationnels, découpé par domaine métier
+│   │   │   └── <domaine>/      ← `pages/`, `components/`, `hooks/`, `utils/`, `index.js`
+│   │   ├── backofficeadmin/    ← Espace administrateur (auth, comptes, rôles, NIF, audit)
+│   │   ├── accountcontribuable/← Portail « Ma situation fiscale » (lien à usage unique)
+│   │   ├── components/         ← Composants partagés (`common/`, `forms/`, `charts/`)
+│   │   ├── hooks/              ← Hooks partagés entre plusieurs domaines
+│   │   ├── utils/              ← Fonctions pures partagées entre plusieurs domaines
+│   │   ├── data/               ← `referentiel-unites.js` (seule sortie de `src/`)
+│   │   └── App.jsx             ← Routeur principal React
+│   └── vite.config.js          ← Alias `@/` → `src/` et proxy `/api` → `localhost:5000`
 └── unitefiscal.json            ← Référentiel institutionnel DGI (centres fiscaux)
 ```
 

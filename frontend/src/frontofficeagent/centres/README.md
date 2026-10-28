@@ -21,13 +21,13 @@ centres/
 
 Le module combine deux approches complémentaires selon les besoins métiers :
 
-1. **Gestion dynamique via API Backend (`api/api.js`)** :
-   * Utilisé par [`Register.jsx`](Register.jsx) et [`CentreDetail.jsx`](CentreDetail.jsx).
+1. **Gestion dynamique via API Backend (fonctions de `@/api`)** :
+   * Utilisé par [`pages/Register.jsx`](pages/Register.jsx) et [`pages/CentreDetail.jsx`](pages/CentreDetail.jsx).
    * Les données proviennent de la base de données via les endpoints `/api/centres` et `/api/contribuables`.
    * Permet le suivi en temps réel des centres enregistrés et le comptage/listing des contribuables qui leur sont rattachés.
 
 2. **Référentiel structurel et territorial (`unitefiscal.json`)** :
-   * Utilisé par [`CentreListe.jsx`](CentreListe.jsx) et [`UniteFiscaleDetail.jsx`](UniteFiscaleDetail.jsx).
+   * Utilisé par [`pages/CentreListe.jsx`](pages/CentreListe.jsx) et [`pages/UniteFiscaleDetail.jsx`](pages/UniteFiscaleDetail.jsx).
    * Les données proviennent du fichier de référence institutionnel à la racine du projet (`unitefiscal.json`), recensant la cartographie fiscale à Madagascar (DGE, SRE, Centres fiscaux par DRI et région).
 
 ---
@@ -41,7 +41,7 @@ Le module combine deux approches complémentaires selon les besoins métiers :
 | `/centres-fiscaux` | `CentreListe` | Fichier statique `unitefiscal.json` | Annuaire global des unités réparties par DGE, SRE et Centres fiscaux |
 | `/centres-fiscaux/:type/:index` | `UniteFiscaleDetail` | Fichier statique `unitefiscal.json` | Fiche détaillée d'une unité opérationnelle (DRI, régions, contacts) |
 
-Toutes ces pages sont réexportées au niveau du point d'entrée central [`frontend/src/frontofficeagent/index.jsx`](../index.jsx).
+Toutes ces pages sont réexportées au niveau du point d'entrée central [`../index.js`](../index.js).
 
 ---
 
@@ -111,6 +111,6 @@ Toutes ces pages sont réexportées au niveau du point d'entrée central [`front
 
 ## 🔗 Liens & Interactions avec les Autres Modules
 
-* **Lien avec `accueil/` :** Le tableau de bord d'accueil ([`Accueil.jsx`](../accueil/Accueil.jsx)) propose un raccourci direct vers le registre (`/register`).
-* **Lien avec `contribuables/` :** Depuis [`CentreDetail.jsx`](CentreDetail.jsx), l'utilisateur accède en un clic à la fiche complète du contribuable rattaché ([`ContribuableDetail.jsx`](../contribuables/ContribuableDetail.jsx)).
-* **Lien avec `entreprises/` :** Lors de l'immatriculation d'une nouvelle entreprise ([`FormInformation.jsx`](../entreprises/FormInformation.jsx)), les centres fiscaux servent de référence pour le rattachement administratif de l'entreprise.
+* **Lien avec `accueil/` :** Le tableau de bord d'accueil ([`../accueil/pages/Accueil.jsx`](../accueil/pages/Accueil.jsx)) propose un raccourci direct vers le registre (`/register`).
+* **Lien avec `contribuables/` :** Depuis [`pages/CentreDetail.jsx`](pages/CentreDetail.jsx), l'utilisateur accède en un clic à la fiche complète du contribuable rattaché ([`../contribuables/pages/ContribuableDetail.jsx`](../contribuables/pages/ContribuableDetail.jsx)).
+* **Lien avec `entreprises/` :** Lors de l'immatriculation d'une nouvelle entreprise ([`../entreprises/pages/FormInformation.jsx`](../entreprises/pages/FormInformation.jsx)), les centres fiscaux servent de référence pour le rattachement administratif de l'entreprise.

@@ -99,7 +99,7 @@ Les relances sont persistées en base par `POST /api/relances` (`createRelance`)
 | Synthèse | `Synthèse` | Année, déclarations déposées, TVA payée, TVA théorique, écart |
 | Nature d'impôt | `Nature d'impôt` | Catégorie, seuil, régimes fiscal et comptable, pénalités de retard, amendes, référence légale |
 | Déclarations | `Déclarations` | Année, chiffre d'affaires, catégorie, TVA collectée, TVA déductible, TVA payée, TVA théorique, statut |
-| Relances | `Relances` | Date, type, montant, statut (relances en base du contribuable, libellés de `utils/relance.utils.js`) |
+| Relances | `Relances` | Date, type, montant, statut (relances en base du contribuable, libellés de `frontofficeagent/relance/utils/relance.utils.js`) |
 
 Le bouton est désactivé quand l'onglet n'a aucune ligne exportable (`countExportRows`). Le fichier est nommé `contribuable-<NIF>-<onglet>-<AAAA-MM-JJ>.xlsx` et les montants sont écrits en valeurs numériques au format Excel `#,##0 "Ar"`.
 
@@ -142,7 +142,7 @@ Règle de déduction VSP/CSP (`isVSP`, `getProcedure`), catégorisation `IS` / `
 
 ### `utils/exportFicheContribuable.js`
 
-Construit et télécharge le classeur Excel de la fiche. `countExportRows(props)` renvoie le nombre de lignes que produirait l'export (utilisé pour désactiver le bouton) et `exportFicheContribuable(props)` génère le fichier et renvoie `{ count, label }`. Les deux fonctions attendent le même objet : `{ activeTab, annualData, contribuable, declarations, fiche, history }`. Le module réutilise les seuils `SEUIL_GRAND` et `SEUIL_MOYEN` de `../../utils/contribuable.utils` pour la colonne « Catégorie ».
+Construit et télécharge le classeur Excel de la fiche. `countExportRows(props)` renvoie le nombre de lignes que produirait l'export (utilisé pour désactiver le bouton) et `exportFicheContribuable(props)` génère le fichier et renvoie `{ count, label }`. Les deux fonctions attendent le même objet : `{ activeTab, annualData, contribuable, declarations, fiche, history }`. Le module réutilise les seuils `SEUIL_GRAND` et `SEUIL_MOYEN` de `../../frontofficeagent/contribuables/utils/classificationCgi.utils` pour la colonne « Catégorie ».
 
 ### Pagination : partagée, plus locale
 
@@ -166,8 +166,8 @@ Exporte `AmountFormatter({ amount })`, qui affiche un montant arrondi et abrég�
 ## Dépendances principales
 
 - `../../api/api` : `getContribuables`, `getContribuableById`, `createDeclaration`, `getRecoupements`, `createRecoupement`, `getDroitsCommunication`, `createDroitCommunication`, `getErrorMessage` ;
-- `../../utils/contribuable.utils` : `getCategorie`, `getFicheCategorie` ;
-- `../../utils/decisionnel.utils` : `getRegime` ;
+- `../../frontofficeagent/contribuables/utils/classificationCgi.utils` : `getCategorie`, `getFicheCategorie` ;
+- `../../frontofficeagent/decisionnel/utils/decisionnel.utils` : `getRegime` ;
 - `../../utils/formatters` : `formatAriary`, `formatNumber`, `toNumber` ;
 - `../../components/forms/ExcelImportModal` : import Excel/CSV ;
 - `../relance/components/RappelOrdreModal` : aperçu des documents de relance ;

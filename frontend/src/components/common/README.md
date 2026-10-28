@@ -77,7 +77,7 @@ Export par défaut `Header`. En-tête rendu par `App.jsx` pour toutes les routes
   tape `/suivi` y accède toujours (le `data-scope` de son rôle couvre tous les
   centres), et un agent qui tape `/admin` tombe sur le refus rendu par chaque
   page du backoffice (`if (!isAdmin)` dans
-  `src/backofficeadmin/dashboard/AdminDashboard.jsx`,
+  `src/backofficeadmin/dashboard/pages/AdminDashboard.jsx`,
   `utilisateurs/AdminUtilisateurs.jsx`, `roles/AdminRoles.jsx`,
   `historique/AdminHistorique.jsx` et `verification-nif/AdminVerificationNIF.jsx`).
   Verrouiller `/admin*` et l'espace fiscal par des gardes de route reste à faire
@@ -163,7 +163,7 @@ Export par défaut `UserProfile`. Puce de profil de l'agent connecté, rendue pa
 Export par défaut `ModaleConfirmation`. Modale de confirmation générique chargée
 de **dire avant de faire** : elle résume la ou les modifications, puis n'exécute
 l'action que sur « Valider ». Deux consommateurs :
-[`../../backofficeadmin/utilisateurs/AdminUtilisateurs.jsx`](../../backofficeadmin/utilisateurs/AdminUtilisateurs.jsx)
+[`../../backofficeadmin/utilisateurs/pages/AdminUtilisateurs.jsx`](../../backofficeadmin/utilisateurs/pages/AdminUtilisateurs.jsx)
 (cinq cas — enregistrement du brouillon, blocage / activation, mot de passe
 temporaire, suppression, abandon d'un brouillon) et la modale de mot de passe de
 [`UserProfile.jsx`](UserProfile.jsx).
@@ -187,7 +187,7 @@ temporaire, suppression, abandon d'un brouillon) et la modale de mot de passe de
   titre, `tabIndex={-1}` et [`../../hooks/useModalA11y.js`](../../hooks/useModalA11y.js)
   (focus volé à l'ouverture, `Échap` qui ferme, focus restitué à l'appelant) ; le
   message d'erreur est en `role="alert"` et le succès en `role="status"`.
-* Styles dans [`../../../App.css`](../../../App.css), bloc `.modale-confirmation*`
+* Styles dans [`../../App.css`](../../App.css), bloc `.modale-confirmation*`
   et ses variantes `.dark-theme`, posé sur l'arrière-plan `.rappel-modal-overlay`
   déjà utilisé par les autres modales.
 
@@ -216,7 +216,7 @@ Export par défaut `NotificationModal`. Modale plein écran présentant un docum
 * Dates formatées en `fr-FR` : date d'émission issue de `date_notification_primitive` ou `date_notification_definitive` (repli sur la date du jour) et date limite issue de `date_limite_reponse` (repli sur aujourd'hui + 30 jours).
 * Boutons « Imprimer / Exporter PDF » et « Fermer » ; la barre d'outils porte la classe `no-print`, prévue pour être masquée à l'impression par [`../../App.css`](../../App.css).
 * Accessibilité clavier : le conteneur `.notification-modal-card` porte `role="dialog"`, `aria-modal="true"`, un `aria-label` selon le type et `tabIndex={-1}` ; il est focalisé à l'ouverture et Échap appelle `onClose` (voir [`../../hooks/useModalA11y.js`](../../hooks/useModalA11y.js)).
-* Les montants sont formatés par `formatAriary` importé depuis [`../../utils/formatters.jsx`](../../utils/formatters.jsx).
+* Les montants sont formatés par `formatAriary` importé depuis [`../../utils/formatters.js`](../../utils/formatters.js).
 * Remarque : `printRef` est déclaré (`useRef`) et attaché au bloc `.notification-sheet`, mais n'est jamais lu.
 
 Props :
@@ -229,7 +229,7 @@ Props :
 | `declaration` | `object` | Déclaration / dossier concerné (obligatoire) |
 | `redressementDetails` | `object` | Surcharge des montants `principal`, `amende`, `penalite`, `total` (défaut `{}`) |
 
-Utilisé par `src/frontofficeagent/suivi-fiscal/DeclarationDetail.jsx` et `src/frontofficeagent/collecte/modules/TheoreticalForm.jsx`.
+Utilisé par `src/frontofficeagent/suivi-fiscal/pages/DeclarationDetail.jsx` et `src/frontofficeagent/collecte/components/TheoreticalForm.jsx`.
 
 ## [`DemandeEclaircissementModal.jsx`](DemandeEclaircissementModal.jsx)
 
@@ -263,4 +263,4 @@ Props :
 | `dateEmission` | `string \| Date \| null` | Date du document ; sert aussi de point de départ du délai |
 | `delaiJours` | `number` | Délai de réponse, en jours (défaut `30`) |
 
-Utilisé par `src/frontofficeagent/suivi-fiscal/DeclarationDetail.jsx`.
+Utilisé par `src/frontofficeagent/suivi-fiscal/pages/DeclarationDetail.jsx`.

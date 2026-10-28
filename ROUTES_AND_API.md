@@ -3,24 +3,24 @@
 Ce document décrit les routes du frontend React, les endpoints de l'API REST
 Express et les fonctions du client API du projet. Il est maintenu en regard du
 code : [`frontend/src/App.jsx`](frontend/src/App.jsx),
-[`frontend/src/api/api.js`](frontend/src/api/api.js) et
+[`frontend/src/api/client.js`](frontend/src/api/client.js) et
 [`backend/src/app.js`](backend/src/app.js).
 
 ---
 
 ## 1. Routes frontend (React Router)
 
-Toutes les routes sont déclarées dans [`App.jsx`](frontend/src/App.jsx). Au
+Toutes les routes sont déclarées dans [`frontend/src/App.jsx`](frontend/src/App.jsx). Au
 montage, l'application appelle `GET /api/auth/me` avec le cookie de session :
 tant que la réponse n'est pas connue, un message « Vérification de la session… »
 est affiché. Ensuite :
 
 - la route `/` affiche l'écran de connexion
-  [`backofficeadmin/auth/signin.jsx`](frontend/src/backofficeadmin/auth/signin.jsx)
+  [`frontend/src/backofficeadmin/auth/pages/Signin.jsx`](frontend/src/backofficeadmin/auth/pages/Signin.jsx)
   si l'agent n'est pas authentifié, sinon elle redirige vers l'accueil de son
   rôle (`getLandingPath`) ;
 - les autres pages sont regroupées dans une route de layout sans chemin, qui
-  rend [`Header.jsx`](frontend/src/components/common/Header.jsx) puis
+  rend [`frontend/src/components/common/Header.jsx`](frontend/src/components/common/Header.jsx) puis
   `<main><Outlet /></main>` lorsque la session est valide, et redirige vers `/`
   sinon. La barre de navigation est fixe en haut de l'écran (`position: sticky`
   au-delà de 1024 px) et l'entrée surlignée est celle dont le chemin est le
@@ -29,7 +29,7 @@ est affiché. Ensuite :
   `/admin/verification-nif/sql`) ;
 - toute URL inconnue correspond au motif `*` et redirige vers `/` ;
 - la route publique `/espace-contribuable/:token` est déclarée **avant** la route
-  de layout : elle rend [`EspaceContribuable.jsx`](frontend/src/accountcontribuable/EspaceContribuable.jsx)
+  de layout : elle rend [`frontend/src/accountcontribuable/pages/EspaceContribuable.jsx`](frontend/src/accountcontribuable/pages/EspaceContribuable.jsx)
   sans `Header` et n'appelle pas `GET /api/auth/me` (un `useLocation` détecte le
   préfixe `/espace-contribuable/` et la vérification de session est court-circuitée),
   de sorte qu'un contributeur sans compte agent ouvre sa page sans `401` dans la
@@ -37,61 +37,62 @@ est affiché. Ensuite :
 
 | Route URL | Composant page | Accès | Rôle |
 | :--- | :--- | :--- | :--- |
-| `/` | `backofficeadmin/auth/signin.jsx` | public | Écran de connexion ; si la session est déjà valide, redirection vers `/admin` pour un administrateur et `/acceuil` pour les autres rôles (`getLandingPath` de `frontend/src/utils/session.utils.js`, partagé par `App.jsx` et `signin.jsx`) |
-| `/espace-contribuable/:token` | `accountcontribuable/EspaceContribuable.jsx` | public — garde par jeton + NIF/e-mail | **Portail contribuable en lecture seule** : `GET /api/acces-contribuable/:token` pour l'état du lien, formulaire NIF + e-mail, puis `POST /api/acces-contribuable/:token/ouvrir` et la page « Ma situation fiscale » (tableau de bord des taxes, histogramme par exercice, conseils et pénalités, notifications et relances, historique TVA, droits de communication, recoupements, rapprochement / confrontation). Bouton « Imprimer / enregistrer en PDF » par `window.print()`, aucune dépendance ajoutée. Le détail est dans [`frontend/src/accountcontribuable/README.md`](frontend/src/accountcontribuable/README.md) |
+| `/` | `backofficeadmin/auth/pages/Signin.jsx` | public | Écran de connexion ; si la session est déjà valide, redirection vers `/admin` pour un administrateur et `/acceuil` pour les autres rôles (`getLandingPath` de `frontend/src/utils/session.utils.js`, partagé par `App.jsx` et `Signin.jsx`) |
+| `/espace-contribuable/:token` | `accountcontribuable/pages/EspaceContribuable.jsx` | public — garde par jeton + NIF/e-mail | **Portail contribuable en lecture seule** : `GET /api/acces-contribuable/:token` pour l'état du lien, formulaire NIF + e-mail, puis `POST /api/acces-contribuable/:token/ouvrir` et la page « Ma situation fiscale » (tableau de bord des taxes, histogramme par exercice, conseils et pénalités, notifications et relances, historique TVA, droits de communication, recoupements, rapprochement / confrontation). Bouton « Imprimer / enregistrer en PDF » par `window.print()`, aucune dépendance ajoutée. Le détail est dans [`frontend/src/accountcontribuable/README.md`](frontend/src/accountcontribuable/README.md) |
 | `/signin` | — | public | Redirection immédiate vers `/` |
-| `/signup` | `backofficeadmin/auth/signup.jsx` | public | Demande de création d'un compte agent (nom, prénom, e-mail, mot de passe et confirmation) ; enregistre la demande sans connecter l'utilisateur puis **redirige vers `/attente-activation`** avec l'identité saisie |
-| `/attente-activation` | `backofficeadmin/auth/attente-activation.jsx` | public | Écran de statut « en attente d'activation » : atteint après une inscription ou après une connexion refusée pour `statut = en_attente` (`403` + `code: COMPTE_EN_ATTENTE`) ; reprend la mise en page de `/` et `/signup` et offre le bouton « ← Retour à la connexion », un lien « Mot de passe oublié ? » vers `/mot-de-passe-oublie` et un lien « Créer un autre compte » vers `/signup` |
-| `/mot-de-passe-oublie` | `backofficeadmin/auth/mot-de-passe-oublie.jsx` | public | Demande de réinitialisation du mot de passe (`POST /api/auth/reset-request`) ; même mise en page que `/`, bouton de thème compris, et champ e-mail prérempli depuis l'état de navigation transmis par le lien « Mot de passe oublié ? » de `/` |
-| `/admin` | `backofficeadmin/dashboard/AdminDashboard.jsx` | protégé — administrateurs | **Accueil de l'espace admin** : tableau de bord des comptes agents (effectifs par statut, répartition, derniers comptes créés, accès rapides) |
-| `/admin/utilisateurs` | `backofficeadmin/utilisateurs/AdminUtilisateurs.jsx` | protégé — administrateurs | Gestion des comptes : activation des demandes, blocage / réactivation, rôles, centre de rattachement, identité, mots de passe, suppression. Chaque ligne se déplie en fiche de profil (identité éditable, rôle, liste des centres disponibles, périmètre, création, actions). **La fiche fonctionne en brouillon** : frapper un champ ou changer un sélecteur n'envoie rien, le pied de fiche affiche « N modification(s) non enregistrée(s) » et seul le bouton `💾 Enregistrer` déclenche les `PATCH`. Toute action (enregistrement, blocage / activation, mot de passe temporaire, suppression, abandon d'un brouillon) passe par la modale [`ModaleConfirmation`](frontend/src/components/common/ModaleConfirmation.jsx), qui liste les paires « avant → après » et propose Annuler / Valider ; les erreurs du serveur (e-mail déjà pris, dernier administrateur…) s'affichent dans la modale elle-même. Pour un admin, le `Header` ne présente que les modules admin (et le logo renvoie vers `/admin`) |
-| `/admin/roles` | `backofficeadmin/roles/AdminRoles.jsx` | protégé — administrateurs | Gestion des rôles & accès par centre fiscal : matrice des 7 titres (Administrateur, Chef de centre, Inspecteur, Contrôleur, Agent Fiscal, Contribuable, Autre), changement de rôle par ligne (`PATCH /api/agents/:id/role`) et affectation du centre de rattachement (`PATCH /api/agents/:id/centre`) — l'affectation est lue et écrite en base, plus dans le `localStorage`. Le même sélecteur de centre est disponible dans la fiche de profil de `/admin/utilisateurs` |
-| `/admin/verification-nif` | `backofficeadmin/verification-nif/AdminVerificationNIF.jsx` | protégé — administrateurs | Synthèse des trois types de vérification (requête, Excel, catalogue JSON) et tableau du référentiel NIF ; chaque bloc renvoie vers sa page dédiée |
-| `/admin/verification-nif/sql` | `backofficeadmin/verification-nif/VerificationNifSql.jsx` | protégé — administrateurs | Vérification d'un NIF par requête API + référentiel local ; saisie multigne acceptant une requête collée (le premier NIF à 10 chiffres est retenu), journal des erreurs et les 3 dernières opérations du type |
-| `/admin/verification-nif/excel` | `backofficeadmin/verification-nif/VerificationNifExcel.jsx` | protégé — administrateurs | Liaison du référentiel depuis un fichier `.xlsx` / `.xls` / `.csv` lu côté navigateur, avec modèle vierge `modele de verificationnif.xls` téléchargeable et les 3 dernières importations |
-| `/admin/verification-nif/json` | `backofficeadmin/verification-nif/VerificationNifJson.jsx` | protégé — administrateurs | Synchronisation avec le catalogue `unitefiscal.json` (import module, pas `fetch`), modèle `modele de verificationnif.json` téléchargeable et API JSON enregistrables — fichiers de `frontend/public/referentiel-nif/` ou serveurs distants — avec les 3 dernières synchronisations |
-| `/admin/historique` | `backofficeadmin/historique/AdminHistorique.jsx` | protégé — administrateurs | Journal des opérations d'administration (`GET /api/agents/historique`) |
-| `/acceuil` | `Accueil.jsx` | protégé | Tableau de bord d'accueil et indicateurs de synthèse |
-| `/collecte` | `Collecte.jsx` | protégé | Simulateur de collecte TVA ; l'onglet actif est porté par `currentModule` (`sales`, `theoretical`, `reconciliation`, `declaration`) |
-| `/entreprises/nouveau` | `PhaseClassement.jsx` | protégé | Étape 1 de l'immatriculation : choix de la structure compétente |
-| `/entreprises/nouveau/form` | `FormInformation.jsx` | protégé | Étape 2 de l'immatriculation : formulaire de création d'un contribuable (`?structure=…`) |
-| `/decisionnel` | `TableauDecisionnel.jsx` | protégé | Tableau de bord de pilotage (KPI et graphiques) |
-| `/register` | `Register.jsx` | protégé | Registre fiscal par centre |
-| `/centres-fiscaux` | `CentreListe.jsx` | protégé | Liste des centres et unités fiscales |
-| `/centres/:id` | `CentreDetail.jsx` | protégé | Fiche d'un centre et de ses contribuables |
-| `/centres-fiscaux/:type/:index` | `UniteFiscaleDetail.jsx` | protégé | Fiche d'une unité fiscale (centre fiscal, SRE ou DGE) |
-| `/suivi` | `SuiviFiscal.jsx` | protégé | Suivi et recherche des déclarations ; badge de contrôle **Rien à signaler** (vert, écart ≤ 25 %), **Risque moyen** (orange, écart ≤ 50 %) ou **À risque** (rouge) |
-| `/suivi/:id` | `DeclarationDetail.jsx` | protégé | Fiche détaillée d'une déclaration et actes de procédure contradictoire : notification primitive, notification définitive, demande d'éclaircissements (CPF V-17, persistée dans `relances`), imputation du crédit d'impôt |
-| `/contribuables` | `Contribuables.jsx` | protégé | Registre des contribuables (vue liste) |
-| `/contribuables?vue=statistique` | `Contribuables.jsx` | protégé | Même page, vue **Statistique** : KPI, camemberts et histogrammes VSP / CSP et IS / IR / TVA (la vue est portée par l'query string, aucun état local) |
-| `/contribuables/:id` | `ContribuableDetail.jsx` | protégé | Fiche détaillée d'un contribuable, onglet Synthèse. Son en-tête porte le bouton `secondary` « Lien contribuable », qui ouvre [`LienAccesModal.jsx`](frontend/src/frontofficeagent/contribuables/components/LienAccesModal.jsx) : durée 7 / 14 / 30 jours, `POST /api/contribuables/:id/acces-contribuable`, URL complète prête à transmettre, e-mail masqué, échéance, copie avec repli par sélection quand `navigator.clipboard` est refusé, et avertissement que la réémission révoque le lien précédent |
-| `/contribuables/:id/classification` | `ContribuableDetail.jsx` | protégé | Même fiche, onglet Nature d'impôt |
-| `/contribuables/:id/declarations` | `ContribuableDetail.jsx` | protégé | Même fiche, onglet Déclarations |
-| `/contribuables/:id/declarations/nouveau` | `pages/DeclarationCreate.jsx` | protégé | Page dédiée d'enregistrement d'une déclaration |
-| `/contribuables/:id/recoupements` | `ContribuableDetail.jsx` | protégé | Même fiche, onglet Recoupements |
-| `/contribuables/:id/recoupements/nouveau` | `pages/RecoupementCreate.jsx` | protégé | Page dédiée d'enregistrement d'un recoupement |
-| `/contribuables/:id/droits-communication` | `ContribuableDetail.jsx` | protégé | Même fiche, onglet Droits de communication |
-| `/contribuables/:id/droits-communication/nouveau` | `pages/DroitCommunicationCreate.jsx` | protégé | Page dédiée d'enregistrement d'un droit de communication |
-| `/contribuables/:id/relances` | `ContribuableDetail.jsx` | protégé | Même fiche, onglet Relances (historique local, `localStorage`) |
-| `/contribuables/:id/confrontation` | `pages/Confrontation.jsx` | protégé | Page unique de confrontation déclarations / recoupements, avec ses onglets internes |
-| `/relance` | `RelanceFiscale.jsx` | protégé | Relance fiscale et recouvrement, alimentée par les déclarations et les contribuables |
+| `/signup` | `backofficeadmin/auth/pages/Signup.jsx` | public | Demande de création d'un compte agent (nom, prénom, e-mail, mot de passe et confirmation) ; enregistre la demande sans connecter l'utilisateur puis **redirige vers `/attente-activation`** avec l'identité saisie |
+| `/attente-activation` | `backofficeadmin/auth/pages/AttenteActivation.jsx` | public | Écran de statut « en attente d'activation » : atteint après une inscription ou après une connexion refusée pour `statut = en_attente` (`403` + `code: COMPTE_EN_ATTENTE`) ; reprend la mise en page de `/` et `/signup` et offre le bouton « ← Retour à la connexion », un lien « Mot de passe oublié ? » vers `/mot-de-passe-oublie` et un lien « Créer un autre compte » vers `/signup` |
+| `/mot-de-passe-oublie` | `backofficeadmin/auth/pages/MotDePasseOublie.jsx` | public | Demande de réinitialisation du mot de passe (`POST /api/auth/reset-request`) ; même mise en page que `/`, bouton de thème compris, et champ e-mail prérempli depuis l'état de navigation transmis par le lien « Mot de passe oublié ? » de `/` |
+| `/admin` | `backofficeadmin/dashboard/pages/AdminDashboard.jsx` | protégé — administrateurs | **Accueil de l'espace admin** : tableau de bord des comptes agents (effectifs par statut, répartition, derniers comptes créés, accès rapides) |
+| `/admin/utilisateurs` | `backofficeadmin/utilisateurs/pages/AdminUtilisateurs.jsx` | protégé — administrateurs | Gestion des comptes : activation des demandes, blocage / réactivation, rôles, centre de rattachement, identité, mots de passe, suppression. Chaque ligne se déplie en fiche de profil (identité éditable, rôle, liste des centres disponibles, périmètre, création, actions). **La fiche fonctionne en brouillon** : frapper un champ ou changer un sélecteur n'envoie rien, le pied de fiche affiche « N modification(s) non enregistrée(s) » et seul le bouton `💾 Enregistrer` déclenche les `PATCH`. Toute action (enregistrement, blocage / activation, mot de passe temporaire, suppression, abandon d'un brouillon) passe par la modale [`ModaleConfirmation`](frontend/src/components/common/ModaleConfirmation.jsx), qui liste les paires « avant → après » et propose Annuler / Valider ; les erreurs du serveur (e-mail déjà pris, dernier administrateur…) s'affichent dans la modale elle-même. Pour un admin, le `Header` ne présente que les modules admin (et le logo renvoie vers `/admin`) |
+| `/admin/roles` | `backofficeadmin/roles/pages/AdminRoles.jsx` | protégé — administrateurs | Gestion des rôles & accès par centre fiscal : matrice des 7 titres (Administrateur, Chef de centre, Inspecteur, Contrôleur, Agent Fiscal, Contribuable, Autre), changement de rôle par ligne (`PATCH /api/agents/:id/role`) et affectation du centre de rattachement (`PATCH /api/agents/:id/centre`) — l'affectation est lue et écrite en base, plus dans le `localStorage`. Le même sélecteur de centre est disponible dans la fiche de profil de `/admin/utilisateurs` |
+| `/admin/verification-nif` | `backofficeadmin/verification-nif/pages/AdminVerificationNIF.jsx` | protégé — administrateurs | Synthèse des trois types de vérification (requête, Excel, catalogue JSON) et tableau du référentiel NIF ; chaque bloc renvoie vers sa page dédiée |
+| `/admin/verification-nif/sql` | `backofficeadmin/verification-nif/pages/VerificationNifSql.jsx` | protégé — administrateurs | Vérification d'un NIF par requête API + référentiel local ; saisie multigne acceptant une requête collée (le premier NIF à 10 chiffres est retenu), journal des erreurs et les 3 dernières opérations du type |
+| `/admin/verification-nif/excel` | `backofficeadmin/verification-nif/pages/VerificationNifExcel.jsx` | protégé — administrateurs | Liaison du référentiel depuis un fichier `.xlsx` / `.xls` / `.csv` lu côté navigateur, avec modèle vierge `modele de verificationnif.xls` téléchargeable et les 3 dernières importations |
+| `/admin/verification-nif/json` | `backofficeadmin/verification-nif/pages/VerificationNifJson.jsx` | protégé — administrateurs | Synchronisation avec le catalogue `unitefiscal.json` (import module, pas `fetch`), modèle `modele de verificationnif.json` téléchargeable et API JSON enregistrables — fichiers de `frontend/public/referentiel-nif/` ou serveurs distants — avec les 3 dernières synchronisations |
+| `/admin/historique` | `backofficeadmin/historique/pages/AdminHistorique.jsx` | protégé — administrateurs | Journal des opérations d'administration (`GET /api/agents/historique`) |
+| `/acceuil` | `frontofficeagent/accueil/pages/Accueil.jsx` | protégé | Tableau de bord d'accueil et indicateurs de synthèse |
+| `/collecte` | `frontofficeagent/collecte/pages/Collecte.jsx` | protégé | Simulateur de collecte TVA ; l'onglet actif est porté par `currentModule` (`sales`, `theoretical`, `reconciliation`, `declaration`) |
+| `/entreprises/nouveau` | `frontofficeagent/entreprises/pages/PhaseClassement.jsx` | protégé | Étape 1 de l'immatriculation : choix de la structure compétente |
+| `/entreprises/nouveau/form` | `frontofficeagent/entreprises/pages/FormInformation.jsx` | protégé | Étape 2 de l'immatriculation : formulaire de création d'un contribuable (`?structure=…`) |
+| `/decisionnel` | `frontofficeagent/decisionnel/pages/TableauDecisionnel.jsx` | protégé | Tableau de bord de pilotage (KPI et graphiques) |
+| `/register` | `frontofficeagent/centres/pages/Register.jsx` | protégé | Registre fiscal par centre |
+| `/centres-fiscaux` | `frontofficeagent/centres/pages/CentreListe.jsx` | protégé | Liste des centres et unités fiscales |
+| `/centres/:id` | `frontofficeagent/centres/pages/CentreDetail.jsx` | protégé | Fiche d'un centre et de ses contribuables |
+| `/centres-fiscaux/:type/:index` | `frontofficeagent/centres/pages/UniteFiscaleDetail.jsx` | protégé | Fiche d'une unité fiscale (centre fiscal, SRE ou DGE) |
+| `/suivi` | `frontofficeagent/suivi-fiscal/pages/SuiviFiscal.jsx` | protégé | Suivi et recherche des déclarations ; badge de contrôle **Rien à signaler** (vert, écart ≤ 25 %), **Risque moyen** (orange, écart ≤ 50 %) ou **À risque** (rouge) |
+| `/suivi/:id` | `frontofficeagent/suivi-fiscal/pages/DeclarationDetail.jsx` | protégé | Fiche détaillée d'une déclaration et actes de procédure contradictoire : notification primitive, notification définitive, demande d'éclaircissements (CPF V-17, persistée dans `relances`), imputation du crédit d'impôt |
+| `/contribuables` | `frontofficeagent/contribuables/pages/Contribuables.jsx` | protégé | Registre des contribuables (vue liste) |
+| `/contribuables?vue=statistique` | `frontofficeagent/contribuables/pages/Contribuables.jsx` | protégé | Même page, vue **Statistique** : KPI, camemberts et histogrammes VSP / CSP et IS / IR / TVA (la vue est portée par l'query string, aucun état local) |
+| `/contribuables/:id` | `frontofficeagent/contribuables/pages/ContribuableDetail.jsx` | protégé | Fiche détaillée d'un contribuable, onglet Synthèse. Son en-tête porte le bouton `secondary` « Lien contribuable », qui ouvre [`frontend/src/frontofficeagent/contribuables/components/LienAccesModal.jsx`](frontend/src/frontofficeagent/contribuables/components/LienAccesModal.jsx) : durée 7 / 14 / 30 jours, `POST /api/contribuables/:id/acces-contribuable`, URL complète prête à transmettre, e-mail masqué, échéance, copie avec repli par sélection quand `navigator.clipboard` est refusé, et avertissement que la réémission révoque le lien précédent |
+| `/contribuables/:id/classification` | `frontofficeagent/contribuables/pages/ContribuableDetail.jsx` | protégé | Même fiche, onglet Nature d'impôt |
+| `/contribuables/:id/declarations` | `frontofficeagent/contribuables/pages/ContribuableDetail.jsx` | protégé | Même fiche, onglet Déclarations |
+| `/contribuables/:id/declarations/nouveau` | `frontofficeagent/contribuables/pages/DeclarationCreate.jsx` | protégé | Page dédiée d'enregistrement d'une déclaration |
+| `/contribuables/:id/recoupements` | `frontofficeagent/contribuables/pages/ContribuableDetail.jsx` | protégé | Même fiche, onglet Recoupements |
+| `/contribuables/:id/recoupements/nouveau` | `frontofficeagent/contribuables/pages/RecoupementCreate.jsx` | protégé | Page dédiée d'enregistrement d'un recoupement |
+| `/contribuables/:id/droits-communication` | `frontofficeagent/contribuables/pages/ContribuableDetail.jsx` | protégé | Même fiche, onglet Droits de communication |
+| `/contribuables/:id/droits-communication/nouveau` | `frontofficeagent/contribuables/pages/DroitCommunicationCreate.jsx` | protégé | Page dédiée d'enregistrement d'un droit de communication |
+| `/contribuables/:id/relances` | `frontofficeagent/contribuables/pages/ContribuableDetail.jsx` | protégé | Même fiche, onglet Relances (historique local, `localStorage`) |
+| `/contribuables/:id/confrontation` | `frontofficeagent/confrontation/pages/Confrontation.jsx` | protégé | Page unique de confrontation déclarations / recoupements, avec ses onglets internes |
+| `/relance` | `frontofficeagent/relance/pages/RelanceFiscale.jsx` | protégé | Relance fiscale et recouvrement, alimentée par les déclarations et les contribuables |
 | `*` | — | public | Redirection vers `/` |
 
 Les pages du domaine contribuable sont réexportées depuis
-[`frontend/src/frontofficeagent/index.jsx`](frontend/src/frontofficeagent/index.jsx).
+[`frontend/src/frontofficeagent/index.js`](frontend/src/frontofficeagent/index.js).
 
 Remarques :
 
 - l'orthographe `/acceuil` (au lieu de `/accueil`) est celle du code et doit
   être conservée dans les liens ;
-- les pages sont réexportées par [`frontofficeagent/index.jsx`](frontend/src/frontofficeagent/index.jsx) ;
-- [`backofficeadmin/auth/login.jsx`](frontend/src/backofficeadmin/auth/login.jsx)
-  existe mais n'est importé par aucune route : l'écran de connexion réel est
-  `backofficeadmin/auth/signin.jsx` ;
+- les pages sont réexportées par le barrel
+  [`frontend/src/frontofficeagent/index.js`](frontend/src/frontofficeagent/index.js) ;
+- l'ancien doublon `backofficeadmin/auth/login.jsx`, importé par aucune route, a
+  été supprimé : l'écran de connexion est
+  `frontend/src/backofficeadmin/auth/pages/Signin.jsx` ;
 - bouclage des quatre écrans publics : `/` (composant `Signin`) renvoie vers
-  `/signup` et vers `/mot-de-passe-oublie` par des liens `Link` ; `signup.jsx`,
+  `/signup` et vers `/mot-de-passe-oublie` par des liens `Link` ; `Signup.jsx`,
   sur `POST /api/auth/register` réussi, redirige vers `/attente-activation` ;
-  `signin.jsx` y redirige aussi quand `POST /api/auth/login` répond `403` avec
+  `Signin.jsx` y redirige aussi quand `POST /api/auth/login` répond `403` avec
   `code: 'COMPTE_EN_ATTENTE'` (un compte `COMPTE_BLOQUE` garde une erreur inline,
   sans redirection) ; `/attente-activation` ramène vers `/` par « ← Retour à la
   connexion » et propose les deux autres écrans publics en liens secondaires ;
@@ -116,9 +117,9 @@ Remarques :
   arrivent sur `/acceuil`. Le calcul est centralisé dans `getLandingPath`
   ([`frontend/src/utils/session.utils.js`](frontend/src/utils/session.utils.js)),
   consommé à la fois par
-  [`backofficeadmin/auth/signin.jsx`](frontend/src/backofficeadmin/auth/signin.jsx)
+  [`frontend/src/backofficeadmin/auth/pages/Signin.jsx`](frontend/src/backofficeadmin/auth/pages/Signin.jsx)
   et par la route `/` de
-  [`App.jsx`](frontend/src/App.jsx) : la redirection de `/` ne peut plus écraser
+  [`frontend/src/App.jsx`](frontend/src/App.jsx) : la redirection de `/` ne peut plus écraser
   la destination choisie après connexion. Le rôle provenant de la réponse de
   `POST /api/auth/login`, il n'y a aucun contournement d'authentification ;
 - **espace administrateur** : pour un agent dont le rôle est `admin`, le
@@ -457,7 +458,7 @@ contribuable donné. Table `droits_communication`, créée par le script additif
 | `DELETE` | `/api/droits-communication/:id` | `id` = `id_droit` | `200` — suppression de la fiche |
 
 `GET /stats/statuts` est déclaré **avant** `GET /:id` dans
-[`droit-communication.routes.js`](backend/src/routes/droit-communication.routes.js),
+[`backend/src/routes/droit-communication.routes.js`](backend/src/routes/droit-communication.routes.js),
 sans quoi le chemin serait absorbé par le paramètre `id`.
 
 ### Module Rapprochements (`/api/rapprochements`)
@@ -528,7 +529,7 @@ contribuable peut émettre la demande.
 
 ## 3. Client API frontend
 
-[`frontend/src/api/api.js`](frontend/src/api/api.js) crée une instance Axios
+[`frontend/src/api/client.js`](frontend/src/api/client.js) crée une instance Axios
 unique :
 
 ```js
@@ -542,18 +543,19 @@ const api = axios.create({
 L'authentification ne repose sur aucun jeton côté client : il n'y a ni
 `localStorage`, ni en-tête `Authorization: Bearer`. Le cookie `fiscal_session`
 est `httpOnly`, donc invisible au JavaScript, et c'est `withCredentials: true`
-qui le fait circuler. Les appels de connexion, de vérification de session et de
-déconnexion utilisent directement l'instance par défaut `api` (aucune fonction
-dédiée n'est exportée) :
+qui le fait circuler. Les appels d'authentification passent par les fonctions de
+[`frontend/src/api/auth.js`](frontend/src/api/auth.js), toutes ré-exportées par
+le barrel [`frontend/src/api/index.js`](frontend/src/api/index.js) que les écrans
+importent sous `@/api` :
 
-| Appel | Endpoint | Utilisé par |
+| Fonction | Endpoint | Utilisée par |
 | :--- | :--- | :--- |
-| `api.post('/auth/register', { nom, prenom, email, password })` | `POST /api/auth/register` | [`backofficeadmin/auth/signup.jsx`](frontend/src/backofficeadmin/auth/signup.jsx) |
-| `api.post('/auth/login', { email, password })` | `POST /api/auth/login` | [`backofficeadmin/auth/signin.jsx`](frontend/src/backofficeadmin/auth/signin.jsx) |
-| `api.post('/auth/reset-request', { email })` | `POST /api/auth/reset-request` | page « Mot de passe oublié » [`backofficeadmin/auth/mot-de-passe-oublie.jsx`](frontend/src/backofficeadmin/auth/mot-de-passe-oublie.jsx) (`/mot-de-passe-oublie`) |
-| `api.get('/auth/me')` | `GET /api/auth/me` | [`App.jsx`](frontend/src/App.jsx) au montage — sauf sur une URL `/espace-contribuable/…`, où aucun appel n'est lancé |
-| `api.post('/auth/logout')` | `POST /api/auth/logout` | bouton « Se déconnecter » du profil de [`Header.jsx`](frontend/src/components/common/Header.jsx) ([`UserProfile.jsx`](frontend/src/components/common/UserProfile.jsx)), câblé dans `App.jsx` |
-| `changeOwnPassword({ password_actuel, password_nouveau, password_confirmation })` | `POST /api/auth/change-password` | modale « 🔑 Changer mon mot de passe » de [`UserProfile.jsx`](frontend/src/components/common/UserProfile.jsx) |
+| `inscrireAgent({ nom, prenom, email, password })` | `POST /api/auth/register` | [`frontend/src/backofficeadmin/auth/pages/Signup.jsx`](frontend/src/backofficeadmin/auth/pages/Signup.jsx) |
+| `connexion(email, password)` | `POST /api/auth/login` | [`frontend/src/backofficeadmin/auth/pages/Signin.jsx`](frontend/src/backofficeadmin/auth/pages/Signin.jsx) |
+| `demanderReinitialisationMotDePasse(email)` | `POST /api/auth/reset-request` | [`frontend/src/backofficeadmin/auth/pages/MotDePasseOublie.jsx`](frontend/src/backofficeadmin/auth/pages/MotDePasseOublie.jsx) (`/mot-de-passe-oublie`) |
+| `getMoi()` | `GET /api/auth/me` | [`frontend/src/App.jsx`](frontend/src/App.jsx) au montage — sauf sur une URL `/espace-contribuable/…`, où aucun appel n'est lancé |
+| `deconnexion()` | `POST /api/auth/logout` | bouton « Se déconnecter » du profil de [`frontend/src/components/common/Header.jsx`](frontend/src/components/common/Header.jsx) ([`frontend/src/components/common/UserProfile.jsx`](frontend/src/components/common/UserProfile.jsx)), câblé dans `App.jsx` |
+| `changerSonMotDePasse(payload)` | `POST /api/auth/change-password` | modale « 🔑 Changer mon mot de passe » de [`frontend/src/components/common/UserProfile.jsx`](frontend/src/components/common/UserProfile.jsx) |
 
 ### Fonctions exportées
 
@@ -595,7 +597,7 @@ l'enveloppe `{ success, data }` de l'API.
 - **VSP / CSP n'est stocké nulle part.** La vue Statistique du registre
   (`/contribuables?vue=statistique`) déduit la procédure de contrôle côté
   frontend, dans
-  [`statistiques.utils.js`](frontend/src/frontofficeagent/contribuables/utils/statistiques.utils.js) :
+  [`frontend/src/frontofficeagent/contribuables/utils/statistiques.utils.js`](frontend/src/frontofficeagent/contribuables/utils/statistiques.utils.js) :
   une déclaration est VSP si elle porte une date de notification (primitive ou
   définitive) ou un `montant_redressement` supérieur à 0, sinon CSP. La
   ventilation IS / IR / TVA est elle aussi dérivée du champ `regime_fiscal` du
@@ -617,10 +619,10 @@ l'enveloppe `{ success, data }` de l'API.
   possible que directement par l'API. Les deux chemins de création du
   frontend ne renseignent pas la même colonne de rattachement : le formulaire
   d'immatriculation
-  ([`FormInformation.jsx`](frontend/src/frontofficeagent/entreprises/FormInformation.jsx))
+  ([`frontend/src/frontofficeagent/entreprises/pages/FormInformation.jsx`](frontend/src/frontofficeagent/entreprises/pages/FormInformation.jsx))
   envoie `centre_fiscal_ref` (référence `cle:nom` du référentiel
   `unitefiscal.json`), tandis que l'import Excel
-  ([`ExcelImportModal.jsx`](frontend/src/components/forms/ExcelImportModal.jsx))
+  ([`frontend/src/components/forms/ExcelImportModal.jsx`](frontend/src/components/forms/ExcelImportModal.jsx))
   envoie `id_centre`, retrouvé par nom de centre. Le backend dérive la colonne
   manquante dans les deux cas, de sorte que le périmètre des agents et les
   pages « unité fiscale » voient le même rattachement.
