@@ -1,6 +1,6 @@
 # Graphiques
 
-Composants SVG de visualisation des indicateurs fiscaux. [`Diagrammes.jsx`](Diagrammes.jsx) est le seul fichier du sous-dossier ; il n'exporte que des symboles nommés (aucun export par défaut) et s'appuie sur [`../../utils/formatters.jsx`](../../utils/formatters.jsx) (`formatAxisValue`, `formatCompact`) et [`../../utils/decisionnel.utils.jsx`](../../utils/decisionnel.utils.jsx) (`getRegime`, `getRegimePercentage`).
+Composants SVG de visualisation des indicateurs fiscaux. [`Diagrammes.jsx`](Diagrammes.jsx) est le seul fichier du sous-dossier ; il n'exporte que des symboles nommés (aucun export par défaut), n'utilise aucune bibliothèque de graphiques, et s'appuie sur [`../../utils/formatters.jsx`](../../utils/formatters.jsx) (`formatAxisValue`, `formatCompact`) et [`../../utils/decisionnel.utils.jsx`](../../utils/decisionnel.utils.jsx) (`getRegime`, `getRegimePercentage`).
 
 ---
 
@@ -13,6 +13,26 @@ Convertit un tableau de valeurs en chaîne de points pour un `<polyline>` SVG (`
 ### `MiniLine({ data, color, max })`
 
 Sparkline SVG. `data` est un tableau d'objets portant un champ `amount` ; `color` vaut `#2563eb` par défaut et `max` vaut `1`. Le composant porte `role="img"` et un `aria-label` « Évolution annuelle ».
+
+### `polarToCartesian()` et `describeArc()`
+
+Fonctions internes de géométrie d'anneau : `describeArc(cx, cy, innerRadius, outerRadius, startAngle, endAngle)` renvoie le chemin SVG d'un segment en couronne, avec un angle complet borné à 359,999° pour éviter l'arc nul et un `largeArcFlag` calculé sur l'amplitude. (`src/backofficeadmin/dashboard/CamembertUtilisateurs.jsx` porte sa propre copie de ce couple de fonctions.)
+
+### `formatPercentage(value)`
+
+Interne : formate un pourcentage en français avec une décimale maximum.
+
+---
+
+## Graphiques génériques
+
+### `Camembert({ title, hint, slices, formatValue, centerValue, centerLabel })`
+
+Camembert en couronne (`article.panel`) découpé par `describeArc` dans un `viewBox="0 0 200 200"`. Chaque tranche est un objet `{ id, label, valeur, couleur }` ; les tranches de valeur nulle ou négative sont exclues du tracé mais restent dans la légende, ce qui permet d'afficher une catégorie à 0 %. Le total (ou `centerValue` s'il est fourni) est inscrit au centre avec `formatAxisValue`, la légende détaille `label`, la valeur formatée par `formatValue` (default `formatAxisValue`) et la part en pourcentage. Chaque segment porte une infobulle `<title>`. Si toutes les valeurs sont nulles, l'anneau est remplacé par le message `.empty` et la légende affiche 0 %.
+
+### `Histogramme({ title, hint, xLabel, groups, series, formatTick })`
+
+Barres groupées réutilisant intégralement la charte des panneaux existants (`.panel`, `.chart-layout`, `.chart-y-axis`, `.bar-chart`, `.chart-grid-lines`, `.bar-group`, `.bars i`, `.chart-x-axis`, `.legend`). `groups` attend `[{ label, valeurs: { cle: nombre } }]` et `series` `[{ key, label, couleur }]` : une barre par série dans chaque groupe, colorée par style inline (la palette fixe de `.bars i :nth-child()` est ainsi surchargeable). L'échelle est bornée à 1 minimum, graduée sur quatre niveaux (maximum, 66 %, 33 %, 0) et formatée par `formatTick`.
 
 ---
 
@@ -48,8 +68,9 @@ Comparaison par courbes de la TVA théorique et de la TVA payée d'un contribuab
 
 | Composant | Importé par |
 | --- | --- |
-| `VolumeChart`, `RegimeChart`, `CurveChart` | `src/pages/decisionnel/TableauDecisionnel.jsx` |
-| `ContribVolumeChart`, `ContribComparisonChart` | `src/pages/contribuables/components/ContribuableOverview.jsx` |
+| `VolumeChart`, `RegimeChart`, `CurveChart` | `src/frontofficeagent/decisionnel/TableauDecisionnel.jsx` |
+| `ContribVolumeChart`, `ContribComparisonChart` | `src/frontofficeagent/contribuables/components/ContribuableOverview.jsx` |
+| `Camembert`, `Histogramme` | `src/frontofficeagent/contribuables/components/ContribuablesStatistiques.jsx` |
 | `buildChartPoints` | Interne au fichier (`ContribComparisonChart`) |
 | `MiniLine` | Interne au fichier (`CurveChart`) |
 

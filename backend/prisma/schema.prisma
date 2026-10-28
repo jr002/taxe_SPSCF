@@ -18,11 +18,15 @@ model agents {
   statut            String?             @default("actif") @db.VarChar(20)
   date_creation     DateTime?           @default(now()) @db.Timestamp(6)
   date_modification DateTime?           @db.Timestamp(6)
+  id_centre         Int?
   controles         controles[]
   etat_contribuable etat_contribuable[]
   relances          relances[]
+  droits_communication droits_communication[]
+  centres           centres?            @relation(fields: [id_centre], references: [id_centre], onUpdate: NoAction)
 
   @@index([email], map: "idx_agents_email")
+  @@index([id_centre], map: "idx_agents_centre")
 }
 
 model controles {
@@ -123,6 +127,7 @@ model contribuables {
   etat_contribuable etat_contribuable[]
   recoupements      recoupements[]
   relances          relances[]
+  droits_communication droits_communication[]
 
   @@index([nif], map: "idx_entreprises_nif")
   @@index([id_centre], map: "idx_contribuables_centre")
@@ -139,6 +144,7 @@ model centres {
   date_modification DateTime?       @db.Timestamp(6)
   telephone_centre  String?         @db.VarChar(30)
   contribuables     contribuables[]
+  agents            agents[]
 
   @@index([type_centre], map: "idx_centres_type")
 }
@@ -204,6 +210,29 @@ model rapprochements {
   @@index([id_declaration], map: "idx_rapprochements_declaration")
   @@index([id_recoupement], map: "idx_rapprochements_recoupement")
   @@index([statut], map: "idx_rapprochements_statut")
+}
+
+model droits_communication {
+  id_droit           Int           @id @default(autoincrement())
+  id_contribuable    Int
+  id_agent           Int?
+  tier               String        @db.VarChar(255)
+  type_tier          String?       @default("autre") @db.VarChar(30)
+  nif_tier           String?       @db.VarChar(50)
+  objet              String
+  pieces_demandees   String?
+  date_demande       DateTime      @db.Date
+  date_reponse       DateTime?     @db.Date
+  statut             String        @default("demande") @db.VarChar(20)
+  documents_recus    String?
+  observations       String?
+  date_creation      DateTime?     @default(now()) @db.Timestamp(6)
+  date_modification  DateTime?     @db.Timestamp(6)
+  agents             agents?       @relation(fields: [id_agent], references: [id_agent], onUpdate: NoAction)
+  contribuables      contribuables @relation(fields: [id_contribuable], references: [id_contribuable], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id_contribuable], map: "idx_droits_communication_contribuable")
+  @@index([statut], map: "idx_droits_communication_statut")
 }
 
 model historique_utilisateurs {

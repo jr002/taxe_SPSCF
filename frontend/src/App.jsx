@@ -5,12 +5,21 @@ import api from './api/api';
 
 // Composants communs
 import Header from './components/common/Header';
+import { getLandingPath } from './utils/session.utils';
 
 // Pages de connexion, d'inscription et d'administration
-import Signin from './users/signin';
-import Signup from './users/signup';
-import AccueilAdmin from './users/acceuiladmin';
-import Admin from './users/admin';
+import Signin from './backofficeadmin/auth/signin';
+import Signup from './backofficeadmin/auth/signup';
+import AttenteActivation from './backofficeadmin/auth/attente-activation';
+import MotDePasseOublie from './backofficeadmin/auth/mot-de-passe-oublie';
+import AccueilAdmin from './backofficeadmin/dashboard/AdminDashboard';
+import Admin from './backofficeadmin/utilisateurs/AdminUtilisateurs';
+import AdminRoles from './backofficeadmin/roles/AdminRoles';
+import AdminVerificationNIF from './backofficeadmin/verification-nif/AdminVerificationNIF';
+import VerificationNifSql from './backofficeadmin/verification-nif/VerificationNifSql';
+import VerificationNifExcel from './backofficeadmin/verification-nif/VerificationNifExcel';
+import VerificationNifJson from './backofficeadmin/verification-nif/VerificationNifJson';
+import AdminHistorique from './backofficeadmin/historique/AdminHistorique';
 
 // Pages principales (organisation modulaire par domaine)
 import {
@@ -24,12 +33,15 @@ import {
   Contribuables,
   ContribuableDetail,
   Confrontation,
+  DeclarationCreate,
+  RecoupementCreate,
+  DroitCommunicationCreate,
   Register,
   CentreDetail,
   CentreListe,
   UniteFiscaleDetail,
   RelanceFiscale,
-} from './pages';
+} from './frontofficeagent';
 
 /**
  * Composant racine de l'application SP2CF / TVA•SSIF
@@ -100,13 +112,27 @@ export default function App() {
         <Route
           path="/"
           element={isCheckingSession ? <p className="auth-loading">Vérification de la session...</p> : (
-            isAuthenticated ? <Navigate to="/acceuil" replace /> : (
-              <Signin onAuthenticated={handleAuthenticated} />
+            isAuthenticated ? <Navigate to={getLandingPath(currentUser)} replace /> : (
+              <Signin
+                onAuthenticated={handleAuthenticated}
+                isDarkMode={isDarkMode}
+                onToggleTheme={() => setIsDarkMode((prev) => !prev)}
+              />
             )
           )}
         />
         <Route path="/signin" element={<Navigate to="/" replace />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/attente-activation" element={<AttenteActivation />} />
+        <Route
+          path="/mot-de-passe-oublie"
+          element={(
+            <MotDePasseOublie
+              isDarkMode={isDarkMode}
+              onToggleTheme={() => setIsDarkMode((prev) => !prev)}
+            />
+          )}
+        />
         <Route
           element={isCheckingSession ? <p className="auth-loading">Vérification de la session...</p> : (
             isAuthenticated ? (
@@ -118,6 +144,7 @@ export default function App() {
                   isDarkMode={isDarkMode}
                   onToggleTheme={() => setIsDarkMode((prev) => !prev)}
                   onLogout={handleLogout}
+                  user={currentUser}
                   isAdmin={currentUser?.role === 'admin'}
                 />
                 <main className="app-main"><Outlet /></main>
@@ -125,7 +152,7 @@ export default function App() {
             ) : <Navigate to="/" replace />
           )}
         >
-          <Route path="/acceuil" element={<Accueil />} />
+          <Route path="/acceuil" element={<Accueil currentUser={currentUser} />} />
           <Route path="/collecte" element={<Collecte currentModule={currentModule} />} />
           <Route path="/entreprises/nouveau" element={<PhaseClassement />} />
           <Route path="/entreprises/nouveau/form" element={<FormInformation />} />
@@ -140,11 +167,22 @@ export default function App() {
           <Route path="/contribuables/:id" element={<ContribuableDetail />} />
           <Route path="/contribuables/:id/classification" element={<ContribuableDetail />} />
           <Route path="/contribuables/:id/declarations" element={<ContribuableDetail />} />
+          <Route path="/contribuables/:id/declarations/nouveau" element={<DeclarationCreate />} />
+          <Route path="/contribuables/:id/recoupements" element={<ContribuableDetail />} />
+          <Route path="/contribuables/:id/recoupements/nouveau" element={<RecoupementCreate />} />
+          <Route path="/contribuables/:id/droits-communication" element={<ContribuableDetail />} />
+          <Route path="/contribuables/:id/droits-communication/nouveau" element={<DroitCommunicationCreate />} />
           <Route path="/contribuables/:id/relances" element={<ContribuableDetail />} />
-          <Route path="/contribuables/:id/confrontation" element={<Confrontation />} />
+          <Route path="/contribuables/:id/confrontation" element={<Confrontation currentUser={currentUser} />} />
           <Route path="/relance" element={<RelanceFiscale />} />
           <Route path="/admin" element={<AccueilAdmin currentUser={currentUser} />} />
           <Route path="/admin/utilisateurs" element={<Admin currentUser={currentUser} />} />
+          <Route path="/admin/roles" element={<AdminRoles currentUser={currentUser} />} />
+          <Route path="/admin/verification-nif" element={<AdminVerificationNIF currentUser={currentUser} />} />
+          <Route path="/admin/verification-nif/sql" element={<VerificationNifSql currentUser={currentUser} />} />
+          <Route path="/admin/verification-nif/excel" element={<VerificationNifExcel currentUser={currentUser} />} />
+          <Route path="/admin/verification-nif/json" element={<VerificationNifJson currentUser={currentUser} />} />
+          <Route path="/admin/historique" element={<AdminHistorique currentUser={currentUser} />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

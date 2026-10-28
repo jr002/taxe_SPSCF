@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { createContribuable, createDeclaration, getErrorMessage } from '../../api/api';
+import { createContribuable, createDeclaration, getCentres, getErrorMessage } from '../../api/api';
 import { formatAriary } from '../../utils/formatters';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 /**
  * Modale personnalisée d'importation de fichiers Excel / CSV pour les contribuables
@@ -15,6 +16,7 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
   const [statusMessage, setStatusMessage] = useState(null);
   const [errorLog, setErrorLog] = useState([]);
   const fileInputRef = useRef(null);
+  const dialogRef = useModalA11y(isOpen, onClose);
 
   if (!isOpen) return null;
 
@@ -74,6 +76,7 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
             ca: '',
             benefice: '',
             regime_fiscal: '',
+            centre_gestionnaire: '',
             adresse: '',
             telephone: '',
             email: '',
@@ -97,8 +100,10 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
             else if (['ca', 'chiffredaffaires', 'chiffreaffaire', 'revenue'].includes(normalized))
               mapped.ca = val;
             else if (['benefice', 'beneficefiscal'].includes(normalized)) mapped.benefice = val;
-            else if (['regime', 'regimefiscal'].includes(normalized))
+            else if (['regime', 'regimefiscal', 'naturedimpot', 'natureimpot'].includes(normalized))
               mapped.regime_fiscal = val.toUpperCase();
+            else if (['centregestionnaire'].includes(normalized))
+              mapped.centre_gestionnaire = val;
             else if (['adresse', 'siege', 'localisation'].includes(normalized)) mapped.adresse = val;
             else if (['telephone', 'tel', 'phone', 'contact'].includes(normalized))
               mapped.telephone = val;
@@ -185,35 +190,37 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
         NIF: '1000000001',
         'Raison Sociale': 'Madagascar Tech Solutions SARL',
         "Secteur d'Activité": 'Développement de logiciels & Informatique',
-        "Chiffre d'Affaires": 450000000,
-        Bénéfice: 65000000,
-        'Régime Fiscal': 'IR',
         Adresse: 'Analakely, Antananarivo 101',
         Téléphone: '+261 34 11 222 33',
         Email: 'contact@madatech.mg',
-        Activité: 'Actif/ En veille / En liquidation/ Dissous',
-        Conformité: 'Conformité/ Défaillant /  En vérification / Bloqué ',
+        'Centre gestionnaire': 'Centre des Impôts d’Antananarivo',
+        'Nature d’impôt': 'IR',
+        "Chiffre d'Affaires": 450000000,
+        Bénéfice: 65000000,
         Année: 2026,
         'TVA Payée': 90000000,
         'TVA Collectée': 90000000,
         'TVA Déductible': 15000000,
+        Activité: 'Actif/ En veille / En liquidation/ Dissous',
+        Conformité: 'Conformité/ Défaillant /  En vérification / Bloqué ',
       },
       {
         NIF: '1000000002',
         'Raison Sociale': 'Boutique Ravinala',
         "Secteur d'Activité": 'Commerce de détail & Produits artisanaux',
-        "Chiffre d'Affaires": 180000000,
-        Bénéfice: 28000000,
-        'Régime Fiscal': 'IS',
         Adresse: 'Isoraka, Antananarivo 101',
         Téléphone: '+261 32 44 555 66',
         Email: 'ravinala@boutique.mg',
-        Activité: 'Actif/ En veille / En liquidation/ Dissous',
-        Conformité: 'Conformité/ Défaillant /  En vérification / Bloqué ',
+        'Centre gestionnaire': 'Centre des Impôts d’Antananarivo',
+        'Nature d’impôt': 'IS',
+        "Chiffre d'Affaires": 180000000,
+        Bénéfice: 28000000,
         Année: 2026,
         'TVA Payée': 9000000,
         'TVA Collectée': 12000000,
         'TVA Déductible': 3000000,
+        Activité: 'Actif/ En veille / En liquidation/ Dissous',
+        Conformité: 'Conformité/ Défaillant /  En vérification / Bloqué ',
       },
     ];
 
@@ -239,9 +246,20 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
     const errors = [];
     let successCount = 0;
 
+    const centres = await getCentres().catch(() => []);
+    const centreByName = new Map(
+      (centres || [])
+        .filter((centre) => centre.nom_centre)
+        .map((centre) => [String(centre.nom_centre).trim().toLowerCase(), centre.id_centre]),
+    );
+
     for (let i = 0; i < validRows.length; i++) {
       const row = validRows[i];
       try {
+        const centreId = centreByName.get(
+          String(row.centre_gestionnaire || '').trim().toLowerCase(),
+        );
+
         // 1. Créer ou mettre à jour l'entreprise
         const createdContribuable = await createContribuable({
           nif: row.nif,
@@ -251,6 +269,7 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
           adresse: row.adresse,
           telephone: row.telephone,
           email: row.email || null,
+          ...(centreId ? { id_centre: centreId } : {}),
         });
 
         const contribuableId =
@@ -316,11 +335,14 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 transition-all duration-300"
       onClick={onClose}
-      role="dialog"
-      aria-modal="true"
     >
       <div
         className="relative w-full max-w-4xl max-h-[90vh] flex flex-col bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden text-gray-800"
+        ref={dialogRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Import Excel des contribuables"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header de la Modal */}
@@ -481,7 +503,7 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
                       <th className="px-3 py-2 text-left">NIF</th>
                       <th className="px-3 py-2 text-left">Raison Sociale</th>
                       <th className="px-3 py-2 text-left">CA Déclaré</th>
-                      <th className="px-3 py-2 text-left">Régime</th>
+                      <th className="px-3 py-2 text-left">Nature d’impôt</th>
                       <th className="px-3 py-2 text-left">Téléphone</th>
                     </tr>
                   </thead>

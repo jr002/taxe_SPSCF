@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const { applyScope } = require('../utils/data-scope');
 
 class DeclarationModel {
   // Créer une déclaration
@@ -8,7 +9,8 @@ class DeclarationModel {
       tva_collectee, tva_deductible, tva_payee,
       tva_theorique, statut,
       type_declaration = 'TVA',
-      periode
+      periode,
+      observations_agent
     } = data;
 
     let parsedAnnee = parseInt(annee, 10);
@@ -31,6 +33,7 @@ class DeclarationModel {
         tva_payee: tva_payee !== undefined ? tva_payee : 0,
         tva_theorique: tva_theorique !== undefined ? tva_theorique : 0,
         statut: statut || 'conforme',
+        observations_agent: observations_agent || null,
         date_creation: new Date(),
       },
     });
@@ -78,7 +81,7 @@ class DeclarationModel {
   }
 
   // Liste avec filtres et pagination
-  static async findAll({ page = 1, limit = 20, search = '', statut = '', annee = '', type_declaration = '', periode = '' } = {}) {
+  static async findAll({ page = 1, limit = 20, search = '', statut = '', annee = '', type_declaration = '', periode = '', scope } = {}) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 20);
     const offset = (pageNum - 1) * limitNum;
@@ -104,6 +107,7 @@ class DeclarationModel {
         ],
       };
     }
+    applyScope(where, scope, { relation: 'contribuables' });
 
     const [total, rows] = await Promise.all([
       prisma.declarations.count({ where }),
@@ -293,22 +297,36 @@ class DeclarationModel {
   }
 
   // Statistiques
-  static async getStats() {
-    const [total, conformes, alertes, critiques, aggregations] = await Promise.all([
-      prisma.declarations.count(),
-      prisma.declarations.count({ where: { statut: 'conforme' } }),
-      prisma.declarations.count({ where: { statut: 'alerte' } }),
-      prisma.declarations.count({ where: { statut: 'critique' } }),
+  /**
+   * `national` ajoute le total TVA de toute la DGI à côté du total du périmètre.
+   * Un chef de centre ne voit que les dossiers de son centre : ce second total,
+   * agrégé et sans détail, lui permet de situer son centre dans l'ensemble.
+   */
+  static async getStats(scope, { national = false } = {}) {
+    const where = applyScope({}, scope, { relation: 'contribuables' });
+
+    const [total, conformes, alertes, critiques, aggregations, nationalAggregation] = await Promise.all([
+      prisma.declarations.count({ where }),
+      prisma.declarations.count({ where: { ...where, statut: 'conforme' } }),
+      prisma.declarations.count({ where: { ...where, statut: 'alerte' } }),
+      prisma.declarations.count({ where: { ...where, statut: 'critique' } }),
       prisma.declarations.aggregate({
+        where,
         _avg: { ca: true },
         _sum: { tva_payee: true, tva_theorique: true },
       }),
+      national
+        ? prisma.declarations.aggregate({ _sum: { tva_theorique: true } })
+        : null,
     ]);
 
     const caMoyen = aggregations._avg.ca ? Number(aggregations._avg.ca) : 0;
     const tvaTotale = aggregations._sum.tva_payee ? Number(aggregations._sum.tva_payee) : 0;
     const tvaTheoriqueTotale = aggregations._sum.tva_theorique ? Number(aggregations._sum.tva_theorique) : 0;
     const ecartTotal = tvaTheoriqueTotale - tvaTotale;
+    const tvaTheoriqueDgi = nationalAggregation?._sum.tva_theorique
+      ? Number(nationalAggregation._sum.tva_theorique)
+      : 0;
 
     return {
       total: String(total),
@@ -319,6 +337,7 @@ class DeclarationModel {
       tva_totale: String(tvaTotale),
       tva_theorique_totale: String(tvaTheoriqueTotale),
       ecart_total: String(ecartTotal),
+      ...(nationalAggregation && { tva_theorique_dgi: String(tvaTheoriqueDgi) }),
     };
   }
 }

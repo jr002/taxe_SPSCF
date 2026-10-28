@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const { applyScope } = require('../utils/data-scope');
 
 class RecoupementModel {
   // Créer un recoupement avec source par défaut
@@ -76,7 +77,7 @@ class RecoupementModel {
   }
 
   // Liste paginée avec filtres
-  static async findAll({ page = 1, limit = 20, search = '', periode = '', source = '', type_operation = '', id_contribuable = null } = {}) {
+  static async findAll({ page = 1, limit = 20, search = '', periode = '', source = '', type_operation = '', id_contribuable = null, scope } = {}) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 20);
     const offset = (pageNum - 1) * limitNum;
@@ -108,6 +109,7 @@ class RecoupementModel {
         },
       ];
     }
+    applyScope(where, scope, { relation: 'contribuables' });
 
     const [total, rows] = await Promise.all([
       prisma.recoupements.count({ where }),
@@ -224,12 +226,13 @@ class RecoupementModel {
   }
 
   // Statistiques des sources
-  static async getSourceStats() {
+  static async getSourceStats(scope) {
     const grouped = await prisma.recoupements.groupBy({
       by: ['source'],
       _count: { _all: true },
       _avg: { somme_recoupee: true },
       _sum: { montant_ttc: true, montant_tva: true },
+      where: applyScope({}, scope, { relation: 'contribuables' }),
     });
 
     return grouped

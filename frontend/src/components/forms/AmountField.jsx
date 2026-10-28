@@ -8,6 +8,7 @@ export default function AmountField({
   surChangement,
   requis = false,
   min = 0,
+  max,
 }) {
   return (
     <label className="field">
@@ -18,6 +19,8 @@ export default function AmountField({
         <input
           type="number"
           min={min}
+          max={max}
+          required={requis}
           name={nomChamp}
           value={valeur}
           onChange={surChangement}

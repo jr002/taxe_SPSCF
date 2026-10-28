@@ -5,9 +5,10 @@
 ## ✨ Fonctionnalités Clés
 
 - 📊 **Tableau de Bord & Décisionnel** : Visualisation en temps réel des indicateurs clés, taux de déclaration et statistiques de recouvrement.
-- 🏢 **Gestion des Contribuables & Entreprises** : Répertoire complet des entreprises assujetties, classification par unité fiscale et historique déclaratif.
+- 🏢 **Gestion des Contribuables & Entreprises** : Répertoire complet des entreprises assujetties, classification par unité fiscale et historique déclaratif. Une vue **Statistique** du registre agrège camemberts et histogrammes de redressements par procédure (VSP / CSP) et par nature d'impôt (IS / IR / TVA).
 - 💰 **Suivi de la Collecte & Déclarations** : Enregistrement, traitement et analyse des déclarations périodiques de TVA.
 - 🚨 **Détection d'Anomalies & Contrôle Fiscal** : Alertes automatiques sur les incohérences déclaratives, sélection des dossiers à risque et programmation des vérifications.
+- ⚖️ **Confrontation & Actes de procédure** : Page unique de confrontation déclarations / recoupements, notification primitive et définitive, imputation du crédit d'impôt, recoupements et droits de communication adressés aux tiers.
 - 📩 **Gestion des Relances** : Automatisation du suivi des défaillants (défaut de déclaration ou de paiement) et émission des relances.
 - 🔐 **Sécurité & Rôles** : Authentification stricte par session JWT sécurisée (`httpOnly`), hachage bcrypt et gestion des droits des agents.
 
@@ -31,7 +32,7 @@ Documentation transverse :
 | Côté | Technologies |
 | --- | --- |
 | Backend | Node.js 20.19+, Express 5, Prisma 6, PostgreSQL 14+, JWT (`jsonwebtoken`), `bcryptjs`, Swagger UI |
-| Frontend | React 19, Vite 8, React Router 7, Axios, Tailwind CSS 4 |
+| Frontend | React 19, Vite 8, React Router 7, Axios, `xlsx` ; aucun graphiques ni composants tiers : styles globaux écrits à la main dans `src/App.css` et `index.css` importe Tailwind 4 (quelques utilitaires) |
 
 ## Prérequis
 
@@ -63,6 +64,12 @@ Documentation transverse :
    une base déjà créée sans historique Prisma, suivez d'abord les instructions
    de baseline dans [`backend/prisma/README.md`](backend/prisma/README.md).
 
+   Attention : le backend contient deux systèmes de migration qui ont divergé
+   (`backend/prisma/migrations/` et les scripts additifs `backend/migrations/00N-*.sql`).
+   Ne lancez jamais `prisma migrate dev` ni `prisma migrate reset` sur une base
+   existante : cela réclamerait un reset destructif. Appliquez uniquement du SQL
+   additif via `prisma db execute` (voir [`backend/prisma/README.md`](backend/prisma/README.md)).
+
 4. Créer le premier compte agent (les inscriptions publiques ne sont pas
    ouvertes) :
 
@@ -91,13 +98,16 @@ Vérification rapide de l'API : `GET http://localhost:5000/health`.
 
 ## Authentification
 
-- L'API expose `POST /api/auth/login`, `GET /api/auth/me` et
-  `POST /api/auth/logout` sur `/api/auth`, seuls endpoints publics avec
-  `/health` et la documentation Swagger.
+- L'API expose `POST /api/auth/login`, `POST /api/auth/register`,
+  `POST /api/auth/reset-request`, `GET /api/auth/me` et `POST /api/auth/logout`
+  sur `/api/auth` ; `POST /api/auth/change-password` est le seul autre point
+  d'entrée du domaine et exige le cookie de session.
 - La connexion renvoie un cookie de session `fiscal_session` (`httpOnly`),
   valable 8 heures ; toutes les autres routes `/api` exigent ce cookie.
-- Les agents sont créés hors de l'interface web (script `agent:create`) et leur
-  mot de passe est stocké haché avec bcrypt.
+- Les agents sont créés hors de l'interface web (script `agent:create`) ou par
+  `POST /api/auth/register` (compte `en_attente`, activé par un
+  administrateur) ; leur mot de passe est stocké haché avec bcrypt et l'agent
+  peut le remplacer lui-même depuis son profil.
 
 ## Scripts pnpm utiles
 

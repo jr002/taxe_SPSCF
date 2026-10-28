@@ -1,8 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 
 const DOSSIER_FISCAL_LINKS = [
-  { to: '/contribuables', label: 'Contribuables' },
-  { to: '/collecte', label: 'Collecte TVA' },
   { to: '/suivi', label: 'Suivi fiscal' },
   { to: '/relance', label: 'Relance fiscale' },
 ];

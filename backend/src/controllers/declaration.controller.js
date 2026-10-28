@@ -7,12 +7,16 @@ class DeclarationController {
     try {
       const { 
         id_contribuable, annee, ca, benefice, 
-        tva_collectee, tva_deductible, tva_payee, 
-        regime_fiscal, type_declaration, periode 
-      } = req.body;
+        tva_collectee, tva_deductible, tva_payee, tva_theorique,
+        regime_fiscal, type_declaration, periode, observations_agent 
+      } = req.body || {};
       
-      // Calculer la TVA théorique
-      const tvaTheorique = FiscalService.calculerTVATheorique(ca, benefice, regime_fiscal);
+      // TVA théorique : calculée depuis le CA et le bénéfice, sauf quand le collecteur
+      // l'a déjà déterminée à partir d'autres assiettes (TVA collectée / déductible).
+      const tvaTheorique =
+        tva_theorique !== undefined && tva_theorique !== null && tva_theorique !== ''
+          ? Number(tva_theorique)
+          : FiscalService.calculerTVATheorique(ca, benefice, regime_fiscal);
       
       // Calculer l'écart et déterminer le statut
       const ecart = FiscalService.calculerEcart(tvaTheorique, tva_payee);
@@ -30,7 +34,8 @@ class DeclarationController {
         tva_deductible,
         tva_payee,
         tva_theorique: tvaTheorique,
-        statut
+        statut,
+        observations_agent
       });
       
       res.status(201).json({
@@ -48,10 +53,17 @@ class DeclarationController {
       });
     } catch (error) {
       console.error('Erreur création déclaration:', error);
+      // L'unicité (contribuable, période, type) est portée par la base : un
+      // doublon est un conflit métier, pas une panne serveur.
+      if (error.code === 'P2002') {
+        return res.status(409).json({
+          success: false,
+          message: 'Une déclaration existe déjà pour ce contribuable, cette période et ce type'
+        });
+      }
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la création de la déclaration',
-        error: error.message
+        message: 'Erreur lors de la création de la déclaration'
       });
     }
   }
@@ -67,7 +79,8 @@ class DeclarationController {
         statut: statut || '',
         annee: annee || '',
         type_declaration: type_declaration || '',
-        periode: periode || ''
+        periode: periode || '',
+        scope: req.dataScope,
       });
       
       res.json({
@@ -78,8 +91,7 @@ class DeclarationController {
       console.error('Erreur liste déclarations:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération des déclarations',
-        error: error.message
+        message: 'Erreur lors de la récupération des déclarations'
       });
     }
   }
@@ -105,8 +117,7 @@ class DeclarationController {
       console.error('Erreur détail déclaration:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération de la déclaration',
-        error: error.message
+        message: 'Erreur lors de la récupération de la déclaration'
       });
     }
   }
@@ -114,7 +125,11 @@ class DeclarationController {
   // Statistiques
   static async getStats(req, res) {
     try {
-      const stats = await DeclarationModel.getStats();
+      // Le chef de centre reçoit en plus le total TVA national : l'accueil
+      // compare son centre à la DGI entière (agrégat seul, aucun dossier).
+      const stats = await DeclarationModel.getStats(req.dataScope, {
+        national: req.user?.role === 'chef_centre',
+      });
       res.json({
         success: true,
         data: stats
@@ -123,8 +138,7 @@ class DeclarationController {
       console.error('Erreur statistiques:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération des statistiques',
-        error: error.message
+        message: 'Erreur lors de la récupération des statistiques'
       });
     }
   }
@@ -160,7 +174,6 @@ class DeclarationController {
       res.status(500).json({
         success: false,
         message: "Erreur lors de l'émission de la notification primitive",
-        error: error.message,
       });
     }
   }
@@ -195,7 +208,6 @@ class DeclarationController {
       res.status(500).json({
         success: false,
         message: "Erreur lors de l'émission de la notification définitive",
-        error: error.message,
       });
     }
   }
@@ -229,7 +241,6 @@ class DeclarationController {
       res.status(400).json({
         success: false,
         message: error.message || "Erreur lors de l'imputation du crédit d'impôt",
-        error: error.message,
       });
     }
   }
@@ -255,7 +266,6 @@ class DeclarationController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la mise à jour de la déclaration',
-        error: error.message,
       });
     }
   }

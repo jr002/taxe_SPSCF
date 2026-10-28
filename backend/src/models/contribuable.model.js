@@ -1,4 +1,45 @@
 const prisma = require('../config/prisma');
+const { applyScope } = require('../utils/data-scope');
+const {
+  TYPE_CENTRE_PAR_CLE_UNITE,
+  centreFiscalRefFromCentre,
+  splitCentreFiscalRef,
+} = require('../utils/unite-fiscale.utils');
+
+/**
+ * `id_centre` (table `centres`, portée par le périmètre des agents) et
+ * `centre_fiscal_ref` (référentiel `unitefiscal.json`, format `cle:nom`)
+ * décrivent le même rattachement fiscal. La colonne présente dans l'écriture
+ * détermine l'autre : `id_centre` d'abord, car `forceCentreOnWrite` l'impose
+ * pour un agent centré ; à défaut la référence textuelle, dont on retrouve le
+ * centre quand il existe en base. Un centre sans équivalent dans le
+ * référentiel (ex. `SSIF`) donne une référence nulle plutôt qu'une valeur
+ * rejetée par `isValidCentreFiscalRef`.
+ */
+const alignerRattachementFiscal = async (values) => {
+  if ('id_centre' in values) {
+    const centre = values.id_centre
+      ? await prisma.centres.findUnique({
+          where: { id_centre: Number(values.id_centre) },
+          select: { type_centre: true, nom_centre: true },
+        })
+      : null;
+    values.centre_fiscal_ref = centreFiscalRefFromCentre(centre);
+    return;
+  }
+
+  if (!('centre_fiscal_ref' in values)) return;
+
+  const parties = splitCentreFiscalRef(values.centre_fiscal_ref);
+  const type_centre = TYPE_CENTRE_PAR_CLE_UNITE[parties?.type];
+  if (!parties || !type_centre) return;
+
+  const centre = await prisma.centres.findFirst({
+    where: { type_centre, nom_centre: parties.nom },
+    select: { id_centre: true },
+  });
+  if (centre) values.id_centre = centre.id_centre;
+};
 
 class ContribuableModel {
   // Créer un contribuable
@@ -11,10 +52,17 @@ class ContribuableModel {
       telephone,
       email,
       regime_fiscal,
-      id_centre,
-      centre_fiscal_ref,
     } = data;
-    
+
+    const rattachement = {};
+    if (data.id_centre !== undefined) {
+      rattachement.id_centre = data.id_centre ? Number(data.id_centre) : null;
+    }
+    if (data.centre_fiscal_ref !== undefined) {
+      rattachement.centre_fiscal_ref = data.centre_fiscal_ref || null;
+    }
+    await alignerRattachementFiscal(rattachement);
+
     return await prisma.contribuables.create({
       data: {
         nif,
@@ -24,8 +72,8 @@ class ContribuableModel {
         telephone: telephone || null,
         email: email || null,
         regime_fiscal: regime_fiscal || null,
-        id_centre: id_centre ? Number(id_centre) : null,
-        centre_fiscal_ref: centre_fiscal_ref || null,
+        id_centre: rattachement.id_centre ?? null,
+        centre_fiscal_ref: rattachement.centre_fiscal_ref ?? null,
         date_creation: new Date(),
       },
     });
@@ -86,7 +134,7 @@ class ContribuableModel {
   }
 
   // Liste des contribuables avec pagination et recherche
-  static async findAll({ page = 1, limit = 20, search = '', centre_fiscal_ref } = {}) {
+  static async findAll({ page = 1, limit = 20, search = '', centre_fiscal_ref, scope } = {}) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 20);
     const offset = (pageNum - 1) * limitNum;
@@ -101,6 +149,8 @@ class ContribuableModel {
         }
       : {};
     if (centre_fiscal_ref) where.centre_fiscal_ref = centre_fiscal_ref;
+    // Périmètre de l'agent : un rôle centré ne voit que les dossiers de son centre.
+    applyScope(where, scope);
 
     const [total, rows] = await Promise.all([
       prisma.contribuables.count({ where }),
@@ -173,6 +223,7 @@ class ContribuableModel {
             : data[field];
       }
     }
+    await alignerRattachementFiscal(updateData);
     updateData.date_modification = new Date();
 
     try {

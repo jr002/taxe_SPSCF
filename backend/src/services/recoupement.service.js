@@ -61,8 +61,8 @@ class RecoupementService {
   }
 
   // Statistiques par source
-  static async getSourceStats() {
-    return await RecoupementModel.getSourceStats();
+  static async getSourceStats(scope) {
+    return await RecoupementModel.getSourceStats(scope);
   }
 }
 

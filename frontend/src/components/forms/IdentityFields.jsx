@@ -21,6 +21,7 @@ export default function IdentityFields({ donneesIdentification, surChangement })
             onChange={surChangement}
             placeholder="Ex: 1000000001"
             maxLength={20}
+            required
           />
         </label>
 
@@ -34,6 +35,7 @@ export default function IdentityFields({ donneesIdentification, surChangement })
             value={donneesIdentification.anneeFiscale || ''}
             onChange={surChangement}
             placeholder={String(new Date().getFullYear())}
+            required
           />
         </label>
       </div>

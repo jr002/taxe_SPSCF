@@ -1,5 +1,6 @@
 import { useRef } from 'react';
 import { formatAriary } from '../../utils/formatters';
+import { useModalA11y } from '../../hooks/useModalA11y';
 
 /**
  * Modal d'affichage et d'impression du document officiel de Notification (Primitive ou Définitive)
@@ -13,6 +14,7 @@ export default function NotificationModal({
   redressementDetails = {},
 }) {
   const printRef = useRef(null);
+  const dialogRef = useModalA11y(isOpen, onClose);
 
   if (!isOpen || !declaration) return null;
 
@@ -47,7 +49,15 @@ export default function NotificationModal({
 
   return (
     <div className="notification-modal-overlay" onClick={onClose}>
-      <div className="notification-modal-card" onClick={(e) => e.stopPropagation()}>
+      <div
+        className="notification-modal-card"
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label={isPrimitive ? 'Notification Primitive' : 'Notification Définitive'}
+        tabIndex={-1}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Barre d'outils du document */}
         <div className="notification-modal-actions no-print">
           <span className="modal-tag">

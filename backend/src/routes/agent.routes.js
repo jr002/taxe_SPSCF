@@ -12,6 +12,8 @@ router.get('/', AgentController.findAll);
 router.get('/historique', AgentController.getHistorique);
 router.patch('/:id/statut', AgentController.updateStatut);
 router.patch('/:id/role', AgentController.updateRole);
+router.patch('/:id/centre', AgentController.updateCentre);
+router.patch('/:id/identite', AgentController.updateIdentite);
 router.patch('/:id/password', AgentController.resetPassword);
 router.delete('/:id', AgentController.remove);
 

@@ -6,7 +6,9 @@ Ce dossier contient les composants d'interface réutilisables, organisés par do
 
 ## 1. `common/` — composants transversaux
 
-* [`common/Header.jsx`](common/Header.jsx) : en-tête de navigation principal. Affiche le logo, les liens de routage, les onglets de sous-modules de collecte et les boutons de thème et de déconnexion. Export par défaut `Header`.
+* [`common/Header.jsx`](common/Header.jsx) : en-tête de navigation principal. Affiche le logo, les liens de routage, les onglets de sous-modules de collecte et le profil de l'agent connecté. Export par défaut `Header`.
+* [`common/UserProfile.jsx`](common/UserProfile.jsx) : pastille ronde portant les initiales de l'agent connecté ; le panneau déroulé affiche l'e-mail, le centre de rattachement, le périmètre du rôle, le bouton « 🔑 Changer mon mot de passe », la bascule du thème clair / sombre et la déconnexion. Export par défaut `UserProfile`.
+* [`common/ModaleConfirmation.jsx`](common/ModaleConfirmation.jsx) : modale de confirmation réutilisable — liste les paires « avant → après » d'une ou plusieurs modifications, affiche erreur et succès en son sein, et propose Annuler / Valider (variante `danger` pour blocage, suppression et abandon). Export par défaut `ModaleConfirmation`, utilisée par `AdminUtilisateurs` et `UserProfile`.
 * [`common/NotificationModal.jsx`](common/NotificationModal.jsx) : modale d'affichage et d'impression du document officiel de notification (primitive ou définitive) de redressement fiscal. Export par défaut `NotificationModal`.
 
 Détail : [`common/README.md`](common/README.md).
@@ -37,8 +39,9 @@ Détail : [`charts/README.md`](charts/README.md).
 | Composant | Importé par |
 | --- | --- |
 | `Header` | `src/App.jsx` |
-| `NotificationModal` | `src/pages/suivi-fiscal/DeclarationDetail.jsx`, `src/pages/collecte/modules/TheoreticalForm.jsx` |
-| `AmountField`, `IdentityFields`, `ControlResult` | `src/pages/collecte/modules/` (TheoreticalForm, ReconciliationForm, InsertionDeclaration, CollecterDeductible) |
-| `ExcelImportModal` | `src/pages/contribuables/Contribuables.jsx` |
-| `VolumeChart`, `RegimeChart`, `CurveChart` | `src/pages/decisionnel/TableauDecisionnel.jsx` |
-| `ContribVolumeChart`, `ContribComparisonChart` | `src/pages/contribuables/components/ContribuableOverview.jsx` |
+| `ModaleConfirmation` | `src/backofficeadmin/utilisateurs/AdminUtilisateurs.jsx`, `src/components/common/UserProfile.jsx` |
+| `NotificationModal` | `src/frontofficeagent/suivi-fiscal/DeclarationDetail.jsx`, `src/frontofficeagent/collecte/modules/TheoreticalForm.jsx` |
+| `AmountField`, `IdentityFields`, `ControlResult` | `src/frontofficeagent/collecte/modules/` (TheoreticalForm, ReconciliationForm, InsertionDeclaration, CollecterDeductible) |
+| `ExcelImportModal` | `src/frontofficeagent/contribuables/Contribuables.jsx` |
+| `VolumeChart`, `RegimeChart`, `CurveChart` | `src/frontofficeagent/decisionnel/TableauDecisionnel.jsx` |
+| `ContribVolumeChart`, `ContribComparisonChart` | `src/frontofficeagent/contribuables/components/ContribuableOverview.jsx` |

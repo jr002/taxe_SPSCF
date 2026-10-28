@@ -1,4 +1,9 @@
 const prisma = require('../config/prisma');
+const { applyScopeViaRelations } = require('../utils/data-scope');
+
+/** Le contrôle n'atteint un contribuable que par sa déclaration. */
+const scopeControles = (scope) =>
+  applyScopeViaRelations({}, scope, [['declarations', 'contribuables']]);
 
 class ControleModel {
   // Créer un contrôle
@@ -91,13 +96,16 @@ class ControleModel {
   }
 
   // Statistiques de contrôle
-  static async getStats() {
+  static async getStats(scope) {
+    const where = scopeControles(scope);
+
     const [total, conformes, alertes, critiques, aggregations] = await Promise.all([
-      prisma.controles.count(),
-      prisma.controles.count({ where: { resultat: 'conforme' } }),
-      prisma.controles.count({ where: { resultat: 'alerte' } }),
-      prisma.controles.count({ where: { resultat: 'critique' } }),
+      prisma.controles.count({ where }),
+      prisma.controles.count({ where: { ...where, resultat: 'conforme' } }),
+      prisma.controles.count({ where: { ...where, resultat: 'alerte' } }),
+      prisma.controles.count({ where: { ...where, resultat: 'critique' } }),
       prisma.controles.aggregate({
+        where,
         _avg: { ecart: true },
         _max: { ecart: true },
       }),
@@ -114,11 +122,12 @@ class ControleModel {
   }
 
   // Contrôles par type
-  static async getByType() {
+  static async getByType(scope) {
     const grouped = await prisma.controles.groupBy({
       by: ['type'],
       _count: { _all: true },
       _avg: { pourcentage_ecart: true },
+      where: scopeControles(scope),
     });
 
     return grouped.map((g) => ({

@@ -19,8 +19,7 @@ class ControleController {
       console.error('Erreur contrôle:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors du contrôle',
-        error: error.message
+        message: 'Erreur lors du contrôle'
       });
     }
   }
@@ -39,8 +38,7 @@ class ControleController {
       console.error('Erreur historique contrôles:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération des contrôles',
-        error: error.message
+        message: 'Erreur lors de la récupération des contrôles'
       });
     }
   }
@@ -48,7 +46,7 @@ class ControleController {
   // Statistiques
   static async getStats(req, res) {
     try {
-      const stats = await ControleService.getStatistiques();
+      const stats = await ControleService.getStatistiques(req.dataScope);
       res.json({
         success: true,
         data: stats
@@ -57,8 +55,7 @@ class ControleController {
       console.error('Erreur statistiques contrôles:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération des statistiques',
-        error: error.message
+        message: 'Erreur lors de la récupération des statistiques'
       });
     }
   }

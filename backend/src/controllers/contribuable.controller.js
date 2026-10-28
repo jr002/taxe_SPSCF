@@ -1,4 +1,5 @@
 const ContribuableModel = require('../models/contribuable.model');
+const { forceCentreOnWrite } = require('../utils/data-scope');
 
 class ContribuableController {
   // Créer un contribuable
@@ -25,17 +26,19 @@ class ContribuableController {
         });
       }
       
-      const contribuable = await ContribuableModel.create({
-        nif,
-        raison_sociale,
-        secteur_activite,
-        adresse,
-        telephone,
-        email,
-        regime_fiscal,
-        id_centre,
-        centre_fiscal_ref,
-      });
+      const contribuable = await ContribuableModel.create(
+        forceCentreOnWrite(req.dataScope, {
+          nif,
+          raison_sociale,
+          secteur_activite,
+          adresse,
+          telephone,
+          email,
+          regime_fiscal,
+          id_centre,
+          centre_fiscal_ref,
+        })
+      );
       
       res.status(201).json({
         success: true,
@@ -49,8 +52,7 @@ class ContribuableController {
       }
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la création du contribuable',
-        error: error.message
+        message: 'Erreur lors de la création du contribuable'
       });
     }
   }
@@ -64,6 +66,7 @@ class ContribuableController {
         limit: parseInt(limit) || 20,
         search: search || '',
         centre_fiscal_ref,
+        scope: req.dataScope,
       });
       
       res.json({
@@ -74,8 +77,7 @@ class ContribuableController {
       console.error('Erreur liste contribuables:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération des contribuables',
-        error: error.message
+        message: 'Erreur lors de la récupération des contribuables'
       });
     }
   }
@@ -101,8 +103,7 @@ class ContribuableController {
       console.error('Erreur détail contribuable:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération du contribuable',
-        error: error.message
+        message: 'Erreur lors de la récupération du contribuable'
       });
     }
   }
@@ -111,7 +112,7 @@ class ContribuableController {
   static async update(req, res) {
     try {
       const { id } = req.params;
-      const contribuable = await ContribuableModel.update(id, req.body);
+      const contribuable = await ContribuableModel.update(id, forceCentreOnWrite(req.dataScope, req.body));
       
       if (!contribuable) {
         return res.status(404).json({
@@ -132,8 +133,7 @@ class ContribuableController {
       }
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la mise à jour du contribuable',
-        error: error.message
+        message: 'Erreur lors de la mise à jour du contribuable'
       });
     }
   }

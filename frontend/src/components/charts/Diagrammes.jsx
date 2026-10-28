@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import { formatAxisValue, formatCompact } from '../../utils/formatters';
 import { getRegime, getRegimePercentage } from '../../utils/decisionnel.utils';
 
@@ -167,6 +168,189 @@ export function CurveChart({ curve }) {
       <div className="chart-x-axis">Année</div>
       <p className="legend">
         <span className="expected" /> Théorique <span className="paid" /> Payé
+      </p>
+    </article>
+  );
+}
+
+/**
+ * Calcul du chemin SVG d'un segment en anneau (camembert)
+ */
+function polarToCartesian(centerX, centerY, radius, angleInDegrees) {
+  const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
+  return {
+    x: centerX + radius * Math.cos(angleInRadians),
+    y: centerY + radius * Math.sin(angleInRadians),
+  };
+}
+
+function describeArc(centerX, centerY, innerRadius, outerRadius, startAngle, endAngle) {
+  const adjustedEnd = endAngle - startAngle >= 360 ? startAngle + 359.999 : endAngle;
+  const startOuter = polarToCartesian(centerX, centerY, outerRadius, adjustedEnd);
+  const endOuter = polarToCartesian(centerX, centerY, outerRadius, startAngle);
+  const startInner = polarToCartesian(centerX, centerY, innerRadius, startAngle);
+  const endInner = polarToCartesian(centerX, centerY, innerRadius, adjustedEnd);
+  const largeArcFlag = adjustedEnd - startAngle <= 180 ? '0' : '1';
+
+  return [
+    'M', startOuter.x, startOuter.y,
+    'A', outerRadius, outerRadius, 0, largeArcFlag, 0, endOuter.x, endOuter.y,
+    'L', startInner.x, startInner.y,
+    'A', innerRadius, innerRadius, 0, largeArcFlag, 1, endInner.x, endInner.y,
+    'Z',
+  ].join(' ');
+}
+
+const formatPercentage = (value) =>
+  value.toLocaleString('fr-FR', { maximumFractionDigits: 1 });
+
+/**
+ * Camembert générique : un anneau SVG découpé selon des tranches { label, valeur, couleur }
+ */
+export function Camembert({
+  title,
+  hint,
+  slices = [],
+  formatValue = (value) => formatAxisValue(value),
+  centerValue,
+  centerLabel = 'total',
+}) {
+  const exploitable = slices.filter((slice) => Number(slice.valeur) > 0);
+  const total = exploitable.reduce((acc, slice) => acc + Number(slice.valeur), 0);
+  const displayTotal = Number(centerValue ?? total);
+
+  const segments = exploitable
+    .reduce(
+      (acc, slice) => {
+        const startAngle = (acc.end / total) * 360;
+        const end = acc.end + Number(slice.valeur);
+        return {
+          end,
+          items: [
+            ...acc.items,
+            { ...slice, path: describeArc(100, 100, 52, 92, startAngle, (end / total) * 360) },
+          ],
+        };
+      },
+      { end: 0, items: [] }
+    )
+    .items;
+  const legende = slices.map((slice) => ({
+    ...slice,
+    part: total ? (Number(slice.valeur) / total) * 100 : 0,
+  }));
+
+  return (
+    <article className="panel">
+      <h2>{title}</h2>
+      {hint && <div className="chart-axis-label">{hint}</div>}
+      {total > 0 && (
+        <svg
+          viewBox="0 0 200 200"
+          width="100%"
+          height="190"
+          role="img"
+          aria-label={title}
+          style={{ display: 'block', margin: '0.5rem auto', maxWidth: 240 }}
+        >
+          {segments.map((segment) => (
+            <path key={segment.id || segment.label} d={segment.path} fill={segment.couleur}>
+              <title>{`${segment.label} : ${formatValue(segment.valeur)}`}</title>
+            </path>
+          ))}
+          <text
+            x="100"
+            y="96"
+            fill="currentColor"
+            fontSize="21"
+            fontWeight="700"
+            textAnchor="middle"
+          >
+            {formatAxisValue(displayTotal)}
+          </text>
+          <text x="100" y="116" fill="#657083" fontSize="11" fontWeight="700" textAnchor="middle">
+            {centerLabel}
+          </text>
+        </svg>
+      )}
+      <p className="legend">
+        {legende.map((slice) => (
+          <Fragment key={slice.id || slice.label}>
+            <span style={{ background: slice.couleur }} />
+            {' '}
+            {`${slice.label} ${formatValue(slice.valeur)} (${formatPercentage(slice.part)} %)`}
+            {'  '}
+          </Fragment>
+        ))}
+      </p>
+      {total === 0 && <p className="empty">Aucune donnée à représenter.</p>}
+    </article>
+  );
+}
+
+/**
+ * Histogramme générique : groupes de barres (réutilise la charte des panneaux existants)
+ * groups : [{ label, valeurs: { cle: nombre } }] · series : [{ key, label, couleur }]
+ */
+export function Histogramme({
+  title,
+  hint,
+  xLabel,
+  groups = [],
+  series = [],
+  formatTick = (value) => formatAxisValue(value),
+}) {
+  const max = Math.max(
+    ...groups.flatMap((group) => series.map((serie) => Number(group.valeurs?.[serie.key]) || 0)),
+    1
+  );
+  const yTicks = [max, Math.round(max * 0.66), Math.round(max * 0.33), 0];
+
+  return (
+    <article className="panel">
+      <h2>{title}</h2>
+      <div className="chart-axis-label">{hint}</div>
+      <div className="chart-layout">
+        <div className="chart-y-axis">
+          {yTicks.map((tick) => (
+            <span key={tick}>{formatTick(tick)}</span>
+          ))}
+        </div>
+        <div className="bar-chart">
+          <div className="chart-grid-lines">
+            {yTicks.slice(0, -1).map((tick) => (
+              <i key={tick} />
+            ))}
+          </div>
+          {groups.map((group) => (
+            <div className="bar-group" key={group.label}>
+              <div className="bars">
+                {series.map((serie) => {
+                  const value = Number(group.valeurs?.[serie.key]) || 0;
+                  return (
+                    <i
+                      key={serie.key}
+                      title={`${group.label} · ${serie.label} : ${value}`}
+                      style={{
+                        height: `${(value / max) * 100}%`,
+                        background: serie.couleur,
+                      }}
+                    />
+                  );
+                })}
+              </div>
+              <small>{group.label}</small>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="chart-x-axis">{xLabel}</div>
+      <p className="legend">
+        {series.map((serie) => (
+          <Fragment key={serie.key}>
+            <span style={{ background: serie.couleur }} /> {serie.label}
+          </Fragment>
+        ))}
       </p>
     </article>
   );

@@ -25,7 +25,7 @@ Classification des contribuables selon les seuils du CGI malgache. Dépend de `t
 * `getCategorie(contribuable)` : renvoie `'Grand'`, `'Moyen'` ou `'Petit'` à partir du chiffre d'affaires de la déclaration la plus récente ; `'Petit'` si le contribuable n'a aucune déclaration.
 * `getFicheCategorie(categorie)` : renvoie la fiche réglementaire de la catégorie (`label`, `seuil`, `couleur`, `background`, `regime`, `penaliteRetard`, `amendes`, `refArticle`). La catégorie `Petit` sert de repli pour toute valeur inconnue.
 
-C'est le module réellement importé par les pages : `src/pages/contribuables/ContribuableDetail.jsx` (`getCategorie`, `getFicheCategorie`) et `src/pages/contribuables/hooks/useContribuablesList.jsx` (`getCategorie`).
+C'est le module réellement importé par les pages : `src/frontofficeagent/contribuables/ContribuableDetail.jsx` (`getCategorie`, `getFicheCategorie`) et `src/frontofficeagent/contribuables/hooks/useContribuablesList.jsx` (`getCategorie`).
 
 ### 3. [`contribuables.utils.jsx`](contribuables.utils.jsx) — au pluriel
 
@@ -47,11 +47,62 @@ Agrégations du tableau décisionnel. Dépend de `toNumber` importé depuis `./f
 * `buildCurves(years, declarations)` : renvoie, pour chaque régime `IS` puis `IR`, les séries `paid` (`tva_payee` cumulée) et `expected` (`tva_theorique` cumulée) par année.
 * `getRegimePercentage(count, total)` : pourcentage arrondi, avec `Math.max(total, 1)` pour éviter la division par zéro.
 
+### 5. [`session.utils.js`](session.utils.js)
+
+Ce qui concerne la session de l'agent connecté, unique source de vérité partagée
+par `App.jsx` (route `/`), `backofficeadmin/auth/signin.jsx` et les affichages du
+profil :
+
+* `getLandingPath(user)` : renvoie `'/admin'` si `user?.role === 'admin'`, sinon `'/acceuil'`. Le rôle provient toujours de la réponse de `POST /api/auth/login` ou de `GET /api/auth/me`, jamais d'une saisie.
+* `initialsOf(user)` : deux initiales (première lettre du prénom + première lettre du nom, en majuscules), repli sur les deux premiers caractères de l'e-mail si l'un des deux manque et `'??'` sans utilisateur. Affichées sur le bouton rond `.user-profile-toggle` de l'en-tête, dans la pastille `.user-profile-avatar` du panneau déroulé et dans la fiche de profil de `AdminUtilisateurs`.
+
+Le helper doit rester partagé : lorsque la route `/` redirigeait seule vers
+`/acceuil`, elle écrasait la navigation vers `/admin` déclenchée par l'écran de
+connexion et un administrateur atterrissait d'abord sur l'espace agent.
+
+### 6. [`pagination.utils.js`](pagination.utils.js)
+
+Numérotation des pages affichées par le composant commun
+[`../components/common/Pagination.jsx`](../components/common/Pagination.jsx).
+Déplacé ici depuis `src/frontofficeagent/contribuables/utils/pagination.jsx`, afin d'être
+partagé entre le registre des contribuables et les tables du backoffice
+administrateur.
+
+* `getPageNumbers(currentPage, totalPages)` : renvoie un tableau de numéros (`number`) entrecoupés de `'...'`. Tous les numéros jusqu'à 7 pages ; `1 2 3 4 5 … n` en début de liste ; `1 … n-4 n-3 n-2 n-1 n` en fin de liste ; sinon `1 … p-1 p p+1 … n`.
+
+---
+
+### 7. [`relance.utils.js`](relance.utils.js)
+
+Vocabulaire partagé des relances fiscales, importé par la fiche contribuable
+(`RelancePanel`, `ContribuableDetail`, `exportFicheContribuable`) et par
+[`../pages/relance/RelanceFiscale.jsx`](../pages/relance/RelanceFiscale.jsx) ainsi que
+[`../pages/relance/components/RappelOrdreModal.jsx`](../pages/relance/components/RappelOrdreModal.jsx).
+
+* `RELANCE_TYPES` : libellés, titre de la lettre, délai réglementaire, suffixe de référence, couleur et badge de sévérité pour les quatre types acceptés par la contrainte `relances_type_relance_check` (`rappel1`, `rappel2`, `mise_en_demeure`, `demande_eclaircissement`).
+* `RELANCE_STATUTS` : libellé et classe CSS pour `emise`, `regularisee`, `annulee` (contrainte `relances_statut_check`).
+* `relanceType(type)` / `relanceStatut(statut)` : accesseurs avec repli, pour qu'une valeur inconnue ne casse pas l'affichage.
+* `formatDateRelance(value)` : date lisible en français (`26/10/2026`) ou `'—'` si la valeur est absente ou illisible.
+
+Les clés sont celles de la base : aucune traduction intermédiaire n'est nécessaire, et le mot `regularise` n'existe pas comme type de relance (c'est un statut).
+
+### 8. [`searchParams.utils.js`](searchParams.utils.js)
+
+Helpers de lecture/écriture de l'état d'une liste dans l'URL, utilisés par
+`useContribuablesList`, `SuiviFiscal.jsx` et `RelanceFiscale.jsx` avec
+`useSearchParams`.
+
+* `updateSearchParams(current, changes)` : copie le `URLSearchParams` courant, applique les modifications (`null`, `undefined` et `''` suppriment la clé) et **préserve les paramètres non mentionnés** (par exemple `vue=statistique` du registre).
+* `readSearchParam(searchParams, key, fallback)` : valeur du paramètre, ou `fallback` lorsqu'il est absent ou vide.
+
+Les pages écrivent toujours avec `{ replace: true }` : une frappe dans un champ de
+recherche ne doit pas empiler vingt entrées dans l'historique du navigateur.
+
 ---
 
 ## Remarques sur le dossier
 
-* Tous les fichiers portent l'extension `.jsx` alors qu'ils n'exportent aucun JSX. Les imports qui omettent l'extension fonctionnent grâce à la résolution de Vite ; `src/pages/relance/RelanceFiscale.jsx` est le seul fichier à écrire explicitement `'../../utils/formatters.jsx'`.
+* Tous les fichiers sauf `session.utils.js` et `pagination.utils.js` portent l'extension `.jsx` alors qu'ils n'exportent aucun JSX. Les imports qui omettent l'extension fonctionnent grâce à la résolution de Vite ; `src/frontofficeagent/relance/RelanceFiscale.jsx` est le seul fichier à écrire explicitement `'../../utils/formatters.jsx'`.
 * Deux modules distincts portent un nom très proche et des rôles différents :
   `contribuable.utils.jsx` (classification d'un contribuable) et
   `contribuables.utils.jsx` (regroupement de déclarations par contribuable).

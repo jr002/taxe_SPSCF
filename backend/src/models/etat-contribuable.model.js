@@ -1,12 +1,19 @@
 const prisma = require('../config/prisma');
+const { applyScope } = require('../utils/data-scope');
+
+// Reprises telles quelles sur les contraintes `check_statut_activite` et
+// `check_statut_conformite` de la base : une valeur hors liste serait refusée
+// par PostgreSQL en erreur 23514 (500) au lieu d'un 400 de validation.
+const STATUTS_ACTIVITE = ['Actif', 'En sommeil', 'En cessation', 'Radié'];
+const STATUTS_CONFORMITE = ['En règle', 'Défaillant', 'Sous contrôle', 'Bloqué'];
 
 class EtatContribuableModel {
   // Créer ou enregistrer un nouvel état pour un contribuable
   static async create(data) {
     const {
       id_contribuable,
-      statut_activite = 'Actif',
-      statut_conformite = 'En règle',
+      statut_activite = STATUTS_ACTIVITE[0],
+      statut_conformite = STATUTS_CONFORMITE[0],
       id_agent,
       motif,
     } = data;
@@ -14,8 +21,8 @@ class EtatContribuableModel {
     return await prisma.etat_contribuable.create({
       data: {
         id_contribuable: parseInt(id_contribuable, 10),
-        statut_activite: statut_activite || 'Actif',
-        statut_conformite: statut_conformite || 'En règle',
+        statut_activite: statut_activite || STATUTS_ACTIVITE[0],
+        statut_conformite: statut_conformite || STATUTS_CONFORMITE[0],
         id_agent: id_agent ? parseInt(id_agent, 10) : null,
         motif: motif || null,
         date_modification: new Date(),
@@ -101,7 +108,7 @@ class EtatContribuableModel {
   }
 
   // Liste paginée avec filtres
-  static async findAll({ page = 1, limit = 20, statut_activite = '', statut_conformite = '', id_contribuable = null } = {}) {
+  static async findAll({ page = 1, limit = 20, statut_activite = '', statut_conformite = '', id_contribuable = null, scope } = {}) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 20);
     const offset = (pageNum - 1) * limitNum;
@@ -110,6 +117,7 @@ class EtatContribuableModel {
     if (id_contribuable) where.id_contribuable = parseInt(id_contribuable, 10);
     if (statut_activite) where.statut_activite = statut_activite;
     if (statut_conformite) where.statut_conformite = statut_conformite;
+    applyScope(where, scope, { relation: 'contribuables' });
 
     const [total, rows] = await Promise.all([
       prisma.etat_contribuable.count({ where }),
@@ -189,17 +197,21 @@ class EtatContribuableModel {
   }
 
   // Statistiques sur les états
-  static async getStats() {
+  static async getStats(scope) {
+    const where = applyScope({}, scope, { relation: 'contribuables' });
+
     const [activite, conformite, total] = await Promise.all([
       prisma.etat_contribuable.groupBy({
         by: ['statut_activite'],
         _count: { _all: true },
+        where,
       }),
       prisma.etat_contribuable.groupBy({
         by: ['statut_conformite'],
         _count: { _all: true },
+        where,
       }),
-      prisma.etat_contribuable.count(),
+      prisma.etat_contribuable.count({ where }),
     ]);
 
     return {
@@ -210,4 +222,4 @@ class EtatContribuableModel {
   }
 }
 
-module.exports = EtatContribuableModel;
+module.exports = { EtatContribuableModel, STATUTS_ACTIVITE, STATUTS_CONFORMITE };

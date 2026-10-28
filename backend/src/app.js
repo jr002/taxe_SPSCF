@@ -11,6 +11,7 @@ const contribuableRoutes = require('./routes/contribuable.routes');
 const declarationRoutes = require('./routes/declaration.routes');
 const controleRoutes = require('./routes/controle.routes');
 const recoupementRoutes = require('./routes/recoupement.routes');
+const droitCommunicationRoutes = require('./routes/droit-communication.routes');
 const centreRoutes = require('./routes/centre.routes');
 const authRoutes = require('./routes/auth.routes');
 const agentRoutes = require('./routes/agent.routes');
@@ -18,6 +19,7 @@ const rapprochementRoutes = require('./routes/rapprochement.routes');
 const etatContribuableRoutes = require('./routes/etat-contribuable.routes');
 const relanceRoutes = require('./routes/relance.routes');
 const { authenticate } = require('./middlewares/auth.middleware');
+const { enforceDataScope } = require('./middlewares/data-scope.middleware');
 
 // Middleware d'erreur
 const errorHandler = require('./middlewares/error.middleware');
@@ -60,11 +62,12 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api', authenticate);
+app.use('/api', authenticate, enforceDataScope);
 app.use('/api/contribuables', contribuableRoutes);
 app.use('/api/declarations', declarationRoutes);
 app.use('/api/controles', controleRoutes);
 app.use('/api/recoupements', recoupementRoutes);
+app.use('/api/droits-communication', droitCommunicationRoutes);
 app.use('/api/centres', centreRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/rapprochements', rapprochementRoutes);

@@ -6,7 +6,10 @@ Contient la lecture de l'environnement et les connexions à PostgreSQL.
 - [`prisma.js`](prisma.js) : instance `PrismaClient` partagée, utilisée par tous
   les modèles et par `scripts/create-agent.js`.
 - [`swagger.js`](swagger.js) : spécification OpenAPI et export de
-  `swagger-ui-express` pour `/api-docs`.
+  `swagger-ui-express` pour `/api-docs` ; documente notamment le tag
+  « Droits de communication », les paths `/api/droits-communication`,
+  `/api/droits-communication/stats/statuts`, `/api/droits-communication/{id}`
+  et le schéma `DroitCommunicationInput`.
 - [`database.js`](database.js) : pool `pg` historique, référencé par aucun
   fichier de l'API.
 

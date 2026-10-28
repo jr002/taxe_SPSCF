@@ -44,6 +44,7 @@ Vite (valeur par défaut : `/api`).
 frontend/
 ├── index.html              # page hôte de l'application
 ├── vite.config.js          # plugins (React, Tailwind) et proxy /api
+├── public/                 # ressources servies à la racine du site, dont `referentiel-nif/`
 └── src/
     ├── main.jsx            # montage React dans BrowserRouter
     ├── App.jsx             # session, routage protégé, thème, déconnexion
@@ -53,13 +54,14 @@ frontend/
     ├── assets/             # ressources importées par le bundler
     ├── components/         # composants réutilisables (common, forms, charts)
     ├── hooks/              # hooks React partagés
-    ├── pages/              # écrans métier, organisés par domaine
-    ├── users/              # écrans de connexion
+    ├── frontofficeagent/   # espace fiscal des rôles opérationnels (agent, contrôleur, chef de centre, inspecteur)
+    ├── backofficeadmin/    # écrans de connexion, d'inscription et d'administration des comptes
+    ├── accountcontribuable/ # espace du contribuable (vide, à personnaliser)
     └── utils/              # formatage des montants et calculs frontend
 ```
 
 Chaque dossier possède un `README.md` qui décrit son contenu ; le détail des
-écrans est dans [`src/pages/README.md`](src/pages/README.md).
+écrans est dans [`src/frontofficeagent/README.md`](src/frontofficeagent/README.md).
 
 ## 4. Routage et contrôle de session
 
@@ -69,32 +71,57 @@ authentifié est ramené sur `/`.
 
 | Route | Écran | Accès |
 | --- | --- | --- |
-| `/` | écran de connexion, ou redirection vers `/acceuil` si la session est valide | public |
+| `/` | écran de connexion, ou redirection vers l'accueil du rôle (`/admin` pour un administrateur, `/acceuil` sinon) si la session est valide | public |
 | `/signin` | redirection vers `/` | public |
 | `/signup` | `Signup` — demande de création de compte agent | public |
+| `/attente-activation` | `AttenteActivation` — statut d'un compte en attente d'activation | public |
+| `/mot-de-passe-oublie` | `MotDePasseOublie` — demande de réinitialisation du mot de passe | public |
 | `/admin` | `AccueilAdmin` — tableau de bord des comptes agents | protégé, administrateurs |
-| `/admin/utilisateurs` | `Admin` — espace administrateur : activer / bloquer les comptes, rôles, mots de passe | protégé, administrateurs |
+| `/admin/utilisateurs` | `Admin` — activer / bloquer les comptes, rôles, centres, identité et mots de passe ; chaque ligne se déplie en fiche de profil **fonctionnant en brouillon**, avec bouton `💾 Enregistrer` et pop-up de confirmation pour toute action | protégé, administrateurs |
+| `/admin/roles` | `AdminRoles` — rôles et centres | protégé, administrateurs |
+| `/admin/verification-nif` | `AdminVerificationNIF` — synthèse des trois types de vérification + référentiel NIF | protégé, administrateurs |
+| `/admin/verification-nif/sql` | `VerificationNifSql` — vérification par requête, 3 dernières opérations | protégé, administrateurs |
+| `/admin/verification-nif/excel` | `VerificationNifExcel` — liaison depuis un fichier Excel, 3 dernières opérations | protégé, administrateurs |
+| `/admin/verification-nif/json` | `VerificationNifJson` — synchronisation avec le catalogue JSON, 3 dernières opérations | protégé, administrateurs |
+| `/admin/historique` | `AdminHistorique` — journal des opérations d'administration | protégé, administrateurs |
 | `/acceuil` | `Accueil` — tableau de bord | protégé |
 | `/collecte` | `Collecte` + onglets de modules TVA | protégé |
 | `/entreprises/nouveau` | `PhaseClassement` | protégé |
 | `/entreprises/nouveau/form` | `FormInformation` | protégé |
 | `/decisionnel` | `TableauDecisionnel` | protégé |
 | `/suivi` et `/suivi/:id` | `SuiviFiscal`, `DeclarationDetail` | protégé |
-| `/contribuables` et `/contribuables/:id` | `Contribuables`, `ContribuableDetail` | protégé |
-| `/contribuables/:id/classification`, `/declarations`, `/relances` | `ContribuableDetail` (onglets) | protégé |
-| `/register`, `/centres/:id` | `Register`, `CentreDetail` | protégé |
-| `/relance` | `RelanceFiscale` | protégé |
+| `/contribuables` | `Contribuables` — vue Registre | protégé |
+| `/contribuables?vue=statistique` | `Contribuables` — vue Statistique (camemberts et histogrammes VSP / CSP, IS / IR / TVA) | protégé |
+| `/contribuables/:id` | `ContribuableDetail` — onglet Synthèse | protégé |
+| `/contribuables/:id/classification`, `/declarations`, `/recoupements`, `/droits-communication`, `/relances` | `ContribuableDetail` (mêmes écrans, onglets déduits du chemin) | protégé |
+| `/contribuables/:id/confrontation` | `Confrontation` — page unique de confrontation déclarations / recoupements | protégé |
+| `/contribuables/:id/declarations/nouveau`, `/recoupements/nouveau`, `/droits-communication/nouveau` | pages dédiées d'enregistrement | protégé |
+| `/register`, `/centres-fiscaux`, `/centres/:id`, `/centres-fiscaux/:type/:index` | `Register`, `CentreListe`, `CentreDetail`, `UniteFiscaleDetail` | protégé |
+| `/relance` | `RelanceFiscale` | protégé — entrée « Relances » du `Header` |
 | toute autre URL | redirection vers `/` | — |
 
 Les routes protégées partagent un même layout (`<Outlet />`) qui rend
 [`Header`](src/components/common/Header.jsx) puis `<main className="app-main">`.
 Le `Header` est donc absent de l'écran de connexion.
 
-La navigation du `Header` dépend du rôle : un agent voit les modules fiscaux
-(Accueil, Collecte TVA, Tableau décisionnel, Suivi fiscal, Contribuables,
-Relance fiscale), tandis qu'un administrateur ne voit que **« Accueil »**
-(`/admin`, tableau de bord des comptes) et **« Utilisateurs »**
-(`/admin/utilisateurs`), son logo renvoyant vers `/admin`.
+La navigation du `Header` dépend du rôle : un agent voit « Accueil », « Collecte »,
+« Décisionnel », « Dossier fiscal », « Relances », « Contribuables », « Centres »
+et « Registre » ; un administrateur voit « Tableau de bord », « Utilisateurs »,
+« Rôles », « Vérification NIF » et « Historique & Audit », son logo
+renvoyant vers `/admin` (constantes `NAVIGATION_LINKS` et `ADMIN_LINKS` de
+`Header.jsx`). La barre est fixe en haut de l'écran (`position: sticky`) et le
+lien actif est celui dont le chemin est le préfixe le plus long de l'URL, y
+compris sur les routes détaillées.
+
+La barre se termine par le profil de l'agent connecté, ancré au coin supérieur
+droit de l'en-tête hors du flux des liens
+([`UserProfile.jsx`](src/components/common/UserProfile.jsx)) : simple pastille
+d'initiales qui déroule l'e-mail, le rôle libellé par `roles.utils.js`, le centre
+de rattachement, le périmètre du rôle et trois commandes — « 🔑 Changer mon mot de
+passe » (modale [`ModaleConfirmation.jsx`](src/components/common/ModaleConfirmation.jsx),
+qui demande le mot de passe actuel puis le nouveau deux fois, et appelle
+`POST /api/auth/change-password`), la bascule du thème et « Se déconnecter ».
+Aucune de ces commandes n'est alignée dans la barre.
 
 > Remarque : la route du tableau de bord est orthographiée `/acceuil` dans le
 > code (`App.jsx`, `Header.jsx`, écrans de connexion), et non `/accueil`.
@@ -109,8 +136,10 @@ Relance fiscale), tandis qu'un administrateur ne voit que **« Accueil »**
   `localStorage`) ;
 - délai d'expiration de 10 secondes ;
 - les fonctions exportées renvoient directement `res.data.data` et couvrent les
-  déclarations, les contribuables, les centres, les recoupements, les contrôles
-  et la procédure contradictoire ;
+  déclarations et la procédure contradictoire, les contribuables, les centres,
+  les recoupements, les droits de communication, les rapprochements
+  (confrontation), les états de contribuable, les relances, les contrôles et
+  l'administration des agents ;
 - `getErrorMessage(error)` produit un message lisible à partir d'une erreur
   Axios.
 
@@ -119,22 +148,40 @@ La liste complète des fonctions et leur endpoint est dans
 
 ## 6. Connexion et déconnexion
 
-- L'écran de connexion ([`src/users/`](src/users/)) envoie
+- L'écran de connexion ([`src/backofficeadmin/auth/`](src/backofficeadmin/auth/)) envoie
   `POST /api/auth/login` avec l'e-mail et le mot de passe, affiche les erreurs
   renvoyées par l'API et désactive le bouton pendant l'envoi.
 - En cas de succès, le cookie de session est posé pour 8 heures et
-  l'utilisateur est redirigé vers `/acceuil` — ou vers `/admin` si son rôle est
-  `admin` (`getLandingPath` de `src/users/signin.jsx`). Le rôle est celui
+  l'utilisateur est redirigé vers `/admin` si son rôle est `admin`, sinon vers
+  `/acceuil` (`getLandingPath` de `src/utils/session.utils.js`, utilisé à la fois
+  par `App.jsx` et par l'écran de connexion). Le rôle est celui
   renvoyé par `POST /api/auth/login`, donc aucune redirection ne peut être
   forcée sans authentification valide.
-- Le bouton « Déconnexion » du `Header` appelle `POST /api/auth/logout`, remet
-  l'état d'authentification à `false` et revient sur `/`.
-- La route publique `/signup` ([`Signup`](src/users/signup.jsx)) envoie
+- Le bouton « Se déconnecter » du profil ouvert dans le `Header` appelle
+  `POST /api/auth/logout`, remet l'état d'authentification à `false` et revient
+  sur `/`.
+- Une session ouverte ne survit pas à son compte : le middleware backend relit
+  l'agent à chaque requête protégée, donc un compte bloqué ou supprimé renvoie
+  `401` et `App.jsx`, qui ouvre l'application par `GET /api/auth/me`, retombe sur
+  l'écran de connexion.
+- « Mot de passe oublié ? » sur `/` est un lien vers la page publique
+  `/mot-de-passe-oublie` ([`MotDePasseOublie`](src/backofficeadmin/auth/mot-de-passe-oublie.jsx)),
+  qui reprend la mise en page de l'écran de connexion et envoie
+  `POST /api/auth/reset-request` : aucune carte SMTP n'existant dans le projet,
+  la demande est seulement consignée dans le journal d'audit et un
+  administrateur saisit le nouveau mot de passe depuis `/admin/utilisateurs`.
+  L'adresse déjà saisie sur `/` y est transmise par l'état de navigation ;
+- `/` et `/mot-de-passe-oublie` reçoivent `isDarkMode` / `onToggleTheme` de
+  `App.jsx` et affichent donc le bouton de thème ; `/signup` et
+  `/attente-activation` n'ont pas de bouton propre mais héritent du thème
+  enregistré. Le bouton « Masquer / Afficher » reste propre au champ mot de passe
+  de `/`.
+- La route publique `/signup` ([`Signup`](src/backofficeadmin/auth/signup.jsx)) envoie
   `POST /api/auth/register` (nom, prénom, e-mail, mot de passe confirmé côté
   client). La demande crée un agent au statut `en_attente` : elle n'ouvre pas de
   session, et la connexion reste refusée jusqu'à l'activation du compte par un
   administrateur. Le détail est dans
-  [`src/users/README.md`](src/users/README.md).
+  [`src/backofficeadmin/README.md`](src/backofficeadmin/README.md).
 - Le contrôle de session n'a lieu qu'au chargement de l'application
   (`GET /api/auth/me`). Un `401` survenu plus tard, pendant la navigation, n'est
   pas intercepté : seule une actualisation de la page ou une déconnexion ramène

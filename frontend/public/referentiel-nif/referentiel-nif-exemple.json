@@ -1,0 +1,13 @@
+{
+  "description": "Jeu de démonstration du référentiel NIF certifié — mêmes NIFs de contrôle que ceux déjà portés par verification.utils.js, pour tester une liaison API JSON sans serveur externe.",
+  "referentiel": [
+    { "NIF": "1000000001", "RaisonSociale": "JIRAMA S.A.", "Centre": "DGE", "statut": "Certifié" },
+    { "NIF": "1000000002", "RaisonSociale": "TELMA MADAGASCAR", "Centre": "DGE", "statut": "Certifié" },
+    { "NIF": "2000000003", "RaisonSociale": "AIR MADAGASCAR", "Centre": "DGE", "statut": "Certifié" },
+    { "NIF": "3000000004", "RaisonSociale": "PHARMACIE CENTRALE", "Centre": "SRE 1 Analamanga", "statut": "Certifié" },
+    { "NIF": "3000000005", "RaisonSociale": "DISTRIBUTEUR DU NORD", "Centre": "SRE 2 Analamanga", "statut": "Certifié" },
+    { "NIF": "4000100021", "RaisonSociale": "BTM BANK MADAGASCAR", "Centre": "DGE", "statut": "Certifié" },
+    { "NIF": "4000100022", "RaisonSociale": "SOCIETE BOISSONS MADAGASCAR", "Centre": "SRE 1 Analamanga", "statut": "Certifié" },
+    { "NIF": "4000100023", "RaisonSociale": "MADAGASCAR ENERGY CORP", "Centre": "SRE 2 Analamanga", "statut": "Certifié" }
+  ]
+}

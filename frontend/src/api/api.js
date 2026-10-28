@@ -76,8 +76,23 @@ export const updateAgentStatut = (id, statut) =>
 export const updateAgentRole = (id, role) =>
   api.patch(`/agents/${id}/role`, { role }).then((res) => res.data.data);
 
+/** Affectation du centre de rattachement ; `null` retire l'affectation. */
+export const updateAgentCentre = (id, idCentre) =>
+  api.patch(`/agents/${id}/centre`, { id_centre: idCentre }).then((res) => res.data);
+
 export const resetAgentPassword = (id, password) =>
   api.patch(`/agents/${id}/password`, { password }).then((res) => res.data.data);
+
+/**
+ * Correction de l'identité d'un compte (nom, prénom, e-mail de connexion) par un
+ * administrateur.
+ */
+export const updateAgentIdentite = (id, payload) =>
+  api.patch(`/agents/${id}/identite`, payload).then((res) => res.data.data);
+
+/** L'agent connecté remplace son propre mot de passe ; renvoie le message serveur. */
+export const changeOwnPassword = (payload) =>
+  api.post('/auth/change-password', payload).then((res) => res.data);
 
 export const deleteAgent = (id) =>
   api.delete(`/agents/${id}`).then((res) => res.data);
@@ -110,6 +125,22 @@ export const getRecoupementsByContribuable = (idContribuable) =>
 export const getRecoupementSourceStats = () =>
   api.get('/recoupements/stats/sources').then((res) => res.data.data);
 
+// ==================== DROITS DE COMMUNICATION ====================
+export const getDroitsCommunication = (params = {}) =>
+  api.get('/droits-communication', { params }).then((res) => res.data.data);
+
+export const getDroitCommunicationById = (id) =>
+  api.get(`/droits-communication/${id}`).then((res) => res.data.data);
+
+export const createDroitCommunication = (payload) =>
+  api.post('/droits-communication', payload).then((res) => res.data.data);
+
+export const updateDroitCommunication = (id, payload) =>
+  api.put(`/droits-communication/${id}`, payload).then((res) => res.data.data);
+
+export const deleteDroitCommunication = (id) =>
+  api.delete(`/droits-communication/${id}`).then((res) => res.data);
+
 // ==================== RAPPROCHEMENTS ====================
 export const getRapprochements = (params = {}) =>
   api.get('/rapprochements', { params }).then((res) => res.data.data);
@@ -117,8 +148,14 @@ export const getRapprochements = (params = {}) =>
 export const getRapprochementById = (id) =>
   api.get(`/rapprochements/${id}`).then((res) => res.data.data);
 
-export const getRapprochementStats = () =>
-  api.get('/rapprochements/stats').then((res) => res.data.data);
+export const getRapprochementStats = (params = {}) =>
+  api.get('/rapprochements/stats', { params }).then((res) => res.data.data);
+
+export const getApercuConfrontation = (idContribuable) =>
+  api.get(`/rapprochements/apercu/${idContribuable}`).then((res) => res.data.data);
+
+export const exportRapprochementsPdf = (params = {}) =>
+  api.get('/rapprochements/export/pdf', { params, responseType: 'blob', timeout: 30000 });
 
 export const createRapprochement = (payload) =>
   api.post('/rapprochements', payload).then((res) => res.data.data);

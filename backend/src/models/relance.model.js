@@ -1,4 +1,10 @@
 const prisma = require('../config/prisma');
+const { applyScope } = require('../utils/data-scope');
+
+// Mêmes listes que les contraintes `relances_type_relance_check` et
+// `relances_statut_check` : hors de ces valeurs PostgreSQL renvoie 23514 (500).
+const TYPES_RELANCE = ['rappel1', 'rappel2', 'mise_en_demeure', 'demande_eclaircissement'];
+const STATUTS_RELANCE = ['emise', 'regularisee', 'annulee'];
 
 class RelanceModel {
   // Créer une relance
@@ -8,7 +14,7 @@ class RelanceModel {
       id_declaration,
       id_agent,
       type_relance,
-      statut = 'emise',
+      statut = STATUTS_RELANCE[0],
       annee,
       montant_du,
       jours_retard = 0,
@@ -24,7 +30,7 @@ class RelanceModel {
         id_declaration: id_declaration ? parseInt(id_declaration, 10) : null,
         id_agent: id_agent ? parseInt(id_agent, 10) : null,
         type_relance,
-        statut: statut || 'emise',
+        statut: statut || STATUTS_RELANCE[0],
         annee: parseInt(annee, 10),
         montant_du: montant_du !== undefined ? montant_du : 0,
         jours_retard: parseInt(jours_retard, 10) || 0,
@@ -84,6 +90,7 @@ class RelanceModel {
     type_relance = '',
     annee = '',
     id_contribuable = null,
+    scope,
   } = {}) {
     const pageNum = Math.max(1, parseInt(page, 10) || 1);
     const limitNum = Math.max(1, parseInt(limit, 10) || 20);
@@ -102,6 +109,7 @@ class RelanceModel {
         ],
       };
     }
+    applyScope(where, scope, { relation: 'contribuables' });
 
     const [total, rows] = await Promise.all([
       prisma.relances.count({ where }),
@@ -216,15 +224,19 @@ class RelanceModel {
   }
 
   // Statistiques
-  static async getStats() {
+  static async getStats(scope) {
+    const where = applyScope({}, scope, { relation: 'contribuables' });
+
     const [total, groupedStatut, aggregates] = await Promise.all([
-      prisma.relances.count(),
+      prisma.relances.count({ where }),
       prisma.relances.groupBy({
         by: ['statut'],
         _count: { _all: true },
         _sum: { montant_du: true },
+        where,
       }),
       prisma.relances.aggregate({
+        where,
         _sum: { montant_du: true },
         _avg: { jours_retard: true },
       }),
@@ -243,4 +255,4 @@ class RelanceModel {
   }
 }
 
-module.exports = RelanceModel;
+module.exports = { RelanceModel, TYPES_RELANCE, STATUTS_RELANCE };

@@ -65,9 +65,9 @@ class ControleService {
   }
 
   // Statistiques globales
-  static async getStatistiques() {
-    const stats = await ControleModel.getStats();
-    const byType = await ControleModel.getByType();
+  static async getStatistiques(scope) {
+    const stats = await ControleModel.getStats(scope);
+    const byType = await ControleModel.getByType(scope);
     
     return {
       global: stats,

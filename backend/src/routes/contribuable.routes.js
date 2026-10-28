@@ -7,26 +7,30 @@ const RelanceController = require('../controllers/relance.controller');
 const {
   validate,
   contribuableValidators,
-  centreFiscalRefValidator,
+  contribuableUpdateValidators,
   centreFiscalRefQueryValidator,
   etatContribuableValidators,
 } = require('../middlewares/validation.middleware');
+const { requireContribuableAccess } = require('../middlewares/data-scope.middleware');
+
+/** Le contribuable visé par `/:id` doit appartenir au centre de l'agent. */
+const contribuableInScope = requireContribuableAccess('id');
 
 // Routes protégées
 router.get('/', validate(centreFiscalRefQueryValidator), ContribuableController.findAll);
-router.get('/:id', ContribuableController.findById);
+router.get('/:id', contribuableInScope, ContribuableController.findById);
 
 // Sous-ressources d'un contribuable
-router.get('/:id/etat', EtatContribuableController.findByContribuable);
-router.post('/:id/etat', validate(etatContribuableValidators), EtatContribuableController.create);
-router.get('/:id/rapprochements', (req, res) => {
+router.get('/:id/etat', contribuableInScope, EtatContribuableController.findByContribuable);
+router.post('/:id/etat', contribuableInScope, validate(etatContribuableValidators), EtatContribuableController.create);
+router.get('/:id/rapprochements', contribuableInScope, (req, res) => {
   req.query.id_contribuable = req.params.id;
   return RapprochementController.findAll(req, res);
 });
-router.get('/:id/relances', RelanceController.findByContribuable);
+router.get('/:id/relances', contribuableInScope, RelanceController.findByContribuable);
 
 // Routes admin
 router.post('/', validate(contribuableValidators), ContribuableController.create);
-router.put('/:id', validate(centreFiscalRefValidator), ContribuableController.update);
+router.put('/:id', contribuableInScope, validate(contribuableUpdateValidators), ContribuableController.update);
 
 module.exports = router;

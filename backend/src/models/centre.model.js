@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const { applyScope } = require('../utils/data-scope');
 
 const CENTRE_TYPES = ['Centre Fiscal', 'SRE', 'DGE', 'autre'];
 
@@ -15,8 +16,11 @@ class CentreModel {
     });
   }
 
-  static async findAll() {
+  static async findAll(scope) {
+    const where = applyScope({}, scope);
+
     return prisma.centres.findMany({
+      where,
       orderBy: { nom_centre: 'asc' },
       include: { _count: { select: { contribuables: true } } },
     });

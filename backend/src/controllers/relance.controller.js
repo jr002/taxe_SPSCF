@@ -1,4 +1,4 @@
-const RelanceModel = require('../models/relance.model');
+const { RelanceModel } = require('../models/relance.model');
 
 class RelanceController {
   // Créer une relance
@@ -20,7 +20,6 @@ class RelanceController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la création de la relance',
-        error: error.message,
       });
     }
   }
@@ -37,6 +36,7 @@ class RelanceController {
         type_relance: type_relance || '',
         annee: annee || '',
         id_contribuable: id_contribuable || null,
+        scope: req.dataScope,
       });
 
       res.json({
@@ -48,7 +48,6 @@ class RelanceController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la récupération des relances',
-        error: error.message,
       });
     }
   }
@@ -75,7 +74,6 @@ class RelanceController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la récupération de la relance',
-        error: error.message,
       });
     }
   }
@@ -95,7 +93,6 @@ class RelanceController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la récupération des relances du contribuable',
-        error: error.message,
       });
     }
   }
@@ -123,7 +120,6 @@ class RelanceController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la mise à jour de la relance',
-        error: error.message,
       });
     }
   }
@@ -150,7 +146,6 @@ class RelanceController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la suppression de la relance',
-        error: error.message,
       });
     }
   }
@@ -158,7 +153,7 @@ class RelanceController {
   // Statistiques
   static async getStats(req, res) {
     try {
-      const stats = await RelanceModel.getStats();
+      const stats = await RelanceModel.getStats(req.dataScope);
       res.json({
         success: true,
         data: stats,
@@ -168,7 +163,6 @@ class RelanceController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la récupération des statistiques',
-        error: error.message,
       });
     }
   }

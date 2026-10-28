@@ -1,4 +1,4 @@
-const EtatContribuableModel = require('../models/etat-contribuable.model');
+const { EtatContribuableModel } = require('../models/etat-contribuable.model');
 
 class EtatContribuableController {
   // Créer un nouvel état pour un contribuable
@@ -33,7 +33,6 @@ class EtatContribuableController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de l\'enregistrement de l\'état du contribuable',
-        error: error.message,
       });
     }
   }
@@ -48,6 +47,7 @@ class EtatContribuableController {
         statut_activite: statut_activite || '',
         statut_conformite: statut_conformite || '',
         id_contribuable: id_contribuable || null,
+        scope: req.dataScope,
       });
 
       res.json({
@@ -59,7 +59,6 @@ class EtatContribuableController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la récupération des états',
-        error: error.message,
       });
     }
   }
@@ -86,7 +85,6 @@ class EtatContribuableController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la récupération de l\'état',
-        error: error.message,
       });
     }
   }
@@ -106,7 +104,6 @@ class EtatContribuableController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la récupération de l\'historique des états',
-        error: error.message,
       });
     }
   }
@@ -126,7 +123,6 @@ class EtatContribuableController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la récupération du dernier état',
-        error: error.message,
       });
     }
   }
@@ -154,7 +150,6 @@ class EtatContribuableController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la mise à jour de l\'état',
-        error: error.message,
       });
     }
   }
@@ -181,7 +176,6 @@ class EtatContribuableController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la suppression de l\'état',
-        error: error.message,
       });
     }
   }
@@ -189,7 +183,7 @@ class EtatContribuableController {
   // Statistiques
   static async getStats(req, res) {
     try {
-      const stats = await EtatContribuableModel.getStats();
+      const stats = await EtatContribuableModel.getStats(req.dataScope);
       res.json({
         success: true,
         data: stats,
@@ -199,7 +193,6 @@ class EtatContribuableController {
       res.status(500).json({
         success: false,
         message: 'Erreur lors de la récupération des statistiques',
-        error: error.message,
       });
     }
   }

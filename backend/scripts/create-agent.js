@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const prisma = require('../src/config/prisma');
+const { AgentModel } = require('../src/models/agent.model');
 
 const createAgent = async () => {
   const { AGENT_EMAIL, AGENT_PASSWORD, AGENT_FIRST_NAME, AGENT_LAST_NAME } = process.env;
@@ -17,6 +18,9 @@ const createAgent = async () => {
   }
 
   const hashedPassword = await bcrypt.hash(AGENT_PASSWORD, 12);
+  // Un administrateur est affilié d'office au centre SSIF (migration 008) ; son
+  // périmètre reste national, l'affectation est seulement informative.
+  const idCentreAdministrateurs = await AgentModel.findIdCentreAdministrateurs();
   await prisma.agents.create({
     data: {
       email,
@@ -25,9 +29,13 @@ const createAgent = async () => {
       nom: AGENT_LAST_NAME.trim(),
       role: 'admin',
       statut: 'actif',
+      id_centre: idCentreAdministrateurs,
     },
   });
   console.log(`Compte agent créé : ${email}`);
+  if (idCentreAdministrateurs === null) {
+    console.log("Avertissement : le centre SSIF est absent, la migration 008 est à appliquer.");
+  }
 };
 
 createAgent()

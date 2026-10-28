@@ -19,6 +19,7 @@ const swaggerSpec = {
     { name: 'Déclarations', description: 'Déclarations fiscales' },
     { name: 'Contrôles', description: 'Contrôles fiscaux' },
     { name: 'Recoupements', description: 'Recoupements avec des tiers' },
+    { name: 'Droits de communication', description: 'Demandes de communication adressées aux tiers' },
     { name: 'Rapprochements', description: 'Confrontation déclarations / recoupements' },
     { name: 'État Contribuable', description: 'Suivi de l’activité et de la conformité' },
     { name: 'Relances', description: 'Relances et recouvrement' },
@@ -185,6 +186,55 @@ const swaggerSpec = {
         responses: { 200: { description: 'Supprimé' } },
       },
     },
+    '/api/droits-communication': {
+      get: {
+        tags: ['Droits de communication'],
+        summary: 'Lister les droits de communication',
+        parameters: [
+          { name: 'page', in: 'query', schema: { type: 'integer', default: 1 } },
+          { name: 'limit', in: 'query', schema: { type: 'integer', default: 20 } },
+          { name: 'search', in: 'query', schema: { type: 'string' } },
+          { name: 'statut', in: 'query', schema: { type: 'string' } },
+          { name: 'type_tier', in: 'query', schema: { type: 'string' } },
+          { name: 'id_contribuable', in: 'query', schema: { type: 'integer' } },
+        ],
+        responses: { 200: { description: 'Liste des droits de communication' } },
+      },
+      post: {
+        tags: ['Droits de communication'],
+        summary: 'Enregistrer un droit de communication',
+        requestBody: {
+          required: true,
+          content: { 'application/json': { schema: { $ref: '#/components/schemas/DroitCommunicationInput' } } },
+        },
+        responses: { 201: { description: 'Droit de communication enregistré' }, 400: { description: 'Données invalides' } },
+      },
+    },
+    '/api/droits-communication/stats/statuts': {
+      get: {
+        tags: ['Droits de communication'],
+        summary: 'Répartition des droits de communication par statut',
+        responses: { 200: { description: 'Statistiques' } },
+      },
+    },
+    '/api/droits-communication/{id}': {
+      parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }],
+      get: {
+        tags: ['Droits de communication'],
+        summary: 'Détail d’un droit de communication',
+        responses: { 200: { description: 'Détail' }, 404: { description: 'Introuvable' } },
+      },
+      put: {
+        tags: ['Droits de communication'],
+        summary: 'Modifier un droit de communication',
+        responses: { 200: { description: 'Modifié' }, 404: { description: 'Introuvable' } },
+      },
+      delete: {
+        tags: ['Droits de communication'],
+        summary: 'Supprimer un droit de communication',
+        responses: { 200: { description: 'Supprimé' }, 404: { description: 'Introuvable' } },
+      },
+    },
     '/api/rapprochements': {
       get: {
         tags: ['Rapprochements'],
@@ -309,6 +359,23 @@ const swaggerSpec = {
           local_products: { type: 'number', example: 200000 },
           import_expenses: { type: 'number', example: 100000 },
           ca_declare: { type: 'number', example: 1000000 },
+        },
+      },
+      DroitCommunicationInput: {
+        type: 'object',
+        required: ['id_contribuable', 'tier', 'objet', 'date_demande'],
+        properties: {
+          id_contribuable: { type: 'integer', example: 1 },
+          tier: { type: 'string', example: 'Banza / Banque BNP' },
+          type_tier: { type: 'string', example: 'banque' },
+          nif_tier: { type: 'string', example: '9876543210' },
+          objet: { type: 'string', example: 'Relevés de compte 2025' },
+          pieces_demandees: { type: 'string', example: 'Relevés bancaires, chèque' },
+          date_demande: { type: 'string', format: 'date', example: '2025-03-10' },
+          date_reponse: { type: 'string', format: 'date', example: '2025-03-30' },
+          statut: { type: 'string', enum: ['demande', 'reponse', 'partiel', 'relance', 'sans_suite'] },
+          documents_recus: { type: 'string', example: '12 relevés' },
+          observations: { type: 'string', example: 'Réponse partielle, relance prévue' },
         },
       },
       EtatContribuableInput: {

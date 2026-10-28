@@ -59,8 +59,7 @@ class RecoupementController {
       console.error('Erreur création recoupement:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la création du recoupement',
-        error: error.message
+        message: 'Erreur lors de la création du recoupement'
       });
     }
   }
@@ -77,6 +76,7 @@ class RecoupementController {
         source: source || '',
         type_operation: type_operation || '',
         id_contribuable: id_contribuable || null,
+        scope: req.dataScope,
       });
 
       res.json({
@@ -87,8 +87,7 @@ class RecoupementController {
       console.error('Erreur liste recoupements:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération des recoupements',
-        error: error.message
+        message: 'Erreur lors de la récupération des recoupements'
       });
     }
   }
@@ -114,8 +113,7 @@ class RecoupementController {
       console.error('Erreur détail recoupement:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération du recoupement',
-        error: error.message
+        message: 'Erreur lors de la récupération du recoupement'
       });
     }
   }
@@ -142,8 +140,7 @@ class RecoupementController {
       console.error('Erreur mise à jour recoupement:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la mise à jour du recoupement',
-        error: error.message
+        message: 'Erreur lors de la mise à jour du recoupement'
       });
     }
   }
@@ -169,8 +166,7 @@ class RecoupementController {
       console.error('Erreur suppression recoupement:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la suppression du recoupement',
-        error: error.message
+        message: 'Erreur lors de la suppression du recoupement'
       });
     }
   }
@@ -191,8 +187,7 @@ class RecoupementController {
       console.error('Erreur analyse recoupements:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de l\'analyse des recoupements',
-        error: error.message
+        message: 'Erreur lors de l\'analyse des recoupements'
       });
     }
   }
@@ -200,7 +195,7 @@ class RecoupementController {
   // Statistiques par source
   static async getSourceStats(req, res) {
     try {
-      const stats = await RecoupementService.getSourceStats();
+      const stats = await RecoupementService.getSourceStats(req.dataScope);
       res.json({
         success: true,
         data: stats
@@ -209,8 +204,7 @@ class RecoupementController {
       console.error('Erreur statistiques sources:', error);
       res.status(500).json({
         success: false,
-        message: 'Erreur lors de la récupération des statistiques',
-        error: error.message
+        message: 'Erreur lors de la récupération des statistiques'
       });
     }
   }
