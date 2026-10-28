@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { createDeclaration, getContribuableById, getErrorMessage } from '@/api';
-import { getRegime } from '@/utils/decisionnel.utils';
+import { getRegime } from '@/frontofficeagent/decisionnel/utils/decisionnel.utils.js';
 import DeclarationForm from '@/frontofficeagent/contribuables/components/DeclarationForm';
 
 const REQUIRED_FIELDS = [

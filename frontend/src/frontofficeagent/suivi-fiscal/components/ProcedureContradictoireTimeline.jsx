@@ -1,4 +1,4 @@
-import { formatAriary } from '@/utils/formatters';
+import { formatAriary } from '@/utils';
 
 /**
  * Visualisation de la timeline de la procédure contradictoire,

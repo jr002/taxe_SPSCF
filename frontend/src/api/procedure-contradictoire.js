@@ -3,7 +3,7 @@
  * 30 jours, notification définitive qui arrête la dette, puis imputation du
  * crédit d'impôt antérieur sur le principal.
  */
-import api from './client';
+import api from '@/api/client';
 
 export const emettreNotificationPrimitive = (idDeclaration, payload = {}) =>
   api

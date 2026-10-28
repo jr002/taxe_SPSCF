@@ -1,7 +1,7 @@
 /**
  * État contribuable : photographie du dossier à une date donnée.
  */
-import api from './client';
+import api from '@/api/client';
 
 export const getEtatsContribuable = (params = {}) =>
   api.get('/etat-contribuable', { params }).then((res) => res.data.data);

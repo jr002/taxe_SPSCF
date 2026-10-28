@@ -2,7 +2,7 @@
  * Relances et recouvrement, y compris la demande d'éclaircissements (CPF V-17),
  * qui est portée par le même table `relances`.
  */
-import api from './client';
+import api from '@/api/client';
 
 export const getRelances = (params = {}) =>
   api.get('/relances', { params }).then((res) => res.data.data);

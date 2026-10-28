@@ -1,5 +1,5 @@
-import { useModalA11y } from '@/hooks/useModalA11y';
-import { relanceType } from '@/utils/relance.utils';
+import { useModalA11y } from '@/hooks';
+import { relanceType } from '@/frontofficeagent/relance/utils/relance.utils';
 
 /**
  * RappelOrdreModal

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 
-import ExportFicheButton from './ExportFicheButton';
+import ExportFicheButton from '@/frontofficeagent/contribuables/components/ExportFicheButton';
 
 const tabs = [
   ['overview', 'Synthèse', ''],

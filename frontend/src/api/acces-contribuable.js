@@ -2,7 +2,7 @@
  * Portail contribuable « Ma situation fiscale » : lien à usage unique vérifié par
  * NIF + e-mail. Les routes publiques sont montées hors session agent côté serveur.
  */
-import api from './client';
+import api from '@/api/client';
 
 /** Génération (ou renouvellement) du lien depuis la fiche du contribuable. */
 export const genererAccesContribuable = (idContribuable, payload = {}) =>

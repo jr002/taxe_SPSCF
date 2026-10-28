@@ -1,7 +1,7 @@
 /**
  * Recoupements : sources externes rapprochées d'un contribuable.
  */
-import api from './client';
+import api from '@/api/client';
 
 export const getRecoupements = (params = {}) =>
   api.get('/recoupements', { params }).then((res) => res.data.data);

@@ -1,4 +1,4 @@
-import { formatAriary } from '@/utils/formatters';
+import { formatAriary } from '@/utils';
 
 /**
  * Carte récapitulative affichant le résultat du contrôle fiscal et les détails calculés

@@ -1,7 +1,7 @@
 /**
  * Session agent : connexion, inscription, profil et mot de passe.
  */
-import api from './client';
+import api from '@/api/client';
 
 /** Connexion ; renvoie le profil agent, l'erreur conserve `error.response.data.code`. */
 export const connexion = (email, password) =>

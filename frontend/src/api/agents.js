@@ -1,7 +1,7 @@
 /**
  * Comptes agents : statut, rôle, centre de rattachement, mot de passe, journal.
  */
-import api from './client';
+import api from '@/api/client';
 
 export const getAgents = (params = {}) =>
   api.get('/agents', { params }).then((res) => res.data.data);

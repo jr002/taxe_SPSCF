@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
-import { formatAxisValue, formatCompact } from '@/utils/formatters';
-import { getRegime, getRegimePercentage } from '@/utils/decisionnel.utils';
+import { formatAxisValue, formatCompact } from '@/utils';
+import { getRegime, getRegimePercentage } from '@/frontofficeagent/decisionnel/utils/decisionnel.utils.js';
 
 /**
  * Calcule les coordonnées SVG d'une polyligne à partir d'un tableau de valeurs

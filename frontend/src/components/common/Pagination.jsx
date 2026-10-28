@@ -1,4 +1,4 @@
-import { getPageNumbers } from '@/utils/pagination.utils';
+import { getPageNumbers } from '@/utils';
 
 /**
  * Barre de pages des tableaux. `showSinglePage` la garde visible même quand la

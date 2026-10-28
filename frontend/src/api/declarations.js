@@ -1,7 +1,7 @@
 /**
  * Déclarations TVA et contrôle de conformité de la procédure contradictoire.
  */
-import api from './client';
+import api from '@/api/client';
 
 export const getDeclarations = (params = {}) =>
   api.get('/declarations', { params: { limit: 250, ...params } }).then((res) => res.data.data);

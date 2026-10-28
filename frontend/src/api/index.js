@@ -6,17 +6,17 @@
  * `@/api/client`, pour qu'un appel ponctuel reste visible plutôt que de se fondre
  * dans un client global.
  */
-export * from './erreurs';
-export * from './auth';
-export * from './contribuables';
-export * from './declarations';
-export * from './controles';
-export * from './procedure-contradictoire';
-export * from './recoupements';
-export * from './droits-communication';
-export * from './rapprochements';
-export * from './etats-contribuable';
-export * from './relances';
-export * from './centres';
-export * from './agents';
-export * from './acces-contribuable';
+export * from '@/api/erreurs';
+export * from '@/api/auth';
+export * from '@/api/contribuables';
+export * from '@/api/declarations';
+export * from '@/api/controles';
+export * from '@/api/procedure-contradictoire';
+export * from '@/api/recoupements';
+export * from '@/api/droits-communication';
+export * from '@/api/rapprochements';
+export * from '@/api/etats-contribuable';
+export * from '@/api/relances';
+export * from '@/api/centres';
+export * from '@/api/agents';
+export * from '@/api/acces-contribuable';

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { changerSonMotDePasse, getErrorMessage } from '@/api';
 import { roleDefinition } from '@/backofficeadmin/utils/roles.utils';
-import { initialsOf } from '@/utils/session.utils';
-import ModaleConfirmation from './ModaleConfirmation';
+import { initialsOf } from '@/utils';
+import ModaleConfirmation from '@/components/common/ModaleConfirmation';
 
 const CHAMPS_VIDES = { actuel: '', nouveau: '', confirmation: '' };
 

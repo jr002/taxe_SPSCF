@@ -1,7 +1,7 @@
 /**
  * Droits de communication (demandes adressées à des tiers).
  */
-import api from './client';
+import api from '@/api/client';
 
 export const getDroitsCommunication = (params = {}) =>
   api.get('/droits-communication', { params }).then((res) => res.data.data);

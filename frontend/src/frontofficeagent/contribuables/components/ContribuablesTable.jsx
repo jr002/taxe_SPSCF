@@ -1,4 +1,4 @@
-import { formatAriary, toNumber } from '@/utils/formatters';
+import { formatAriary, toNumber } from '@/utils';
 
 function ContribuableRow({ contribuable, onOpenDetail }) {
   const latestDeclaration = contribuable.declarations[0];

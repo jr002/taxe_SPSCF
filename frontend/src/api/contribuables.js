@@ -1,7 +1,7 @@
 /**
  * Contribuables : portefeuille, recherche par NIF et création.
  */
-import api from './client';
+import api from '@/api/client';
 
 export const getContribuables = (params = {}) =>
   api.get('/contribuables', { params }).then((res) => res.data.data);

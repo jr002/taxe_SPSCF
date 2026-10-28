@@ -1,4 +1,4 @@
-import { relanceStatut, relanceType } from '@/utils/relance.utils';
+import { relanceStatut, relanceType } from '@/frontofficeagent/relance/utils/relance.utils';
 
 const RELANCE_ACTIONS = [
   {

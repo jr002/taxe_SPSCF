@@ -1,5 +1,5 @@
-import { ContribComparisonChart, ContribVolumeChart } from '@/components/charts/Diagrammes';
-import { formatAriary } from '@/utils/formatters';
+import { ContribComparisonChart, ContribVolumeChart } from '@/components/charts';
+import { formatAriary } from '@/utils';
 
 export default function ContribuableOverview({ annualData, curveData, currentRegime, declarations, maxBars, curveMax, totalPaid }) {
   return <>

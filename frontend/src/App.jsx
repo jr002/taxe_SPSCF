@@ -1,48 +1,52 @@
 import { useEffect, useState } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
-import './App.css';
+import '@/App.css';
 import { deconnexion, getMoi } from '@/api';
 
-// Composants communs
-import Header from './components/common/Header';
-import EspaceContribuable from './accountcontribuable/EspaceContribuable';
-import { getLandingPath } from './utils/session.utils';
+// Composants transverses, hooks et portes d'entrée des espaces
+import { Header } from '@/components/common';
+import { getLandingPath } from '@/utils';
 
-// Pages de connexion, d'inscription et d'administration
-import Signin from './backofficeadmin/auth/signin';
-import Signup from './backofficeadmin/auth/signup';
-import AttenteActivation from './backofficeadmin/auth/attente-activation';
-import MotDePasseOublie from './backofficeadmin/auth/mot-de-passe-oublie';
-import AccueilAdmin from './backofficeadmin/dashboard/AdminDashboard';
-import Admin from './backofficeadmin/utilisateurs/AdminUtilisateurs';
-import AdminRoles from './backofficeadmin/roles/AdminRoles';
-import AdminVerificationNIF from './backofficeadmin/verification-nif/AdminVerificationNIF';
-import VerificationNifSql from './backofficeadmin/verification-nif/VerificationNifSql';
-import VerificationNifExcel from './backofficeadmin/verification-nif/VerificationNifExcel';
-import VerificationNifJson from './backofficeadmin/verification-nif/VerificationNifJson';
-import AdminHistorique from './backofficeadmin/historique/AdminHistorique';
+// Espace contribuable : une page publique, atteinte par un jeton, hors session agent
+import { EspaceContribuable } from '@/accountcontribuable';
 
-// Pages principales (organisation modulaire par domaine)
+// Back-office : écran de connexion, d'inscription et pages réservées à l'admin
+import {
+  AdminDashboard,
+  AdminHistorique,
+  AdminRoles,
+  AdminUtilisateurs,
+  AdminVerificationNIF,
+  AttenteActivation,
+  MotDePasseOublie,
+  Signin,
+  Signup,
+  VerificationNifExcel,
+  VerificationNifJson,
+  VerificationNifSql,
+} from '@/backofficeadmin';
+
+// Front-office : les pages routées de chaque domaine fiscal
 import {
   Accueil,
-  Collecte,
-  PhaseClassement,
-  FormInformation,
-  TableauDecisionnel,
-  SuiviFiscal,
-  DeclarationDetail,
-  Contribuables,
-  ContribuableDetail,
-  Confrontation,
-  DeclarationCreate,
-  RecoupementCreate,
-  DroitCommunicationCreate,
-  Register,
   CentreDetail,
   CentreListe,
-  UniteFiscaleDetail,
+  Collecte,
+  Confrontation,
+  ContribuableDetail,
+  Contribuables,
+  DeclarationCreate,
+  DeclarationDetail,
+  DroitCommunicationCreate,
+  FormInformation,
+  PhaseClassement,
+  RecoupementCreate,
+  Register,
   RelanceFiscale,
-} from './frontofficeagent';
+  SuiviFiscal,
+  TableauDecisionnel,
+  UniteFiscaleDetail,
+} from '@/frontofficeagent';
 
 /**
  * Composant racine de l'application SP2CF / TVA•SSIF
@@ -192,8 +196,8 @@ export default function App() {
           <Route path="/contribuables/:id/relances" element={<ContribuableDetail />} />
           <Route path="/contribuables/:id/confrontation" element={<Confrontation currentUser={currentUser} />} />
           <Route path="/relance" element={<RelanceFiscale />} />
-          <Route path="/admin" element={<AccueilAdmin currentUser={currentUser} />} />
-          <Route path="/admin/utilisateurs" element={<Admin currentUser={currentUser} />} />
+          <Route path="/admin" element={<AdminDashboard currentUser={currentUser} />} />
+          <Route path="/admin/utilisateurs" element={<AdminUtilisateurs currentUser={currentUser} />} />
           <Route path="/admin/roles" element={<AdminRoles currentUser={currentUser} />} />
           <Route path="/admin/verification-nif" element={<AdminVerificationNIF currentUser={currentUser} />} />
           <Route path="/admin/verification-nif/sql" element={<VerificationNifSql currentUser={currentUser} />} />

@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import logoDgi from '@/assets/logodgi.jpg';
-import UserProfile from './UserProfile';
+import UserProfile from '@/components/common/UserProfile';
 
 const NAVIGATION_LINKS = [
   { to: '/acceuil', label: 'Accueil' },

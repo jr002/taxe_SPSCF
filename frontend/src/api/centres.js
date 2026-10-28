@@ -1,7 +1,7 @@
 /**
  * Centres fiscaux (registre et annuaire des unités opérationnelles).
  */
-import api from './client';
+import api from '@/api/client';
 
 export const getCentres = () => api.get('/centres').then((res) => res.data.data);
 
