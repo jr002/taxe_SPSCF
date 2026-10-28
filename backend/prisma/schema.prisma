@@ -23,6 +23,7 @@ model agents {
   etat_contribuable etat_contribuable[]
   relances          relances[]
   droits_communication droits_communication[]
+  acces_contribuable acces_contribuable[]
   centres           centres?            @relation(fields: [id_centre], references: [id_centre], onUpdate: NoAction)
 
   @@index([email], map: "idx_agents_email")
@@ -128,6 +129,7 @@ model contribuables {
   recoupements      recoupements[]
   relances          relances[]
   droits_communication droits_communication[]
+  acces_contribuable acces_contribuable[]
 
   @@index([nif], map: "idx_entreprises_nif")
   @@index([id_centre], map: "idx_contribuables_centre")
@@ -233,6 +235,26 @@ model droits_communication {
 
   @@index([id_contribuable], map: "idx_droits_communication_contribuable")
   @@index([statut], map: "idx_droits_communication_statut")
+}
+
+/// Jeton d'accès au portail du contribuable. Seule l'empreinte SHA-256 du
+/// jeton est stockée ; la colonne `date_revocation` invalide un lien sans le
+/// supprimer, pour conserver le journal des accès.
+model acces_contribuable {
+  id_acces           Int             @id @default(autoincrement())
+  id_contribuable    Int
+  id_agent           Int?
+  token_hash         String          @unique @db.VarChar(64)
+  date_creation      DateTime        @default(now()) @db.Timestamp(6)
+  date_expiration    DateTime        @db.Timestamp(6)
+  date_revocation    DateTime?       @db.Timestamp(6)
+  date_dernier_acces DateTime?       @db.Timestamp(6)
+  nb_acces           Int             @default(0)
+  nb_echecs          Int             @default(0)
+  agents             agents?         @relation(fields: [id_agent], references: [id_agent], onUpdate: NoAction)
+  contribuables     contribuables   @relation(fields: [id_contribuable], references: [id_contribuable], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([id_contribuable], map: "idx_acces_contribuable")
 }
 
 model historique_utilisateurs {

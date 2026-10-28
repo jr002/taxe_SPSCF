@@ -27,11 +27,18 @@ est affiché. Ensuite :
   préfixe le plus long de l'URL courante, ce qui maintient le repère sur les
   routes détaillées (`/contribuables/51/relances`,
   `/admin/verification-nif/sql`) ;
-- toute URL inconnue correspond au motif `*` et redirige vers `/`.
+- toute URL inconnue correspond au motif `*` et redirige vers `/` ;
+- la route publique `/espace-contribuable/:token` est déclarée **avant** la route
+  de layout : elle rend [`EspaceContribuable.jsx`](frontend/src/accountcontribuable/EspaceContribuable.jsx)
+  sans `Header` et n'appelle pas `GET /api/auth/me` (un `useLocation` détecte le
+  préfixe `/espace-contribuable/` et la vérification de session est court-circuitée),
+  de sorte qu'un contributeur sans compte agent ouvre sa page sans `401` dans la
+  console.
 
 | Route URL | Composant page | Accès | Rôle |
 | :--- | :--- | :--- | :--- |
 | `/` | `backofficeadmin/auth/signin.jsx` | public | Écran de connexion ; si la session est déjà valide, redirection vers `/admin` pour un administrateur et `/acceuil` pour les autres rôles (`getLandingPath` de `frontend/src/utils/session.utils.js`, partagé par `App.jsx` et `signin.jsx`) |
+| `/espace-contribuable/:token` | `accountcontribuable/EspaceContribuable.jsx` | public — garde par jeton + NIF/e-mail | **Portail contribuable en lecture seule** : `GET /api/acces-contribuable/:token` pour l'état du lien, formulaire NIF + e-mail, puis `POST /api/acces-contribuable/:token/ouvrir` et la page « Ma situation fiscale » (tableau de bord des taxes, histogramme par exercice, conseils et pénalités, notifications et relances, historique TVA, droits de communication, recoupements, rapprochement / confrontation). Bouton « Imprimer / enregistrer en PDF » par `window.print()`, aucune dépendance ajoutée. Le détail est dans [`frontend/src/accountcontribuable/README.md`](frontend/src/accountcontribuable/README.md) |
 | `/signin` | — | public | Redirection immédiate vers `/` |
 | `/signup` | `backofficeadmin/auth/signup.jsx` | public | Demande de création d'un compte agent (nom, prénom, e-mail, mot de passe et confirmation) ; enregistre la demande sans connecter l'utilisateur puis **redirige vers `/attente-activation`** avec l'identité saisie |
 | `/attente-activation` | `backofficeadmin/auth/attente-activation.jsx` | public | Écran de statut « en attente d'activation » : atteint après une inscription ou après une connexion refusée pour `statut = en_attente` (`403` + `code: COMPTE_EN_ATTENTE`) ; reprend la mise en page de `/` et `/signup` et offre le bouton « ← Retour à la connexion », un lien « Mot de passe oublié ? » vers `/mot-de-passe-oublie` et un lien « Créer un autre compte » vers `/signup` |
@@ -57,7 +64,7 @@ est affiché. Ensuite :
 | `/suivi/:id` | `DeclarationDetail.jsx` | protégé | Fiche détaillée d'une déclaration et actes de procédure contradictoire : notification primitive, notification définitive, demande d'éclaircissements (CPF V-17, persistée dans `relances`), imputation du crédit d'impôt |
 | `/contribuables` | `Contribuables.jsx` | protégé | Registre des contribuables (vue liste) |
 | `/contribuables?vue=statistique` | `Contribuables.jsx` | protégé | Même page, vue **Statistique** : KPI, camemberts et histogrammes VSP / CSP et IS / IR / TVA (la vue est portée par l'query string, aucun état local) |
-| `/contribuables/:id` | `ContribuableDetail.jsx` | protégé | Fiche détaillée d'un contribuable, onglet Synthèse |
+| `/contribuables/:id` | `ContribuableDetail.jsx` | protégé | Fiche détaillée d'un contribuable, onglet Synthèse. Son en-tête porte le bouton `secondary` « Lien contribuable », qui ouvre [`LienAccesModal.jsx`](frontend/src/frontofficeagent/contribuables/components/LienAccesModal.jsx) : durée 7 / 14 / 30 jours, `POST /api/contribuables/:id/acces-contribuable`, URL complète prête à transmettre, e-mail masqué, échéance, copie avec repli par sélection quand `navigator.clipboard` est refusé, et avertissement que la réémission révoque le lien précédent |
 | `/contribuables/:id/classification` | `ContribuableDetail.jsx` | protégé | Même fiche, onglet Nature d'impôt |
 | `/contribuables/:id/declarations` | `ContribuableDetail.jsx` | protégé | Même fiche, onglet Déclarations |
 | `/contribuables/:id/declarations/nouveau` | `pages/DeclarationCreate.jsx` | protégé | Page dédiée d'enregistrement d'une déclaration |
@@ -134,10 +141,11 @@ requêtes `/api` vers ce serveur via
 
 ### Authentification et routes publiques
 
-`backend/src/app.js` monte onze domaines d'API :
+`backend/src/app.js` monte douze domaines d'API :
 
 ```text
 /api/auth               (monté avant le middleware d'authentification)
+/api/acces-contribuable (portail contribuable, monté avant le middleware d'authentification)
 /api/contribuables
 /api/declarations
 /api/controles
@@ -151,7 +159,7 @@ requêtes `/api` vers ce serveur via
 ```
 
 La ligne `app.use('/api', authenticate, enforceDataScope)` protège **toutes** les
-routes `/api` sauf celles de `/api/auth`. Sans cookie `fiscal_session` valide, une
+routes `/api` sauf celles de `/api/auth` et `/api/acces-contribuable`. Sans cookie `fiscal_session` valide, une
 route protégée répond :
 
 ```json
@@ -194,14 +202,24 @@ dans [`backend/src/middlewares/data-scope.middleware.js`](backend/src/middleware
   tous les centres mais ne peut ni en créer ni en modifier. » ; `/api/auth`
   restant hors périmètre métier, un inspecteur y change son propre mot de passe ;
 - une création ou une modification de contribuable par un agent centré écrit
-  d'office son propre `id_centre` (l'administrateur seul choisit un autre centre).
+  d'office son propre `id_centre` (l'administrateur seul choisit un autre centre) ;
+- exception unique sur l'écriture : `isShareRoute` dans la middleware ouvre à
+  `POST /api/contribuables/:id/acces-contribuable` les scopes en lecture seule,
+  car émettre un lien de consultation ne modifie aucune donnée fiscale. Les
+  garnitures de périmètre (`contribuableInScope`) continuent de s'appliquer, et
+  `admin`, `chef_centre`, `inspecteur`, `controleur` et `agent` peuvent émettre un
+  lien ; `contribuable` et `autre` reçoivent `403` (périmètre vide). Aucune autre
+  méthode d'écriture n'est rouverte.
 
 Routes publiques : `GET /health`, l'interface `/api-docs`, la spécification
 `/api-docs/swagger.json`, les fichiers statiques `/uploads`, ainsi que
 `POST /api/auth/register`, `POST /api/auth/login`,
 `POST /api/auth/reset-request` et `POST /api/auth/logout`.
 `GET /api/auth/me` applique le middleware dans son propre routeur et exige donc
-le cookie.
+le cookie. S'y ajoutent les deux routes du portail contribuable,
+`GET /api/acces-contribuable/:token` et `POST /api/acces-contribuable/:token/ouvrir` :
+elles n'attendent aucun cookie agent, leur garde étant le jeton de l'URL plus la
+correspondance NIF / e-mail.
 
 `POST /api/auth/login`, `POST /api/auth/register` et
 `POST /api/auth/reset-request` sont limités par
@@ -210,6 +228,14 @@ le cookie.
 paire IP + e-mail et 20 par IP pour la connexion, 10 envois par IP pour les
 deux formulaires. `POST /api/auth/change-password` applique le même
 mécanisme, compté par agent connecté (6 tentatives par fenêtre).
+
+Le portail contribuable applique trois compteurs : 60 consultations par IP pour
+`GET /api/acces-contribuable/:token`, puis pour `POST /api/acces-contribuable/:token/ouvrir`
+8 tentatives par lien et IP (l'identité du compteur est portée par les 12 derniers
+caractères du jeton, jamais par son empreinte) et 20 tentatives par IP. Une
+vérification réussie réinitialise les compteurs (`req.rateLimit.reset()`), donc un
+contribuable légitime n'est jamais bloqué ; le champ `nb_echecs` de
+`acces_contribuable` est en plus incrémenté à chaque couple NIF / e-mail erroné.
 
 Le cookie `fiscal_session` est `httpOnly`, `sameSite=lax`, `secure` lorsque
 `NODE_ENV=production`, et sa durée est de 8 heures, comme le jeton JWT
@@ -342,6 +368,37 @@ qui aligne aussi sur le référentiel l'orthographe de quatre `nom_centre`.
 | `POST` | `/api/contribuables/:id/etat` | `{ statut_activite, statut_conformite, motif }` | `201` — nouvel enregistrement d'état pour le contribuable |
 | `GET` | `/api/contribuables/:id/rapprochements` | `id` = `id_contribuable` | `200` — liste des rapprochements du contribuable |
 | `GET` | `/api/contribuables/:id/relances` | `id` = `id_contribuable` | `200` — liste des relances du contribuable |
+| `POST` | `/api/contribuables/:id/acces-contribuable` | route agent : `duree_jours` (optionnel, entier de 1 à 30, défaut 7) | `201` — `{ token, chemin: '/espace-contribuable/<jeton>', date_expiration, duree_jours, email_masque }`, le jeton brut n'étant renvoyé qu'ici ; `400` si la durée est hors borne ou si le contribuable n'a pas d'e-mail enregistré ; `404` si introuvable ; `403` si hors périmètre. Émettre ce lien révoque les liens actifs précédents du même dossier et écrit une ligne d'audit `ACCES_CONTRIBUABLE` (sans jeton) |
+
+### Module Accès contribuable (`/api/acces-contribuable`) — portail public
+
+Deux routes, montées **avant** `authenticate` dans
+[`backend/src/app.js`](backend/src/app.js) : aucun cookie agent n'est attendu, la
+garde est le jeton de l'URL et la correspondance NIF / e-mail.
+
+| Méthode | Endpoint | Corps / paramètres | Codes |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/acces-contribuable/:token` | `token` = jeton brut (20 à 120 caractères `A-Za-z0-9_-`) | `200` — `{ valide, date_expiration, raison_sociale_masquee, centre }`, aucune donnée fiscale avant vérification ; `404` — message unique « Ce lien d'accès est invalide, expiré ou révoqué… » pour un lien inconnu, expiré ou révoqué ; `429` au-delà de 60 consultations par IP |
+| `POST` | `/api/acces-contribuable/:token/ouvrir` | `{ nif, email }` (tous deux obligatoires, 100 et 255 caractères maximum) | `200` — dossier complet du contribuable ; `400` — champ manquant ou trop long ; `403` — couple NIF / e-mail ne correspondant pas au dossier (`nb_echecs` incrémenté) ; `404` — lien invalide ; `429` au-delà de 8 tentatives par lien + IP ou 20 par IP. Une réponse `200` réinitialise les compteurs |
+
+Le dossier renvoyé (`data`) porte `contribuable` (identité, centre, `regime_fiscal`),
+`situation` (dernier `etat_contribuable`, défauts `Actif` / `En règle` si aucune
+ligne), `declarations`, `droits_communication`, `recoupements`, `rapprochements`
+(et `relances`), sélectionnés par projection dans
+[`backend/src/models/acces-contribuable.model.js`](backend/src/models/acces-contribuable.model.js).
+En sont **exclus** : `observations_agent`, `score`, `motif` et `id_agent` des
+rapprochements, `nif_tier`, `id_agent`, `observations`, `pieces_demandees` et
+`documents_recus` des droits de communication, `token_hash` et les compteurs du
+lien, ainsi que toute ligne d'un autre contribuable. Les
+rapprochements sont atteints par `declarations.id_contribuable` **ou**
+`recoupements.id_contribuable` — la table `rapprochements` ne porte pas de colonne
+contribuable.
+
+Côté jeton : 32 octets aléatoires en base64url, seul son SHA-256 est stocké
+(`acces_contribuable.token_hash`, index unique) ; `date_creation`,
+`date_expiration`, `date_revocation`, `date_dernier_acces`, `nb_acces` et
+`nb_echecs` jalonnent le lien. Une réémission révoque dans la même transaction
+tous les liens actifs du même dossier.
 
 ### Module Déclarations (`/api/declarations`)
 
@@ -487,7 +544,7 @@ dédiée n'est exportée) :
 | `api.post('/auth/register', { nom, prenom, email, password })` | `POST /api/auth/register` | [`backofficeadmin/auth/signup.jsx`](frontend/src/backofficeadmin/auth/signup.jsx) |
 | `api.post('/auth/login', { email, password })` | `POST /api/auth/login` | [`backofficeadmin/auth/signin.jsx`](frontend/src/backofficeadmin/auth/signin.jsx) |
 | `api.post('/auth/reset-request', { email })` | `POST /api/auth/reset-request` | page « Mot de passe oublié » [`backofficeadmin/auth/mot-de-passe-oublie.jsx`](frontend/src/backofficeadmin/auth/mot-de-passe-oublie.jsx) (`/mot-de-passe-oublie`) |
-| `api.get('/auth/me')` | `GET /api/auth/me` | [`App.jsx`](frontend/src/App.jsx) au montage |
+| `api.get('/auth/me')` | `GET /api/auth/me` | [`App.jsx`](frontend/src/App.jsx) au montage — sauf sur une URL `/espace-contribuable/…`, où aucun appel n'est lancé |
 | `api.post('/auth/logout')` | `POST /api/auth/logout` | bouton « Se déconnecter » du profil de [`Header.jsx`](frontend/src/components/common/Header.jsx) ([`UserProfile.jsx`](frontend/src/components/common/UserProfile.jsx)), câblé dans `App.jsx` |
 | `changeOwnPassword({ password_actuel, password_nouveau, password_confirmation })` | `POST /api/auth/change-password` | modale « 🔑 Changer mon mot de passe » de [`UserProfile.jsx`](frontend/src/components/common/UserProfile.jsx) |
 
@@ -499,6 +556,7 @@ Le détail fonction par fonction est dans
 | Groupe | Fonctions | Endpoints couverts |
 | :--- | :--- | :--- |
 | Contribuables | `getContribuables`, `getContribuableById`, `getContribuableByNif`, `createContribuable` | `GET/POST /api/contribuables`, `GET /api/contribuables/:id` |
+| Accès contribuable (portail) | `genererAccesContribuable` (agent, depuis la fiche contribuable), `getStatutAccesContribuable`, `ouvrirAccesContribuable` (toutes deux appelées par le portail, sans cookie agent) | `POST /api/contribuables/:id/acces-contribuable`, `GET /api/acces-contribuable/:token`, `POST /api/acces-contribuable/:token/ouvrir` |
 | Déclarations | `getDeclarations`, `getDeclarationById`, `getDeclarationStats`, `createDeclaration`, `updateDeclaration` | `GET/POST /api/declarations`, `GET/PUT /api/declarations/:id`, `GET /api/declarations/stats` |
 | Procédure contradictoire | `emettreNotificationPrimitive`, `emettreNotificationDefinitive`, `imputerCreditImpot` | `POST /api/declarations/:id/notification-primitive`, `…/notification-definitive`, `…/imputer-credit` |
 | Demande d'éclaircissements | `getRelances`, `createRelance` | `GET /api/relances?id_contribuable&type_relance=demande_eclaircissement`, `POST /api/relances` |
@@ -559,3 +617,14 @@ l'enveloppe `{ success, data }` de l'API.
   envoie `id_centre`, retrouvé par nom de centre. Le backend dérive la colonne
   manquante dans les deux cas, de sorte que le périmètre des agents et les
   pages « unité fiscale » voient le même rattachement.
+- **Portail contribuable : quatre limites assumées.** (1) L'émission échoue avec
+  `400` si `contribuables.email` est vide, car cet e-mail est l'un des deux
+  facteurs de confirmation ; un dossier sans contact renseigné ne peut donc pas
+  être mis en ligne. (2) Aucune interface de révocation : seul le fait
+  réémettre un lien (ou laisser passer l'échéance) invalide le précédent, et
+  `acces_contribuable.date_revocation` ne se manipule qu'en base. (3) La
+  confirmation NIF + e-mail reste de la connaissance déclarée du dossier : ce
+  n'est pas une authentification forte, et le lien n'est jamais stocké côté
+  navigateur. (4) Le rôle `contribuable` d'un compte agent reste sans périmètre
+  (`kind: 'none'`) : le lien de consultation est aujourd'hui le seul chemin
+  d'accès du contribuable à ses données, le compte ↔ NIF n'étant pas implémenté.

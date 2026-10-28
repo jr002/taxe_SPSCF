@@ -10,6 +10,7 @@
 - 🚨 **Détection d'Anomalies & Contrôle Fiscal** : Alertes automatiques sur les incohérences déclaratives, sélection des dossiers à risque et programmation des vérifications.
 - ⚖️ **Confrontation & Actes de procédure** : Page unique de confrontation déclarations / recoupements, notification primitive et définitive, imputation du crédit d'impôt, recoupements et droits de communication adressés aux tiers.
 - 📩 **Gestion des Relances** : Automatisation du suivi des défaillants (défaut de déclaration ou de paiement) et émission des relances.
+- 🪪 **Espace contribuable** : Lien de consultation à durée limitée émis depuis la fiche d'un contribuable, ouvrant une page publique en lecture seule (« Ma situation fiscale ») après confirmation du NIF et de l'e-mail enregistrés : tableau de bord des taxes payées, conseils et rappels de pénalités, historique des déclarations TVA, droits de communication, recoupements et confrontation. Aucun jeton n'est stocké en base (seule son empreinte SHA-256), aucune note interne de l'agent ne sort du serveur. Voir [`frontend/src/accountcontribuable/README.md`](frontend/src/accountcontribuable/README.md).
 - 🔐 **Sécurité & Rôles** : Authentification stricte par session JWT sécurisée (`httpOnly`), hachage bcrypt et gestion des droits des agents.
 
 ## Repères rapides
@@ -103,7 +104,10 @@ Vérification rapide de l'API : `GET http://localhost:5000/health`.
   sur `/api/auth` ; `POST /api/auth/change-password` est le seul autre point
   d'entrée du domaine et exige le cookie de session.
 - La connexion renvoie un cookie de session `fiscal_session` (`httpOnly`),
-  valable 8 heures ; toutes les autres routes `/api` exigent ce cookie.
+  valable 8 heures ; toutes les autres routes `/api` exigent ce cookie, sauf
+  `/api/acces-contribuable/:token` et `POST /api/acces-contribuable/:token/ouvrir` :
+  le portail contribuable s'ouvre sans compte agent, sa garde étant le jeton de
+  l'URL puis la correspondance du NIF et de l'e-mail enregistrés sur le dossier.
 - Les agents sont créés hors de l'interface web (script `agent:create`) ou par
   `POST /api/auth/register` (compte `en_attente`, activé par un
   administrateur) ; leur mot de passe est stocké haché avec bcrypt et l'agent

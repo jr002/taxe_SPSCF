@@ -45,7 +45,7 @@ function getOperationalUnit(contribuable) {
   return null;
 }
 
-export default function ContribuableHeader({ activeTab, contribuable, declarationsCount, exportDisabled, exportLabel, exportTitle, fiche, id, onExport }) {
+export default function ContribuableHeader({ activeTab, contribuable, declarationsCount, exportDisabled, exportLabel, exportTitle, fiche, id, onExport, onPartager }) {
   const operationalUnit = getOperationalUnit(contribuable);
 
   return <>
@@ -55,6 +55,14 @@ export default function ContribuableHeader({ activeTab, contribuable, declaratio
       <div className="contribuable-heading-row">
         <h1>{contribuable.raison_sociale || 'Contribuable'}<span className="categorie-badge-inline" style={{ background: fiche.background, color: fiche.couleur }}>{fiche.label}</span></h1>
         <div className="contribuable-heading-actions">
+          <button
+            type="button"
+            className="secondary"
+            onClick={onPartager}
+            title="Émettre un lien de consultation en lecture seule pour ce contribuable"
+          >
+            Lien contribuable
+          </button>
           {!['recoupements', 'droits'].includes(activeTab) && (
             <ExportFicheButton
               disabled={exportDisabled}

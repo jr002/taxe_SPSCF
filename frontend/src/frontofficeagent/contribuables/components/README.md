@@ -19,7 +19,8 @@ ContribuableDetail.jsx
 ├── DeclarationHistory
 ├── RecoupementsPanel
 ├── DroitCommunicationPanel
-└── RelancePanel
+├── RelancePanel
+└── LienAccesModal (monté conditionnellement par la fiche)
 
 Pages d'enregistrement (pages/)
 ├── DeclarationCreate       → DeclarationForm
@@ -92,11 +93,48 @@ En-tête commun de la fiche détaillée. Il affiche :
 - le lien de retour vers la liste ;
 - la raison sociale, le NIF, le badge de catégorie, le nombre d'années suivies et le centre gestionnaire du contribuable ;
 - les six onglets Synthèse, Nature d'impôt, Déclarations, Recoupements, Droits de communication et Relances, qui renvoient vers `/contribuables/:id`, `/classification`, `/declarations`, `/recoupements`, `/droits-communication` et `/relances` ;
-- un bouton d'export Excel des données de l'onglet actif (`ExportFicheButton`), masqué sur les onglets Recoupements et Droits de communication.
+- un bouton d'export Excel des données de l'onglet actif (`ExportFicheButton`), masqué sur les onglets Recoupements et Droits de communication ;
+- un bouton `secondary` « Lien contribuable », hors du contexte d'un onglet, qui ouvre la modale d'émission du portail (`LienAccesModal`).
 
 Les deux boutons sont regroupés dans `.contribuable-heading-actions`, qui passe en pleine largeur sur petit écran.
 
-Propriétés : `activeTab` (met en évidence l'onglet courant), `contribuable`, `declarationsCount`, `exportDisabled` (désactive l'export quand l'onglet n'a aucune ligne), `exportLabel` et `exportTitle` (libellé et infobulle contextuels du bouton d'export), `fiche` (badge de catégorie), `id` (construction des liens d'onglets) et `onExport`. Les anciens props `onToggleDeclarationForm` et `showDeclarationForm` ont disparu : l'ajout d'une déclaration est devenu une page dédiée.
+Propriétés : `activeTab` (met en évidence l'onglet courant), `contribuable`, `declarationsCount`, `exportDisabled` (désactive l'export quand l'onglet n'a aucune ligne), `exportLabel` et `exportTitle` (libellé et infobulle contextuels du bouton d'export), `fiche` (badge de catégorie), `id` (construction des liens d'onglets), `onExport` et `onPartager` (ouverture de la modale de lien). Les anciens props `onToggleDeclarationForm` et `showDeclarationForm` ont disparu : l'ajout d'une déclaration est devenu une page dédiée.
+
+### `LienAccesModal.jsx`
+
+Modale d'émission du lien de consultation du portail contribuable, montée par
+`ContribuableDetail.jsx` seulement quand elle est ouverte (`{lienAccesOpen && <LienAccesModal … />}`),
+de sorte que chaque ouverture repart d'un état neuf — le jeton précédemment généré
+n'affiche jamais dans une nouvelle fenêtre.
+
+Deux états :
+
+1. demande : sélecteur de durée (7 / 14 / 30 jours, `duree_jours` envoyé à l'API),
+   explication du parcours NIF + e-mail et encart `.rule-box` avertissant que la
+   génération révoque le lien actif précédent ;
+2. résultat : URL complète (`window.location.origin` + `chemin` renvoyé par
+   l'API), échéance, e-mail masqué, et mention explicite que le lien précédent est
+   révoqué.
+
+Le bouton « Copier » passe par `navigator.clipboard` ; quand le navigateur le
+refuse (contexte non sécurisé, autorisation non accordée), il replie sur un
+`focus()` + `select()` de champ et invite à `Ctrl+C`. La copie n'est jamais
+bloquante pour l'agent.
+
+Réutilise la charte des modales déjà en place (`rappel-modal-overlay`,
+`modale-confirmation`, `modale-confirmation-*`, `login-field`, `rule-box`,
+`badge surveillance`) et `useModalA11y(ouvert, onFermer)` pour la focus trap,
+`Échap` et l'`aria-modal`.
+
+| Propriété | Description |
+| --- | --- |
+| `ouvert` | La modale ne rend rien si `false` ; sert aussi d'argument au hook d'accessibilité. |
+| `contribuable` | Dossier ciblé : `id_contribuable` pour l'appel API, `raison_sociale` pour les libellés. |
+| `onFermer` | Fermeture (bouton ✕, « Annuler », « Terminer », clic hors du panneau ou `Échap`). |
+
+Le serveur garde le périmètre : un agent centré ne peut émettre de lien que pour
+un contribuable de son centre (`403` sinon), et l'`inspecteur`, bien qu'en lecture
+seule sur les données métier, le peut (exception `isShareRoute`).
 
 ### `ExportFicheButton.jsx`
 

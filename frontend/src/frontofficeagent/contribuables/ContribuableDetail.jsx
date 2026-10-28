@@ -21,6 +21,7 @@ import DeclarationHistory from './components/DeclarationHistory';
 import DroitCommunicationPanel from './components/DroitCommunicationPanel';
 import RecoupementsPanel from './components/RecoupementsPanel';
 import RelancePanel from './components/RelancePanel';
+import LienAccesModal from './components/LienAccesModal';
 import { countExportRows, exportFicheContribuable } from './utils/exportFicheContribuable';
 
 /** Libellé et infobulle du bouton d'export, selon l'onglet affiché. */
@@ -72,6 +73,7 @@ export default function ContribuableDetail() {
   const [relanceSuccess, setRelanceSuccess] = useState('');
   const [relanceError, setRelanceError] = useState('');
   const [exportSuccess, setExportSuccess] = useState('');
+  const [lienAccesOpen, setLienAccesOpen] = useState(false);
   const [currentTimestamp] = useState(() => Date.now());
 
   const activeTab = getActiveTab(location.pathname);
@@ -347,6 +349,7 @@ export default function ContribuableDetail() {
           fiche={fiche}
           id={id}
           onExport={handleExport}
+          onPartager={() => setLienAccesOpen(true)}
         />
 
         {activeTab === 'overview' && (
@@ -432,6 +435,13 @@ export default function ContribuableDetail() {
         dossier={rappelDossier}
         type={rappelModalType}
       />
+      {lienAccesOpen && (
+        <LienAccesModal
+          ouvert
+          contribuable={contribuable}
+          onFermer={() => setLienAccesOpen(false)}
+        />
+      )}
     </>
   );
 }

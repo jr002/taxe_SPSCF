@@ -58,7 +58,7 @@ La base indiquée par `DATABASE_URL` doit exister avant le démarrage de l'API.
 
 ### Migrations SQL additives
 
-Le dossier [`migrations/`](migrations/) contient neuf scripts SQL additifs, à
+Le dossier [`migrations/`](migrations/) contient dix scripts SQL additifs, à
 appliquer manuellement et dans l'ordre sur une base antérieure à Prisma :
 
 | Fichier | Objet |
@@ -72,6 +72,7 @@ appliquer manuellement et dans l'ordre sur une base antérieure à Prisma :
 | [`007-demande-eclaircissement.sql`](migrations/007-demande-eclaircissement.sql) | remplace la contrainte `relances_type_relance_check` pour y ajouter le type `demande_eclaircissement` ; aucune colonne nouvelle, la demande d'éclaircissements (CPF V-17) réutilise `observations` et `date_emission` |
 | [`008-centre-ssif-administrateurs.sql`](migrations/008-centre-ssif-administrateurs.sql) | crée le centre `SSIF` (`type_centre = 'DGE'`, `numero_centre = 'SSIF'`) et rattache les comptes `admin` existants à ce centre. Rejouable : l'insertion est gardée par `NOT EXISTS` et l'`UPDATE` ne touche que les lignes dont l'affiliation diffère |
 | [`009-centre-fiscal-ref.sql`](migrations/009-centre-fiscal-ref.sql) | aligne sur le référentiel `unitefiscal.json` l'orthographe de quatre `centres.nom_centre` (`CF Fénérive-Est`, `CF Belon'i Tsiribihina`, `CF Vohémar`, `CF Port-Bergé`) puis dérive `contribuables.centre_fiscal_ref` depuis `id_centre` pour les dossiers déjà rattachés. Rejouable : les renommages sont gardés par l'ancienne orthographe et la dérivation ne touche que les références vides |
+| [`010-acces-contribuable.sql`](migrations/010-acces-contribuable.sql) | crée la table `acces_contribuable` des liens du portail contribuable : `token_hash varchar(64)` unique (empreinte SHA-256 du jeton, jamais le jeton), `date_creation` / `date_expiration` / `date_revocation` / `date_dernier_acces`, compteurs `nb_acces` et `nb_echecs`, clé étrangère vers `contribuables` en `ON DELETE CASCADE` et vers `agents` en `ON DELETE SET NULL`, index `idx_acces_contribuable`. Rejouable : table et index créés sous `IF NOT EXISTS`. Nécessite la déclaration du modèle dans `prisma/schema.prisma` puis `pnpm run prisma:generate` |
 
 Ces scripts ne sont pas gérés par Prisma. Les instructions y utilisent
 `IF EXISTS` et `IF NOT EXISTS` pour la plupart, mais `001` n'est pas rejouable :
@@ -85,18 +86,18 @@ s'appliquent avec `pnpm --filter backend run prisma:deploy` (voir
 > contient deux systèmes de migration qui ont divergé :
 > [`prisma/migrations/`](prisma/migrations/) (3 migrations enregistrées :
 > `0_init`, `20260922120000_add_relances`, `20261013110000_add_json_fiscal_centre_ref`)
-> et [`migrations/`](migrations/) (scripts manuels `001` à `009`). À cause de ce
+> et [`migrations/`](migrations/) (scripts manuels `001` à `010`). À cause de ce
 > drift, `prisma migrate dev` ou `prisma migrate reset` réclamerait un reset
 > destructif qui viderait la base `taxe_verification`. **Ne les lancez jamais
 > sur une base existante.** Appliquez uniquement du SQL additif via
 > `prisma db execute` et tenez `schema.prisma` et la base alignés à la main.
-> Le script `009` s'applique ainsi (même procédure pour `007` et `008`) :
+> Le script `010` s'applique ainsi (même procédure pour `006` à `009`) :
 >
 > ```bash
-> pnpm exec prisma db execute --file ./migrations/009-centre-fiscal-ref.sql --schema ./prisma/schema.prisma
+> pnpm exec prisma db execute --file ./migrations/010-acces-contribuable.sql --schema ./prisma/schema.prisma
 > ```
 >
-> Après chaque colonne ajoutée de cette façon, relancez `pnpm run prisma:generate`
+> Après chaque colonne ou table ajoutée de cette façon, relancez `pnpm run prisma:generate`
 > — le backend en cours d'exécution verrouille le moteur Prisma, il faut donc
 > l'arrêter, régénérer le client, puis redémarrer.
 
@@ -205,6 +206,12 @@ Conséquences pratiques :
   mais ne peut ni en créer ni en modifier » ;
 - `/api/auth` n'étant pas un préfixe métier, un inspecteur y change quand même
   son propre mot de passe ;
+- exception unique sur l'écriture en lecture seule : `isShareRoute` ouvre
+  `POST /api/contribuables/:id/acces-contribuable` à l'`inspecteur`, car émettre
+  un lien de consultation n'altère aucune donnée fiscale. Le contrôle de périmètre
+  sur le contribuable (`contribuableInScope`) s'applique toujours, et les rôles
+  `contribuable` / `autre` restent refusés (`403`, périmètre vide). Aucune autre
+  méthode d'écriture n'est rouverte par cette exception ;
 - `/api/agents` et les écritures sur `/api/centres` restent réservées à `admin`.
 
 #### Affiliation automatique des administrateurs au centre `SSIF`
@@ -246,12 +253,13 @@ Le contenu de cette spécification est défini dans
 
 ### Routes principales
 
-Onze domaines sont montés par [`src/app.js`](src/app.js). Tous exigent le cookie `fiscal_session`, sauf
-`/api/auth`.
+Douze domaines sont montés par [`src/app.js`](src/app.js). Tous exigent le cookie `fiscal_session`, sauf
+`/api/auth` et `/api/acces-contribuable`.
 
 | Préfixe | Rôle | Auth |
 | --- | --- | --- |
 | `/api/auth` | connexion, inscription, session courante, déconnexion | publique, sauf `GET /api/auth/me` |
+| `/api/acces-contribuable` | portail « Ma situation fiscale » du contribuable : état du lien puis ouverture après confirmation NIF + e-mail | publique, gardée par le jeton d'URL ; monté **avant** `authenticate` |
 | `/api/contribuables` | créer, consulter et modifier les contribuables | requise |
 | `/api/declarations` | gérer les déclarations, leurs statistiques et la procédure contradictoire | requise |
 | `/api/controles` | effectuer un contrôle et consulter son historique | requise |
@@ -286,6 +294,10 @@ GET  /api/contribuables
 GET  /api/contribuables/:id
 POST /api/contribuables
 PUT  /api/contribuables/:id
+POST /api/contribuables/:id/acces-contribuable   (émet le lien du portail)
+
+GET  /api/acces-contribuable/:token              (public)
+POST /api/acces-contribuable/:token/ouvrir       (public, NIF + e-mail)
 
 GET  /api/declarations
 GET  /api/declarations/stats

@@ -56,7 +56,7 @@ frontend/
     ├── hooks/              # hooks React partagés
     ├── frontofficeagent/   # espace fiscal des rôles opérationnels (agent, contrôleur, chef de centre, inspecteur)
     ├── backofficeadmin/    # écrans de connexion, d'inscription et d'administration des comptes
-    ├── accountcontribuable/ # espace du contribuable (vide, à personnaliser)
+    ├── accountcontribuable/ # portail « Ma situation fiscale » du contribuable, hors session agent
     └── utils/              # formatage des montants et calculs frontend
 ```
 
@@ -67,11 +67,15 @@ Chaque dossier possède un `README.md` qui décrit son contenu ; le détail des
 
 `App.jsx` interroge `GET /api/auth/me` au montage. Tant que la réponse n'est pas
 connue, un écran « Vérification de la session... » s'affiche ; un agent non
-authentifié est ramené sur `/`.
+authentifié est ramené sur `/`. Sur une URL commençant par
+`/espace-contribuable/`, aucune vérification de session n'est lancée : le portail
+contribuable n'a pas de session agent, et le réseau du navigateur ne montre ni
+`GET /auth/me` ni `401` sur cette page.
 
 | Route | Écran | Accès |
 | --- | --- | --- |
 | `/` | écran de connexion, ou redirection vers l'accueil du rôle (`/admin` pour un administrateur, `/acceuil` sinon) si la session est valide | public |
+| `/espace-contribuable/:token` | `EspaceContribuable` — portail contribuable en lecture seule : formulaire NIF + e-mail, puis tableau de bord des taxes, conseils et pénalités, historique TVA, droits de communication, recoupements et confrontation | public, protégé par le jeton (voir [`src/accountcontribuable/README.md`](src/accountcontribuable/README.md)) |
 | `/signin` | redirection vers `/` | public |
 | `/signup` | `Signup` — demande de création de compte agent | public |
 | `/attente-activation` | `AttenteActivation` — statut d'un compte en attente d'activation | public |
@@ -138,10 +142,15 @@ Aucune de ces commandes n'est alignée dans la barre.
 - les fonctions exportées renvoient directement `res.data.data` et couvrent les
   déclarations et la procédure contradictoire, les contribuables, les centres,
   les recoupements, les droits de communication, les rapprochements
-  (confrontation), les états de contribuable, les relances, les contrôles et
-  l'administration des agents ;
+  (confrontation), les états de contribuable, les relances, les contrôles,
+  l'administration des agents et les liens d'accès contribuable
+  (`genererAccesContribuable`, `getStatutAccesContribuable`,
+  `ouvrirAccesContribuable`) ;
 - `getErrorMessage(error)` produit un message lisible à partir d'une erreur
-  Axios.
+  Axios ;
+- le jeton du portail contribuable vient uniquement de l'URL : il n'est écrit
+  dans le `localStorage` ni dans un cookie, et n'est jamais renvoyé par une autre
+  route que celle qui l'émet.
 
 La liste complète des fonctions et leur endpoint est dans
 [`../ROUTES_AND_API.md`](../ROUTES_AND_API.md).

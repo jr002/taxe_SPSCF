@@ -11,7 +11,7 @@ Point d'entrée de l'interface React (React 19 + Vite, routage `react-router-dom
 
 ## Comportements portés par `App.jsx`
 
-* Contrôle de session : `api.get('/auth/me')` au montage. En attente, un message « Vérification de la session... » est affiché ; en cas d'échec, l'utilisateur est redirigé vers la page de connexion.
+* Contrôle de session : `api.get('/auth/me')` au montage. En attente, un message « Vérification de la session... » est affiché ; en cas d'échec, l'utilisateur est redirigé vers la page de connexion. Aucune vérification n'est lancée sur une URL `/espace-contribuable/…` : le portail du contribuable est hors session agent, et `isCheckingSession` en découle (aucun `setState` dans l'effet).
 * Thème : l'état `isDarkMode` est initialisé depuis `localStorage['tva-ssif-theme']` et la classe `dark-theme` est appliquée sur `.app-shell` ; toute bascule est réécrite dans `localStorage`.
 * Déconnexion : `api.post('/auth/logout')`, puis retour sur `/`. L'action est déclenchée par le bouton « Se déconnecter » du profil affiché dans l'en-tête.
 * Profil transmis à l'en-tête : `currentUser` (renvoyé par `/auth/me`, donc `role`, `nom_centre` inclus) alimente la puce « nom + rôle » de `UserProfile.jsx`.
@@ -22,6 +22,7 @@ Point d'entrée de l'interface React (React 19 + Vite, routage `react-router-dom
 | Route | Élément |
 | --- | --- |
 | `/` | Écran de connexion si non authentifié, sinon redirection vers l'accueil du rôle (`/admin` pour un admin, `/acceuil` sinon) |
+| `/espace-contribuable/:token` | `EspaceContribuable` — portail contribuable en lecture seule, déclaré **avant** la route de mise en page : ni `Header` ni cookie agent requis |
 | `/signin` | Redirection vers `/` |
 | `/signup` | `Signup` (demande de création de compte) |
 | `/acceuil` | `Accueil` |
@@ -78,8 +79,10 @@ d'administration par [`backofficeadmin/`](backofficeadmin/).
   formulaire de collecte en écriture API.
 * [`backofficeadmin/`](backofficeadmin/) : écrans d'authentification et backoffice
   administrateur (comptes, rôles, vérification NIF, journal d'audit).
-* [`accountcontribuable/`](accountcontribuable/) : espace du contribuable,
-  volontairement vide — il accueillera la fiche du contribuable connecté.
+* [`accountcontribuable/`](accountcontribuable/) : portail « Ma situation fiscale »
+  du contribuable, ouvert par un lien à usage unique et en lecture seule
+  (formulaire NIF + e-mail, tableau de bord des taxes, conseils et pénalités,
+  historique TVA, droits de communication, recoupements, confrontation).
 * [`utils/`](utils/) : formatage, classification, agrégations métier, libellés de relance et helpers partagés de pagination et d'état dans l'URL (voir [`utils/README.md`](utils/README.md)).
 
 ## Authentification

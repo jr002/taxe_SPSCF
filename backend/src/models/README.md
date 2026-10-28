@@ -37,6 +37,19 @@ fichier expose une classe statique pour un domaine métier :
   `demande`, `reponse`, `partiel`, `relance`, `sans_suite`.
 - [`centre.model.js`](centre.model.js) : exporte `{ CentreModel, CENTRE_TYPES }`
   et non une classe seule.
+- [`acces-contribuable.model.js`](acces-contribuable.model.js) : porte les liens
+  du portail contribuable. `creer()` génère 32 octets en base64url, n'en stocke
+  que le SHA-256 (`token_hash`) et, dans la même transaction, remplit
+  `date_revocation` de tous les liens encore actifs du dossier — un dossier ne
+  donne donc jamais accès par deux liens différents. `trouverParToken()` rejette
+  d'abord tout jeton hors format avant la recherche par empreinte.
+  `construireDossier()` assemble la fiche en lecture seule par **projections
+  explicites** : `observations_agent` des déclarations, `score`, `motif` et
+  `id_agent` des rapprochements, `nif_tier`, `observations`, `pieces_demandees`,
+  `documents_recus` et `id_agent` des droits de communication ne quittent jamais
+  la base. `estActif()`, `masquerNom()` et `masquerEmail()` sont exportés pour le
+  contrôleur. Contrairement aux autres modèles, celui-ci n'est pas filtré par
+  `req.dataScope` : c'est le jeton, et lui seul, qui désigne le dossier.
 - [`agent.model.js`](agent.model.js) : exporte
   `{ AgentModel, AGENT_STATUTS, AGENT_ROLES, AGENT_SELECT, CENTRE_ADMINISTRATEURS }` ; `AGENT_ROLES` vaut
   `['admin', 'chef_centre', 'inspecteur', 'controleur', 'agent', 'contribuable', 'autre']`

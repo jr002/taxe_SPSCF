@@ -14,6 +14,7 @@ contribuables/
 │   ├── ContribuableHeader.jsx / ExportFicheButton.jsx / ContribuableOverview.jsx
 │   ├── ClassificationPanel.jsx / DeclarationHistory.jsx / RelancePanel.jsx
 │   ├── RecoupementsPanel.jsx / DroitCommunicationPanel.jsx
+│   ├── LienAccesModal.jsx      # émission du lien du portail contribuable
 │   ├── DeclarationForm.jsx / RecoupementForm.jsx / DroitCommunicationForm.jsx
 │   └── README.md
 ├── hooks/
@@ -101,6 +102,27 @@ Les relances sont persistées en base par `POST /api/relances` (`createRelance`)
 | Relances | `Relances` | Date, type, montant, statut (relances en base du contribuable, libellés de `utils/relance.utils.js`) |
 
 Le bouton est désactivé quand l'onglet n'a aucune ligne exportable (`countExportRows`). Le fichier est nommé `contribuable-<NIF>-<onglet>-<AAAA-MM-JJ>.xlsx` et les montants sont écrits en valeurs numériques au format Excel `#,##0 "Ar"`.
+
+### Lien de consultation du portail contribuable
+
+`ContribuableHeader` affiche aussi, hors du contexte d'un onglet, un bouton
+`secondary` « Lien contribuable ». Il bascule l'état `lienAccesOpen` de
+`ContribuableDetail.jsx`, qui monte alors `LienAccesModal` — monté
+conditionnellement, donc jamais deux fois avec le même jeton affiché.
+
+La modale choisit une durée (7, 14 ou 30 jours) et appelle
+`genererAccesContribuable(id_contribuable, { duree_jours })`, c'est-à-dire
+`POST /api/contribuables/:id/acces-contribuable`. Elle affiche alors l'URL complète
+du portail (`/espace-contribuable/<jeton>`), son échéance et l'e-mail masqué du
+dossier, avec le rappel que le lien actif précédent a été révoqué et qu'aucune
+note interne n'est visible du contribuable.
+
+L'agent n'a rien à retenir : le jeton n'est stocké ni dans le `localStorage` ni
+dans un cookie, il ne transite que par le presse-papiers ou le champ sélectionné.
+Un dossier sans e-mail enregistré refuse l'émission (`400` tant côté API que dans
+la modale), car cet e-mail est l'un des deux facteurs de confirmation du portail.
+Le détail du parcours côté contribuable est dans
+[`../../accountcontribuable/README.md`](../../accountcontribuable/README.md).
 
 ## Composants
 

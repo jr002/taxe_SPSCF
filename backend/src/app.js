@@ -18,6 +18,7 @@ const agentRoutes = require('./routes/agent.routes');
 const rapprochementRoutes = require('./routes/rapprochement.routes');
 const etatContribuableRoutes = require('./routes/etat-contribuable.routes');
 const relanceRoutes = require('./routes/relance.routes');
+const accesContribuableRoutes = require('./routes/acces-contribuable.routes');
 const { authenticate } = require('./middlewares/auth.middleware');
 const { enforceDataScope } = require('./middlewares/data-scope.middleware');
 
@@ -59,6 +60,10 @@ app.use(morgan('dev'));
 
 // Dossier uploads
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
+
+// Portail contribuable : le jeton et la vérification NIF/e-mail remplacent la
+// session agent. Ces routes doivent rester avant la barrière d'authentification.
+app.use('/api/acces-contribuable', accesContribuableRoutes);
 
 // Routes
 app.use('/api/auth', authRoutes);

@@ -32,6 +32,15 @@ const isBusinessRoute = (req) => {
 const WRITE_METHODS = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
 
 /**
+ * Émettre un lien de consultation ne change aucune donnée fiscale : cette seule
+ * route reste donc accessible à l'inspecteur, dont le périmètre est en lecture
+ * seule. Le contrôle du contribuable et de son centre reste appliqué ensuite.
+ */
+const isShareRoute = (req) =>
+  req.method === 'POST'
+  && /^\/api\/contribuables\/\d+\/acces-contribuable\/?$/.test((req.originalUrl || req.url).split('?')[0]);
+
+/**
  * Porte d'entrée du périmètre de données : un rôle sans centre (`contribuable`,
  * `autre`, ou rôle centré sans rattachement) ne reçoit aucune donnée métier, et
  * un rôle national en lecture seule (`inspecteur`) ne peut rien écrire. Le
@@ -49,7 +58,7 @@ const enforceDataScope = (req, res, next) => {
     return res.status(403).json({ success: false, message: scopeDeniedMessage(scope) });
   }
 
-  if (scope.canWrite === false && WRITE_METHODS.has(req.method)) {
+  if (scope.canWrite === false && WRITE_METHODS.has(req.method) && !isShareRoute(req)) {
     return res.status(403).json({ success: false, message: writeDeniedMessage(scope) });
   }
 

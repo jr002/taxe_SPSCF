@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Navigate, Outlet, Route, Routes, useNavigate } from 'react-router-dom';
+import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import './App.css';
 import api from './api/api';
 
 // Composants communs
 import Header from './components/common/Header';
+import EspaceContribuable from './accountcontribuable/EspaceContribuable';
 import { getLandingPath } from './utils/session.utils';
 
 // Pages de connexion, d'inscription et d'administration
@@ -48,7 +49,9 @@ import {
  */
 export default function App() {
   const navigate = useNavigate();
-  const [isCheckingSession, setIsCheckingSession] = useState(true);
+  const location = useLocation();
+  const estPortailContribuable = location.pathname.startsWith('/espace-contribuable/');
+  const [sessionVerifiee, setSessionVerifiee] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentModule, setCurrentModule] = useState('sales');
@@ -56,11 +59,16 @@ export default function App() {
     () => localStorage.getItem('tva-ssif-theme') === 'dark'
   );
 
+  // Le portail contribuable s'ouvre hors session agent : il n'a rien à vérifier.
+  const isCheckingSession = !estPortailContribuable && !sessionVerifiee;
+
   useEffect(() => {
     localStorage.setItem('tva-ssif-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
   useEffect(() => {
+    if (estPortailContribuable) return undefined;
+
     api.get('/auth/me')
       .then((response) => {
         setCurrentUser(response.data?.user || null);
@@ -70,8 +78,8 @@ export default function App() {
         setCurrentUser(null);
         setIsAuthenticated(false);
       })
-      .finally(() => setIsCheckingSession(false));
-  }, []);
+      .finally(() => setSessionVerifiee(true));
+  }, [estPortailContribuable]);
 
   /**
    * Après connexion : l'écran de connexion transmet l'agent renvoyé par l'API ;
@@ -109,6 +117,15 @@ export default function App() {
   return (
     <div className={`app-shell${isDarkMode ? ' dark-theme' : ''}`}>
       <Routes>
+        <Route
+          path="/espace-contribuable/:token"
+          element={(
+            <EspaceContribuable
+              isDarkMode={isDarkMode}
+              onToggleTheme={() => setIsDarkMode((prev) => !prev)}
+            />
+          )}
+        />
         <Route
           path="/"
           element={isCheckingSession ? <p className="auth-loading">Vérification de la session...</p> : (

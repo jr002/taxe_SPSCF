@@ -2,8 +2,8 @@
 
 Définit les endpoints de l'API et relie chaque URL à son contrôleur.
 
-Les onze fichiers de routes sont montés dans [`../app.js`](../app.js) sous
-`/api/auth`, `/api/contribuables`, `/api/declarations`, `/api/controles`,
+Les douze fichiers de routes sont montés dans [`../app.js`](../app.js) sous
+`/api/auth`, `/api/acces-contribuable`, `/api/contribuables`, `/api/declarations`, `/api/controles`,
 `/api/recoupements`, `/api/droits-communication`, `/api/centres`, `/api/agents`,
 `/api/rapprochements`, `/api/etat-contribuable` et `/api/relances`.
 
@@ -18,6 +18,8 @@ Les onze fichiers de routes sont montés dans [`../app.js`](../app.js) sous
 - [`contribuable.routes.js`](contribuable.routes.js) : validation sur la
   création uniquement. `/:id` et ses sous-ressources (`/etat`, `/rapprochements`,
   `/relances`) passent par `requireContribuableAccess('id')`.
+  `POST /:id/acces-contribuable` (émission du lien du portail) est gardée par la
+  même garniture : seul un agent qui voit le dossier peut en émettre le lien.
 - [`declaration.routes.js`](declaration.routes.js) : liste, statistiques,
   détail, création et actes de procédure contradictoire, avec
   `requireDeclarationAccess` sur chaque route ciblant une déclaration.
@@ -51,8 +53,13 @@ Les onze fichiers de routes sont montés dans [`../app.js`](../app.js) sous
 - [`relance.routes.js`](relance.routes.js) : relances et recouvrement
   (`GET /`, `GET /stats`, `GET /contribuable/:id_contribuable`, `GET /:id`,
   `POST /`, `PUT /:id`, `DELETE /:id`).
+- [`acces-contribuable.routes.js`](acces-contribuable.routes.js) : portail
+  contribuable, **monté avant `authenticate`** (`GET /:token` pour l'état du lien,
+  `POST /:token/ouvrir` après confirmation NIF + e-mail). Aucun cookie agent
+  n'est attendu ; trois limiteurs maison gardent la route : 60 consultations par
+  IP sur le statut, 8 tentatives par lien + IP et 20 par IP sur l'ouverture.
 
-Toutes ces routes, sauf `/api/auth`, sont protégées par `authenticate` puis par
+Toutes ces routes, sauf `/api/auth` et `/api/acces-contribuable`, sont protégées par `authenticate` puis par
 `enforceDataScope` (périmètre du rôle, voir
 [`../utils/data-scope.js`](../utils/data-scope.js)) ; `/api/agents` exige en plus
 le rôle `admin`.

@@ -18,6 +18,16 @@ puis renvoient les statuts et les données JSON.
   CRUD et statistiques par statut ; le `create` horodate `id_agent` depuis la
   session (`req.user?.id`).
 - [`relance.controller.js`](relance.controller.js)
+- [`acces-contribuable.controller.js`](acces-contribuable.controller.js) : les
+  trois temps du portail. `generer` (route agent) borne la durée à 1–30 jours,
+  exige un e-mail enregistré sur le dossier, émet le jeton et ne le renvoie
+  qu'ici — l'audit `ACCES_CONTRIBUABLE` n'en consigne ni le jeton ni l'empreinte ;
+  `statut` (route publique) ne répond qu'une validité, une échéance, une raison
+  sociale masquée et le centre ; `ouvrir` (route publique) normalise NIF et
+  e-mail, les compare au dossier, répond `403` sur correspondance insuffisante
+  (`nb_echecs` incrémenté), `404` avec un message unique pour un lien inconnu,
+  expiré ou révoqué, et réinitialise les limiteurs après succès. Aucun des trois
+  ne consomme `req.dataScope` : la garde du portail est le jeton, pas la session.
 - [`etat-contribuable.controller.js`](etat-contribuable.controller.js)
 - [`rapprochement.controller.js`](rapprochement.controller.js)
 - [`centre.controller.js`](centre.controller.js) : le `delete` refuse le centre

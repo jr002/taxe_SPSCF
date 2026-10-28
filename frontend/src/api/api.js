@@ -227,4 +227,14 @@ export const emettreNotificationDefinitive = (idDeclaration, payload = {}) =>
 export const imputerCreditImpot = (idDeclaration, payload = {}) =>
   api.post(`/declarations/${idDeclaration}/imputer-credit`, payload).then((res) => res.data.data);
 
+// ==================== PORTAIL CONTRIBUABLE ====================
+export const genererAccesContribuable = (idContribuable, payload = {}) =>
+  api.post(`/contribuables/${idContribuable}/acces-contribuable`, payload).then((res) => res.data.data);
+
+export const getStatutAccesContribuable = (token) =>
+  api.get(`/acces-contribuable/${encodeURIComponent(token)}`).then((res) => res.data.data);
+
+export const ouvrirAccesContribuable = (token, payload) =>
+  api.post(`/acces-contribuable/${encodeURIComponent(token)}/ouvrir`, payload).then((res) => res.data.data);
+
 export default api;

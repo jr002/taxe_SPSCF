@@ -27,6 +27,7 @@ votre installation. Ne versionnez jamais ce fichier.
 | `droits_communication` | demandes de communication adressées aux tiers ; rattaché à un `contribuables` (cascade) et à un `agents` instructeur facultatif (`SetNull`) ; `statut` par défaut `demande` |
 | `centres` | centres fiscaux ; `numero_centre` unique |
 | `relances` | relances émises pour un contribuable ; exposées par `/api/relances` |
+| `acces_contribuable` | liens de consultation du portail contribuable ; `token_hash` (`VarChar(64)`, empreinte SHA-256 du jeton, jamais le jeton) unique, `date_expiration`, `date_revocation` facultative, `date_dernier_acces`, compteurs `nb_acces` et `nb_echecs` ; rattaché à un `contribuables` (cascade) et à l'`agents` émetteur facultatif (`SetNull`) |
 
 Relations principales :
 
@@ -34,7 +35,8 @@ Relations principales :
 centres 1 ──── n contribuables 1 ──── n declarations 1 ──── n controles n ──── 0..1 agents
     │                 │                      │
     └── n agents      │                      └──── n relances (0..1 declaration, 0..1 agent)
-                      └──── n recoupements
+                      ├──── n recoupements
+                      └──── n acces_contribuable (0..1 agent émetteur)
 ```
 
 - Une déclaration peut appartenir à un contribuable.
@@ -52,6 +54,14 @@ centres 1 ──── n contribuables 1 ──── n declarations 1 ───
 - Un contribuable porte plusieurs `droits_communication` ; la suppression du
   contribuable les supprime (`onDelete: Cascade`).
 - La suppression d'un agent met `droits_communication.id_agent` à `NULL`.
+- Un contribuable porte plusieurs liens de consultation (`acces_contribuable`) ;
+  la suppression du contribuable les supprime (`onDelete: Cascade`). La suppression
+  de l'agent émetteur met `acces_contribuable.id_agent` à `NULL` : le lien reste
+  lisible, seul son auteur disparaît.
+- Un seul lien reste actif par dossier : `AccesContribuableModel.creer()`
+  (`../src/models/acces-contribuable.model.js`) remplit `date_revocation` de tous
+  les liens non expirés du même `id_contribuable` dans la même transaction que la
+  création.
 
 Les montants financiers utilisent `Decimal(15, 2)`. Les dates sont initialisées
 automatiquement lorsque le schéma le prévoit. Les modèles sont au pluriel car
@@ -107,18 +117,22 @@ Deux systèmes de migration coexistent et ont **divergé** :
   Prisma (`0_init`, `20260922120000_add_relances`,
   `20261013110000_add_json_fiscal_centre_ref`) ;
 - [`../migrations/`](../migrations/) : scripts SQL manuels `00N-*.sql`
-  (`001` à `008`), dont `005-droits-communication.sql` qui crée la table
+  (`001` à `010`), dont `005-droits-communication.sql` qui crée la table
   `droits_communication` du module Droits de communication,
   `006-roles-centre-affectation.sql` qui ajoute `agents.id_centre` (clé étrangère
   vers `centres` en `ON DELETE SET NULL`, index `idx_agents_centre`) et convertit
   les rôles hérités `client` en `contribuable`,
   `007-demande-eclaircissement.sql` qui élargit la contrainte
   `relances_type_relance_check` au type `demande_eclaircissement` utilisé par la
-  fiche de déclaration, et `008-centre-ssif-administrateurs.sql` qui crée le
+  fiche de déclaration, `008-centre-ssif-administrateurs.sql` qui crée le
   centre `SSIF` (`type_centre = 'DGE'`) et y rattache les comptes `admin` déjà en
-  base. Ce script ne touche aucune colonne du schéma Prisma — il se rejoue sans
-  effet de bord, ses deux instructions étant gardées par `NOT EXISTS` et
-  `IS DISTINCT FROM`.
+  base, `009-centre-fiscal-ref.sql` qui aligne quatre `centres.nom_centre` sur le
+  référentiel et dérive `contribuables.centre_fiscal_ref` depuis `id_centre`, et
+  `010-acces-contribuable.sql` qui crée la table `acces_contribuable` du portail
+  contribuable (clé étrangère contribuable en `ON DELETE CASCADE`, agent en
+  `ON DELETE SET NULL`, index unique sur `token_hash`, index `idx_acces_contribuable`).
+  Aucun de ces scripts ne modifie un montant fiscal et tous se rejouent sans effet
+  de bord.
 
 Ces scripts additifs ne sont pas dans l'historique Prisma. À cause de ce drift
 de schéma, `prisma migrate dev` ou `prisma migrate reset` détecterait des
@@ -138,7 +152,11 @@ pnpm exec prisma db execute --file ./migrations/006-roles-centre-affectation.sql
 
 Toute colonne ajoutée de cette façon impose de relancer `pnpm exec prisma generate`
 avant de la lire : le client généré valide chaque `select` et refuserait
-`agents.id_centre` tant qu'il n'est pas régénéré. Le backend en cours d'exécution
+`agents.id_centre` tant qu'il n'est pas régénéré. Le script `010`, qui crée une
+table, obéit à la même règle : le modèle `acces_contribuable` a été déclaré dans
+[`schema.prisma`](schema.prisma) puis régénéré avant que
+[`../src/models/acces-contribuable.model.js`](../src/models/acces-contribuable.model.js)
+n'utilise `prisma.acces_contribuable`. Le backend en cours d'exécution
 verrouille le moteur Prisma (`EPERM` sur le renommage de la DLL) — il faut donc
 l'arrêter, régénérer, puis le redémarrer.
 
@@ -150,3 +168,11 @@ Les scripts SQL additifs `00N-*.sql` sont détaillés dans
 Le champ `agents.mot_de_passe` contient une donnée sensible. Ne l'exposez
 jamais dans une réponse API, un log ou un export. Ne publiez pas non plus
 `DATABASE_URL` ni les identifiants PostgreSQL.
+
+S'agissant du portail contribuable, `acces_contribuable` ne stocke que
+`token_hash` : l'empreinte SHA-256 du jeton, jamais le jeton lui-même. Le jeton
+brut n'existe qu'à la réponse de `POST /api/contribuables/:id/acces-contribuable`
+et n'est écrit dans aucune table, aucun journal d'audit, aucun log. Une fuite de
+la base ne livre donc pas de lien exploitable ; la ligne `token_hash` reste
+pourtant suffisante pour identifier un dossier, donc elle ne doit pas non plus
+sortir d'un export.

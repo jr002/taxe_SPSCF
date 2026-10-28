@@ -2072,3 +2072,88 @@ body:has(.dark-theme) { background: #111827; }
 .dark-theme .verif-gabarit strong, .dark-theme .verif-api-item code { color: #e7edf5; }
 .dark-theme .verif-api-item { border-color: #2d3a4d; background: #182231; }
 .dark-theme .verif-api-item small { color: #9caabd; }
+
+/* ---- Portail public du contribuable ---- */
+.portail { min-height: 100vh; padding: clamp(1rem, 3vw, 2rem); background: #f4f7fb; }
+.portail-shell { width: min(100%, 1120px); margin: 0 auto; }
+.portail-shell-etroit { max-width: 520px; padding-top: clamp(1rem, 8vh, 5rem); }
+.portail-brand { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; }
+.portail-brand img { width: 3rem; height: 3rem; border: 2px solid #ffffff; border-radius: 10px; object-fit: cover; box-shadow: 0 4px 14px rgba(24, 45, 72, 0.12); }
+.portail-brand > div { display: grid; gap: 0.15rem; }
+.portail-brand strong { color: #172033; font-family: Georgia, 'Times New Roman', serif; font-size: 1.2rem; }
+.portail-brand strong span { color: #138b79; }
+.portail-brand > div > span { color: #657083; font-size: 0.72rem; }
+.portail-brand .theme-toggle { margin-left: auto; }
+.portail-verification { padding: clamp(1.25rem, 4vw, 2rem); }
+.portail-verification h1 { margin: 0.15rem 0 0.75rem; color: #172033; font-size: clamp(1.6rem, 4vw, 2rem); }
+.portail-intro { margin: 0; color: #344054; font-size: 0.88rem; line-height: 1.65; }
+.portail-intro strong { color: #1769aa; }
+.portail-form { margin-top: 0.25rem; }
+.portail-note { margin: 1.1rem 0 0; padding-top: 1rem; border-top: 1px solid #e2e8f0; color: #657083; font-size: 0.75rem; line-height: 1.55; }
+.portail-heading { margin-bottom: 1.25rem; }
+.portail-heading-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.portail-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
+.portail-actions .secondary { font-size: 0.78rem; white-space: nowrap; }
+.portail-identite { margin: 1rem 0 0; padding: 1rem; border: 1px solid #dfe5ed; border-radius: 10px; background: #ffffff; }
+.portail-section { margin-bottom: 1rem; }
+.portail-section h3 { margin: 1.25rem 0 0.75rem; color: #172033; font-size: 0.9rem; }
+.portail-section-intro { margin: -0.5rem 0 1rem; color: #657083; font-size: 0.8rem; line-height: 1.55; }
+.portail-conseils { display: grid; gap: 0.65rem; margin: 0 0 1rem; padding: 0; list-style: none; }
+.portail-conseils li { padding: 0.75rem 0.9rem; border: 1px solid #d8eaf5; border-left: 4px solid #1769aa; border-radius: 8px; background: #f6fbff; color: #344054; font-size: 0.83rem; line-height: 1.55; }
+.portail-section .rule-box { margin-bottom: 1rem; }
+.portail-section .portail-que-faire { margin: 1rem 0 0; }
+.portail-section .procedure-more .table-wrap { margin-top: 0.9rem; }
+.portail .table-wrap tbody tr { cursor: default; }
+.portail .bar-chart { margin-top: 1rem; }
+.portail .legend { margin: 0.75rem 0 0; }
+.portail-footer { padding: 1rem 0 0; color: #657083; font-size: 0.75rem; line-height: 1.6; text-align: center; }
+
+.dark-theme .portail { background: #111827; }
+.dark-theme .portail-brand strong, .dark-theme .portail-verification h1, .dark-theme .portail-section h3 { color: #f8fafc; }
+.dark-theme .portail-brand > div > span, .dark-theme .portail-note, .dark-theme .portail-section-intro, .dark-theme .portail-footer { color: #9caabd; }
+.dark-theme .portail-brand img { border-color: #405169; }
+.dark-theme .portail-intro { color: #d1d5db; }
+.dark-theme .portail-intro strong { color: #7dd3fc; }
+.dark-theme .portail-note { border-color: #2d3a4d; }
+.dark-theme .portail-identite { border-color: #2d3a4d; background: #111827; }
+.dark-theme .portail-identite dd { color: #f8fafc; }
+.dark-theme .portail-conseils li { border-color: #28516d; border-left-color: #38bdf8; background: #12263f; color: #d1d5db; }
+.dark-theme .portail .bar-chart { border-color: #405169; }
+
+/* ---- Lien d'accès émis depuis la fiche agent ---- */
+.lien-acces-select { min-height: 2.8rem; border: 1px solid #cbd5e1; border-radius: 7px; padding: 0.65rem 0.75rem; color: #172033; background: #ffffff; }
+.lien-acces-url { display: flex; align-items: center; gap: 0.5rem; padding: 0.65rem 0.75rem; border: 1px solid #b9d7eb; border-radius: 8px; background: #f8fbff; }
+.lien-acces-url input { flex: 1; min-width: 0; border: 0; color: #125384; background: transparent; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 0.75rem; outline: none; }
+.lien-acces-url button { flex-shrink: 0; border: 1px solid #b9d7eb; border-radius: 7px; padding: 0.45rem 0.65rem; color: #1769aa; background: #ffffff; font-size: 0.75rem; font-weight: 700; cursor: pointer; }
+.lien-acces-url button:hover { border-color: #1769aa; background: #eef7ff; }
+.dark-theme .lien-acces-select { color: #f8fafc; border-color: #405169; background: #111827; }
+.dark-theme .lien-acces-url { border-color: #405169; background: #111827; }
+.dark-theme .lien-acces-url input { color: #7dd3fc; }
+.dark-theme .lien-acces-url button { color: #7dd3fc; border-color: #405169; background: #182231; }
+.dark-theme .lien-acces-url button:hover { border-color: #7dd3fc; background: #12263f; }
+
+@media (max-width: 760px) {
+  .portail-heading-top { flex-direction: column; }
+  .portail-actions { width: 100%; justify-content: flex-start; }
+  .portail-identite { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .portail-identite div:nth-child(2n) { border-right: 0; }
+}
+
+@media (max-width: 520px) {
+  .portail { padding: 0.75rem; }
+  .portail-identite { grid-template-columns: 1fr; }
+  .portail-identite div { border-right: 0; }
+  .portail-actions { flex-direction: column; }
+  .portail-actions .secondary { width: 100%; }
+}
+
+@media print {
+  .portail { padding: 0; background: #ffffff; }
+  .portail-shell { width: 100%; max-width: none; }
+  .portail-actions, .portail .theme-toggle { display: none; }
+  .portail-brand { margin-bottom: 1rem; }
+  .portail .panel, .portail-identite { break-inside: avoid; box-shadow: none; }
+  .portail .table-wrap { overflow: visible; }
+  .portail table { font-size: 0.68rem; }
+  .portail-footer { color: #344054; }
+}

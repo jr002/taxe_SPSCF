@@ -41,6 +41,16 @@ L'instance Axios est exportée par défaut (`export default api`) et créée ave
 * `getContribuableByNif(nif)` — `GET /contribuables?search=<nif>&limit=20`, puis recherche de l'élément dont `nif` correspond exactement. Renvoie `undefined` si aucun résultat (désenchaînement `result.data?.data?.data?.find(...)`).
 * `createContribuable(payload)` — `POST /contribuables`.
 
+### Accès contribuable (portail)
+
+* `genererAccesContribuable(idContribuable, payload = {})` — `POST /contribuables/:idContribuable/acces-contribuable`, avec `{ duree_jours }` (1 à 30). Route **agent** : appelée par `LienAccesModal.jsx`, elle renvoie le jeton brut, le `chemin`, la `date_expiration` et l'`email_masque`.
+* `getStatutAccesContribuable(token)` — `GET /acces-contribuable/:token`. Le jeton est passé par `encodeURIComponent`. Pas de cookie agent attendu : la fonction est appelée par le portail, hors session.
+* `ouvrirAccesContribuable(token, { nif, email })` — `POST /acces-contribuable/:token/ouvrir`. Renvoie le dossier complet en lecture seule après confirmation de l'identité.
+
+Ces deux dernières fonctions sont les seules du client à viser une route publique
+sans `fiscal_session` ; `api.get('/auth/me')` n'est jamais appelé sur une URL
+`/espace-contribuable/…` (voir [`../README.md`](../README.md)).
+
 ### Centres
 
 * `getCentres()` — `GET /centres`.
