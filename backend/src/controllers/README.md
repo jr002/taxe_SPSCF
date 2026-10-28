@@ -25,7 +25,9 @@ puis renvoient les statuts et les données JSON.
   `statut` (route publique) ne répond qu'une validité, une échéance, une raison
   sociale masquée et le centre ; `ouvrir` (route publique) normalise NIF et
   e-mail, les compare au dossier, répond `403` sur correspondance insuffisante
-  (`nb_echecs` incrémenté), `404` avec un message unique pour un lien inconnu,
+  (`nb_echecs` incrémenté et `tentatives_restantes` lu sur `req.rateLimit.remaining`,
+  pour que le portail prévienne le contribuable avant le blocage), `404` avec un
+  message unique pour un lien inconnu,
   expiré ou révoqué, et réinitialise les limiteurs après succès. Aucun des trois
   ne consomme `req.dataScope` : la garde du portail est le jeton, pas la session.
 - [`etat-contribuable.controller.js`](etat-contribuable.controller.js)

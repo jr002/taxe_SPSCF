@@ -127,6 +127,7 @@ class AccesContribuableController {
         return res.status(403).json({
           success: false,
           message: "Le NIF ou l'adresse e-mail ne correspond pas à ce dossier.",
+          tentatives_restantes: req.rateLimit?.remaining ?? null,
         });
       }
 

@@ -56,12 +56,16 @@ const rateLimit = ({ scope, windowMs = 15 * 60 * 1000, max = 10, identity, messa
     timestamps.push(now);
     attempts.set(bucketKey, timestamps);
 
-    const previousReset = req.rateLimit?.reset;
+    const previous = req.rateLimit;
+    const remaining = Math.max(0, max - timestamps.length);
+
     req.rateLimit = {
+      /** Tentatives restantes dans la fenêtre, tous compteurs confondus. */
+      remaining: previous?.remaining === undefined ? remaining : Math.min(remaining, previous.remaining),
       /** À appeler après un succès : vide le compteur courant et les précédents. */
       reset: () => {
         attempts.delete(bucketKey);
-        previousReset?.();
+        previous?.reset?.();
       },
     };
 

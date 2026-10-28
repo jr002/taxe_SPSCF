@@ -2,9 +2,9 @@ import { formatAriary, toNumber } from '../../../utils/formatters';
 
 /**
  * Boutons d'actions et formulaires pliables pour la procédure contradictoire :
- * 1. Émission Notification Primitive (délai 30j)
- * 2. Validation & Émission Notification Définitive
- * 3. Demande d'Éclaircissements et de Justifications (CPF V-17)
+ * 1. Demande d'Éclaircissements et de Justifications (CPF V-17, étape facultative)
+ * 2. Émission Notification Primitive (délai 30j)
+ * 3. Validation & Émission Notification Définitive
  * 4. Imputation du Crédit d'Impôt
  */
 export default function ProcedureActionForms({
@@ -47,30 +47,53 @@ export default function ProcedureActionForms({
   const canEclaircissement = !isEclaircissementEmis && !isDefinitiveEnvoyee;
   const canImputation = isDefinitiveEnvoyee;
 
-  // Une seule action mise en avant : celle qui fait avancer le dossier.
-  const principale = canPrimitive
-    ? {
-        label: 'Émettre la Notification Primitive',
-        className: 'primary',
-        open: () => setShowPrimitiveForm((prev) => !prev),
-      }
-    : isPrimitiveEnvoyee && !isDefinitiveEnvoyee
-      ? {
-          label: 'Émettre la Notification Définitive',
-          className: 'primary btn-violet',
-          open: () => setShowDefinitiveForm((prev) => !prev),
-        }
-      : {
-          label: "Imputer le Crédit d'Impôt",
-          className: 'primary btn-green',
-          open: () => setShowImputationForm((prev) => !prev),
-        };
+  // Actions classées dans l'ordre légal de la procédure contradictoire : l'étape
+  // facultative d'éclaircissements (CPF V-17) est proposée avant le choix
+  // primitive / définitive.
+  const actions = [
+    canEclaircissement && {
+      cle: 'eclaircissement',
+      label: 'Demander des éclaircissements',
+      className: 'primary btn-teal',
+      open: () => setShowEclaircissementForm((prev) => !prev),
+    },
+    canPrimitive && {
+      cle: 'primitive',
+      label: 'Émettre la Notification Primitive',
+      className: 'primary',
+      open: () => setShowPrimitiveForm((prev) => !prev),
+    },
+    canDefinitive && {
+      cle: 'definitive',
+      label: 'Émettre la Notification Définitive',
+      className: 'primary btn-violet',
+      open: () => setShowDefinitiveForm((prev) => !prev),
+    },
+    canImputation && {
+      cle: 'imputation',
+      label: "Imputer le Crédit d'Impôt",
+      className: 'primary btn-green',
+      open: () => setShowImputationForm((prev) => !prev),
+    },
+  ].filter(Boolean);
 
-  const prochaineEtape = canPrimitive
-    ? 'La procédure n’est pas encore engagée : une notification primitive ouvre 30 jours de réponse au contribuable.'
-    : isPrimitiveEnvoyee && !isDefinitiveEnvoyee
-      ? 'La notification primitive est émise ; la notification définitive fixe définitivement la dette.'
-      : 'La dette est arrêtée ; un crédit d’impôt antérieur peut être imputé sur le principal.';
+  // Une seule action mise en avant : la première du déroulé légal encore ouverte.
+  const [principale, ...autres] = actions;
+  const suivante = autres[0] ?? null;
+  const repliees = autres.slice(1);
+
+  const prochaineEtape = {
+    eclaircissement: isPrimitiveEnvoyee
+      ? 'La notification primitive court : une demande d’éclaircissements (CPF V-17) reste possible avant de fixer la dette.'
+      : 'Le contrôle a relevé un écart : demandez d’abord les éclaircissements du contribuable (CPF V-17), puis engagez la notification primitive.',
+    primitive: isEclaircissementEmis
+      ? 'Les éclaircissements sont demandés : la notification primitive ouvre 30 jours de réponse au contribuable.'
+      : 'La procédure n’est pas encore engagée : une notification primitive ouvre 30 jours de réponse au contribuable.',
+    definitive:
+      'La notification primitive est émise ; la notification définitive fixe définitivement la dette.',
+    imputation:
+      'La dette est arrêtée ; un crédit d’impôt antérieur peut être imputé sur le principal.',
+  }[principale?.cle];
 
   return (
     <>
@@ -80,52 +103,45 @@ export default function ProcedureActionForms({
           <span className="procedure-tag">Prochaine étape</span>
           <p>{prochaineEtape}</p>
         </div>
-        <div className="procedure-next-actions">
-          <button
-            type="button"
-            className={principale.className}
-            onClick={principale.open}
-            disabled={actionLoading}
-          >
-            {principale.label}
-          </button>
-          {canPrimitive && canEclaircissement && (
+        {principale && (
+          <div className="procedure-next-actions">
             <button
               type="button"
-              className="secondary"
-              onClick={() => setShowEclaircissementForm((prev) => !prev)}
+              className={principale.className}
+              onClick={principale.open}
               disabled={actionLoading}
             >
-              Demander des éclaircissements
+              {principale.label}
             </button>
-          )}
-        </div>
+            {suivante && (
+              <button
+                type="button"
+                className="secondary"
+                onClick={suivante.open}
+                disabled={actionLoading}
+              >
+                {suivante.label}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
-      {(canPrimitive || canEclaircissement || !canImputation) && (
+      {(repliees.length > 0 || !canImputation) && (
         <details className="procedure-more">
           <summary>Autres actions du dossier</summary>
           <div className="procedure-buttons">
-            {canPrimitive && canDefinitive && (
+            {repliees.map((action) => (
               <button
+                key={action.cle}
                 type="button"
-                className="primary btn-violet"
-                onClick={() => setShowDefinitiveForm((prev) => !prev)}
+                className={action.className}
+                onClick={action.open}
                 disabled={actionLoading}
               >
-                Émettre la Notification Définitive
+                {action.label}
               </button>
-            )}
-            {!canPrimitive && canEclaircissement && (
-              <button
-                type="button"
-                className="primary btn-teal"
-                onClick={() => setShowEclaircissementForm((prev) => !prev)}
-                disabled={actionLoading}
-              >
-                Demander des éclaircissements
-              </button>
-            )}
+            ))}
             {!canImputation && (
               <span className="procedure-locked">
                 Imputation du crédit d’impôt : disponible après la notification définitive.
@@ -135,7 +151,41 @@ export default function ProcedureActionForms({
         </details>
       )}
 
-      {/* ── Formulaire 1 : Émission Notification Primitive ── */}
+      {/* ── Formulaire 1 : Demande d'Éclaircissements et de Justifications ── */}
+      {showEclaircissementForm && !isEclaircissementEmis && !isDefinitiveEnvoyee && (
+        <form
+          onSubmit={onEmettreEclaircissement}
+          className="procedure-form procedure-form-eclaircissement"
+        >
+          <h3>Demande d'Éclaircissements et de Justifications (CPF Art. V-17)</h3>
+          <p>
+            Invite le contribuable à fournir les éclaircissements ou justifications sur les éléments du calcul
+            non contrôlés. L'administration dispose de 30 jours après sa réponse pour notifier le redressement.
+          </p>
+
+          <label className="field" style={{ marginBottom: '1rem' }}>
+            <span>Points appelant vos éclaircissements</span>
+            <textarea
+              rows="4"
+              required
+              value={eclaircissementQuestions}
+              onChange={(e) => setEclaircissementQuestions(e.target.value)}
+              placeholder="Ex: justifier l'écart entre la TVA collectée déclarée et le chiffre d'affaires encaissé..."
+            />
+          </label>
+
+          <div className="procedure-form-actions">
+            <button type="button" onClick={() => setShowEclaircissementForm(false)}>
+              Annuler
+            </button>
+            <button className="primary btn-teal" type="submit" disabled={actionLoading}>
+              {actionLoading ? 'Émission en cours...' : 'Émettre la Demande d’Éclaircissements →'}
+            </button>
+          </div>
+        </form>
+      )}
+
+      {/* ── Formulaire 2 : Émission Notification Primitive ── */}
       {showPrimitiveForm && !isPrimitiveEnvoyee && (
         <form onSubmit={onEmettrePrimitive} className="procedure-form">
           <h3>Émission de la Notification Primitive (Proposition temporaire)</h3>
@@ -242,40 +292,6 @@ export default function ProcedureActionForms({
             </button>
             <button className="primary btn-violet" type="submit" disabled={actionLoading}>
               {actionLoading ? 'Validation en cours...' : 'Valider & Émettre la Notification Définitive →'}
-            </button>
-          </div>
-        </form>
-      )}
-
-      {/* ── Formulaire 3 : Demande d'Éclaircissements et de Justifications ── */}
-      {showEclaircissementForm && !isEclaircissementEmis && !isDefinitiveEnvoyee && (
-        <form
-          onSubmit={onEmettreEclaircissement}
-          className="procedure-form procedure-form-eclaircissement"
-        >
-          <h3>Demande d'Éclaircissements et de Justifications (CPF Art. V-17)</h3>
-          <p>
-            Invite le contribuable à fournir les éclaircissements ou justifications sur les éléments du calcul
-            non contrôlés. L'administration dispose de 30 jours après sa réponse pour notifier le redressement.
-          </p>
-
-          <label className="field" style={{ marginBottom: '1rem' }}>
-            <span>Points appelant vos éclaircissements</span>
-            <textarea
-              rows="4"
-              required
-              value={eclaircissementQuestions}
-              onChange={(e) => setEclaircissementQuestions(e.target.value)}
-              placeholder="Ex: justifier l'écart entre la TVA collectée déclarée et le chiffre d'affaires encaissé..."
-            />
-          </label>
-
-          <div className="procedure-form-actions">
-            <button type="button" onClick={() => setShowEclaircissementForm(false)}>
-              Annuler
-            </button>
-            <button className="primary btn-teal" type="submit" disabled={actionLoading}>
-              {actionLoading ? 'Émission en cours...' : 'Émettre la Demande d’Éclaircissements →'}
             </button>
           </div>
         </form>

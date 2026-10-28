@@ -31,6 +31,19 @@ contribuable du front-office agent.
 | [`EspaceContribuable.jsx`](EspaceContribuable.jsx) | lit le jeton depuis l'URL, affiche l'en-tête DGI, le thème, les trois états du lien (vérification, indisponible, formulaire d'identité) et monte `SituationFiscale` après confirmation. Le composant interne est rendu avec `key={token}` : changer de lien repart d'un état neuf, sans dossier conservé en mémoire |
 | [`components/SituationFiscale.jsx`](components/SituationFiscale.jsx) | dossier complet en lecture seule |
 
+### Compteur de tentatives du formulaire d'identité
+
+`POST /api/acces-contribuable/:token/ouvrir` renvoie, avec son `403`, le champ
+`tentatives_restantes` lu par le serveur sur le limiteur encore ouvert (8 tentatives
+par lien et IP). `EspaceContribuable` l'affiche sous le message d'erreur, dans un
+paragraphe `.procedure-note` en `role="status"`, à partir de **trois** tentatives
+restantes : « Il vous reste N tentatives avant le blocage temporaire de ce lien. »,
+puis, à zéro, le blocage est annoncé avec la conduite à tenir. Le `429` n'est pas
+doublé : le message du serveur, qui énonce déjà le délai d'attente en minutes,
+tient lieu d'avertissement et le paragraphe de compteur reste vide. Une ouverture
+réussie réinitialise les compteurs côté serveur, donc le contribuable qui trouve le
+bon couple n'est jamais bloqué.
+
 `SituationFiscale` présente, dans cet ordre :
 
 - l'identité du dossier (raison sociale, NIF, centre gestionnaire, situation

@@ -25,9 +25,13 @@ Traitements exécutés pendant le cycle d'une requête Express.
   un limiteur maison à fenêtre glissante (Map en mémoire, aucun paquet npm)
   paramétré par `scope`, `windowMs`, `max`, `identity` et `message`. Il pose
   l'en-tête `Retry-After`, renvoie `429` et met `req.rateLimit.reset()` à
-  disposition de la route pour vider le compteur après un succès. Les compteurs
-  vivent dans le processus : ils repartent de zéro au redémarrage et ne sont
-  pas partagés entre plusieurs instances.
+  disposition de la route pour vider le compteur après un succès. Il renseigne
+  aussi `req.rateLimit.remaining` : le nombre de tentatives encore acceptées dans
+  la fenêtre, réduit au plus petit des compteurs quand plusieurs limiteurs sont
+  enchaînés sur la même route (cas de `POST /api/acces-contribuable/:token/ouvrir`,
+  limité à la fois par lien + IP et par IP). Les compteurs vivent dans le
+  processus : ils repartent de zéro au redémarrage et ne sont pas partagés entre
+  plusieurs instances.
 - [`validation.middleware.js`](validation.middleware.js) : exporte `validate` et
   les listes de règles `express-validator` montées par les routeurs. `validate`
   renvoie `400` avec l'enveloppe

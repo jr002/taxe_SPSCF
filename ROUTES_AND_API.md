@@ -237,6 +237,13 @@ vérification réussie réinitialise les compteurs (`req.rateLimit.reset()`), do
 contribuable légitime n'est jamais bloqué ; le champ `nb_echecs` de
 `acces_contribuable` est en plus incrémenté à chaque couple NIF / e-mail erroné.
 
+Chaque passage dans le limiteur expose `req.rateLimit.remaining`, le plus petit des
+compteurs enchaînés pour la requête. Le `403` de `ouvrir` renvoie cette valeur sous
+`tentatives_restantes` : le formulaire du portail s'en sert pour avertir le
+contribuable à partir de trois tentatives restantes, puis lui signaler le blocage
+temporaire à zéro. Le `429` conserve son propre message (avec `retryAfterSeconds`),
+et le frontend ne double pas l'avertissement dans ce cas.
+
 Le cookie `fiscal_session` est `httpOnly`, `sameSite=lax`, `secure` lorsque
 `NODE_ENV=production`, et sa durée est de 8 heures, comme le jeton JWT
 (`expiresIn: '8h'`).
@@ -379,7 +386,7 @@ garde est le jeton de l'URL et la correspondance NIF / e-mail.
 | Méthode | Endpoint | Corps / paramètres | Codes |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/acces-contribuable/:token` | `token` = jeton brut (20 à 120 caractères `A-Za-z0-9_-`) | `200` — `{ valide, date_expiration, raison_sociale_masquee, centre }`, aucune donnée fiscale avant vérification ; `404` — message unique « Ce lien d'accès est invalide, expiré ou révoqué… » pour un lien inconnu, expiré ou révoqué ; `429` au-delà de 60 consultations par IP |
-| `POST` | `/api/acces-contribuable/:token/ouvrir` | `{ nif, email }` (tous deux obligatoires, 100 et 255 caractères maximum) | `200` — dossier complet du contribuable ; `400` — champ manquant ou trop long ; `403` — couple NIF / e-mail ne correspondant pas au dossier (`nb_echecs` incrémenté) ; `404` — lien invalide ; `429` au-delà de 8 tentatives par lien + IP ou 20 par IP. Une réponse `200` réinitialise les compteurs |
+| `POST` | `/api/acces-contribuable/:token/ouvrir` | `{ nif, email }` (tous deux obligatoires, 100 et 255 caractères maximum) | `200` — dossier complet du contribuable ; `400` — champ manquant ou trop long ; `403` — couple NIF / e-mail ne correspondant pas au dossier (`nb_echecs` incrémenté, `tentatives_restantes` renvoyé) ; `404` — lien invalide ; `429` au-delà de 8 tentatives par lien + IP ou 20 par IP. Une réponse `200` réinitialise les compteurs |
 
 Le dossier renvoyé (`data`) porte `contribuable` (identité, centre, `regime_fiscal`),
 `situation` (dernier `etat_contribuable`, défauts `Actif` / `En règle` si aucune

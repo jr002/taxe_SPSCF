@@ -57,7 +57,10 @@ Les douze fichiers de routes sont montés dans [`../app.js`](../app.js) sous
   contribuable, **monté avant `authenticate`** (`GET /:token` pour l'état du lien,
   `POST /:token/ouvrir` après confirmation NIF + e-mail). Aucun cookie agent
   n'est attendu ; trois limiteurs maison gardent la route : 60 consultations par
-  IP sur le statut, 8 tentatives par lien + IP et 20 par IP sur l'ouverture.
+  IP sur le statut, 8 tentatives par lien + IP et 20 par IP sur l'ouverture. Le
+  `403` de l'ouverture renvoie `tentatives_restantes` (voir
+  [`../middlewares/README.md`](../middlewares/README.md)), que le portail affiche
+  au contribuable.
 
 Toutes ces routes, sauf `/api/auth` et `/api/acces-contribuable`, sont protégées par `authenticate` puis par
 `enforceDataScope` (périmètre du rôle, voir
