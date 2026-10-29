@@ -1,4 +1,5 @@
 const prisma = require('../config/prisma');
+const { applyScope } = require('../utils/data-scope');
 
 /** Statuts acceptés pour un compte agent. */
 const AGENT_STATUTS = ['actif', 'en_attente', 'inactif'];
@@ -9,8 +10,10 @@ const AGENT_STATUTS = ['actif', 'en_attente', 'inactif'];
  * (tous les centres en consultation seule, aucune écriture métier), `chef_centre`,
  * `controleur` et `agent` (uniquement le centre de rattachement, avec la saisie),
  * `contribuable` (son propre dossier — non encore implémenté, donc aucun accès
- * API métier) et `autre` (aucun périmètre). Seul `admin` accède à la gestion des
- * utilisateurs (`requireAdmin`).
+ * API métier) et `autre` (aucun périmètre). La gestion des comptes reste
+ * administratrice, à deux exceptions près pour le `chef_centre` : il liste les
+ * comptes de son centre et peut les bloquer ou les activer
+ * (voir `src/routes/agent.routes.js`).
  */
 const AGENT_ROLES = [
   'admin',
@@ -61,8 +64,14 @@ const withCentreName = (rows) =>
   }));
 
 class AgentModel {
-  static async findAll({ search, statut, role } = {}) {
-    const where = {};
+  /**
+   * Liste des comptes. `scope` (voir `src/utils/data-scope.js`) borne la lecture :
+   * un rôle centré — le chef de centre qui consulte son équipe — ne voit que les
+   * comptes rattachés à son centre ; un périmètre `all` ne filtre rien. Sans
+   * `scope`, appel interne au serveur, la liste est nationale.
+   */
+  static async findAll({ search, statut, role, scope } = {}) {
+    const where = applyScope({}, scope);
 
     if (statut && AGENT_STATUTS.includes(statut)) where.statut = statut;
     if (role && AGENT_ROLES.includes(role)) where.role = role;

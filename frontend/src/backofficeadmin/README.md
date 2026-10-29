@@ -49,7 +49,7 @@ backofficeadmin/
 | [`auth/pages/MotDePasseOublie.jsx`](auth/pages/MotDePasseOublie.jsx) | `MotDePasseOublie({ isDarkMode, onToggleTheme })` | `/mot-de-passe-oublie` | **utilisé** |
 | [`dashboard/pages/AdminDashboard.jsx`](dashboard/pages/AdminDashboard.jsx) | `AdminDashboard({ currentUser })` | `/admin` | **utilisé** (administrateurs) |
 | [`dashboard/components/CamembertUtilisateurs.jsx`](dashboard/components/CamembertUtilisateurs.jsx) | `CamembertUtilisateurs({ stats, agents })` | sous-composant de `/admin` | **utilisé** |
-| [`utilisateurs/pages/AdminUtilisateurs.jsx`](utilisateurs/pages/AdminUtilisateurs.jsx) | `AdminUtilisateurs({ currentUser })` | `/admin/utilisateurs` | **utilisé** (administrateurs) |
+| [`utilisateurs/pages/AdminUtilisateurs.jsx`](utilisateurs/pages/AdminUtilisateurs.jsx) | `AdminUtilisateurs({ currentUser })` | `/admin/utilisateurs` | **utilisé** (administrateurs, et chefs de centre en mode restreint) |
 | [`roles/pages/AdminRoles.jsx`](roles/pages/AdminRoles.jsx) | `AdminRoles({ currentUser })` | `/admin/roles` | **utilisé** (administrateurs) |
 | [`utils/roles.utils.js`](utils/roles.utils.js) | — (`ROLES_AGENTS`, `roleDefinition`, `isCentreScoped`, `getRoleLabel`, `CENTRE_TEXTES`, `centreResume`) | — | **utilisé** (Utilisateurs, Rôles, camembert, profil de l'en-tête) |
 | [`verification-nif/pages/AdminVerificationNIF.jsx`](verification-nif/pages/AdminVerificationNIF.jsx) | `AdminVerificationNIF({ currentUser })` | `/admin/verification-nif` | **utilisé** (administrateurs) |
@@ -258,19 +258,26 @@ Saisies demandées :
 | Nom | `type="text"`, `maxLength={100}`, `autoComplete="family-name"` |
 | Prénom | `type="text"`, `maxLength={100}`, `autoComplete="given-name"` |
 | Adresse e-mail | `type="email"`, `maxLength={255}`, `autoComplete="email"` |
+| Centre de rattachement | `<select name="id_centre" required>` alimenté par `getCentresInscription()` (`GET /api/auth/centres`, public), options groupées par `type_centre` via `<optgroup>` ; désactivé tant que la liste charge ou si elle est vide |
 | Mot de passe | `type="password"`, `minLength={4}`, `autoComplete="new-password"` |
 | Confirmation | `type="password"`, `minLength={4}`, `name="password-confirmation"` |
+
+Un `useEffect` charge la liste des centres au montage ; en cas d'échec, le
+message de l'API s'affiche via `getErrorMessage`. Le centre des administrateurs
+(`SSIF`) n'est jamais proposé — le serveur l'exclut de l'annuaire public.
 
 Déroulement :
 
 1. `handleSubmit` empêche le rechargement de la page ;
 2. si `password !== confirmation`, un message local « Les mots de passe ne
    correspondent pas. » est affiché et aucun appel réseau n'est effectué ;
-3. sinon `api.post('/auth/register', { nom, prenom, email, password })` ;
+3. sinon `api.post('/auth/register', { nom, prenom, email, password, id_centre })` —
+   `id_centre` est converti en nombre, et le serveur refuse une demande sans
+   centre, avec un centre inconnu ou sur `SSIF` (`400`) ;
 4. en cas de succès, le composant **redirige** (`navigate(..., { replace: true })`)
    vers `/attente-activation` en passant l'état `{ origine: 'inscription', email,
-   nom, prenom }` : c'est cet écran qui affiche la confirmation, avec le bouton de
-   retour vers la connexion ;
+   nom, prenom, centre }` : c'est cet écran qui affiche la confirmation, avec le
+   bouton de retour vers la connexion ;
 5. en cas d'échec, `getErrorMessage` affiche le message de l'API (par exemple
    « Un compte utilise déjà cette adresse e-mail ») dans le formulaire.
 
@@ -293,10 +300,12 @@ donnée depuis l'URL : tout vient de `useLocation().state`.
   « Demande enregistrée », `connexion` → « Compte en attente d'activation » avec
   « La connexion restera refusée jusque-là. », aucune donnée (accès direct,
   rechargement brutal) → formulation neutre et **aucune fiche d'identité**.
-- Fiche `.attente-compte` (`<dl>`) : titulaire, adresse e-mail, état du compte —
+- Fiche `.attente-compte` (`<dl>`) : titulaire, adresse e-mail, centre de
+  rattachement (transmis par l'inscription uniquement), état du compte —
   uniquement les lignes réellement connues. Pastille `.badge.surveillance`
-  « En attente d'activation », puis les trois étapes jusqu'à la décision de
-  l'administrateur.
+  « En attente d'activation », puis les trois étapes : examen par un
+  administrateur ou le chef du centre choisi, activation avec le rôle de départ
+  (le centre peut être corrigé), connexion.
 - Bouton principal « ← Retour à la connexion » (`Link to="/"`), puis deux liens
   secondaires `.auth-link` : « Mot de passe oublié ? » vers `/mot-de-passe-oublie`
   et « Créer un autre compte » vers `/signup`.
@@ -322,14 +331,15 @@ aucun endpoint de statistiques n'existe côté serveur.
 ## `utilisateurs/pages/AdminUtilisateurs.jsx` — gestion des utilisateurs
 
 Page de gestion des comptes montée sur `/admin/utilisateurs`, **à l'intérieur du
-layout protégé**. C'est l'espace de l'administrateur : quand
+layout protégé**. C'est d'abord l'espace de l'administrateur : quand
 `currentUser.role === 'admin'`, le `Header` ne présente que les cinq entrées
 admin (`ADMIN_LINKS` : `/admin`, `/admin/utilisateurs`, `/admin/roles`,
 `/admin/verification-nif`, `/admin/historique`), et le logo renvoie vers
 `/admin` — les modules fiscaux ne sont donc pas proposés à un admin. La page
 affiche un lien « ← Retour au tableau de bord ». L'API répond `403` à tout autre
-rôle, et si un agent non administrateur ouvre l'URL directement, la page affiche
-un message « réservée aux administrateurs » au lieu de la liste.
+rôle, et si un agent ni admin ni chef de centre ouvre l'URL directement, la page
+affiche un message « réservée aux administrateurs et aux chefs de centre » au
+lieu de la liste. Le `chef_centre` y entre en **mode restreint** décrit plus bas.
 
 | Propriété | Description |
 | --- | --- |
@@ -337,7 +347,7 @@ un message « réservée aux administrateurs » au lieu de la liste.
 
 Fonctionnalités :
 
-- **Liste des comptes** (avatar d'initiales, nom, prénom, e-mail, rôle, statut, date de création) chargée avec `getAgents()` et `getCentres()` en parallèle (`Promise.allSettled`), **paginée à 10 lignes** ;
+- **Liste des comptes** (avatar d'initiales, nom, prénom, e-mail, rôle, statut, date de création) chargée avec `getAgents()` et — pour un administrateur seulement — `getCentres()` en parallèle (`Promise.allSettled`), **paginée à 10 lignes** ;
 - **onglets de filtre** par statut (Tous, En attente, Actifs, Bloqués) avec compteurs, plus une recherche libre sur le nom, le prénom, l'e-mail ou le rôle ;
 - **lignes colorées** selon le statut : vert `actif`, jaune `en_attente`, rouge `inactif` — affiché « Bloqué » (classes `row-conforme`, `row-surveillance`, `row-critique`) ;
 - **fiche de profil dépliable** : chaque ligne (`admin-row-clickable`, `tabIndex` +
@@ -406,6 +416,41 @@ création ; chacun change son propre mot de passe depuis le profil de l'en-tête
 Le serveur, lui, refuse de désactiver, de rétrograder ou de supprimer le dernier
 administrateur actif.
 
+### Mode restreint « Équipe du centre » (`chef_centre`)
+
+`estSeulementChefDeCentre` (`!isAdmin && role === 'chef_centre'`) déclenche un
+second rendu de la **même page**, sans nouvelle feuille de style : les classes
+`admin-row`, `agent-profile`, `categorie-tabs` et `ModaleConfirmation` restent les
+seules utilisées. Le mode restreint retire tout ce que l'API refuserait :
+
+- `AdminNav` n'est pas rendu — les quatre autres écrans du backoffice sont fermés
+  au chef de centre, et un lien mort dans une barre de navigation serait une
+  promesse fausse ; l'en-tête de page prend le relais avec l'œil « Mon centre »,
+  le titre « Équipe du centre — <nom du centre> » (`currentUser.nom_centre`,
+  renvoyé par `/api/auth/me`) et une description qui énonce la limite ;
+- la liste arrive déjà bornée côté serveur (`applyScope` sur `agents.id_centre`) :
+  `getAgents()` du chef de centre ne renvoie que son centre, donc la page n'a
+  aucun filtre « tous les comptes » à cacher ;
+- la colonne « Rôle / Titre » rend un libellé figé au lieu du `select`, et la fiche
+  déroule les cinq mêmes rubriques en **texte** (`dt`/`dd` sans `input` ni
+  `select`) : identité, rôle, centre, périmètre, date de création, identifiant ;
+- le pied de fiche brouillon (« N modification(s) non enregistrée(s) », « Reprendre
+  les valeurs enregistrées », `💾 Enregistrer`) disparaît — aucun brouillon ne peut
+  naître sans champ saisissable ;
+- `agent-profile-actions` ne garde que **Bloquer / Activer** ; « Mot de passe
+  temporaire » et « Supprimer » ne sont rendus que pour un admin. La modale de
+  confirmation, elle, est identique, y compris le libellé « Activation » pour un
+  compte `en_attente` que le chef de centre peut activer ;
+- les compteurs d'onglets (Tous / En attente / Actifs / Bloqués) portent sur la
+  seule équipe, donc le chef de centre voit le nombre de comptes qu'il peut
+  réellement traiter.
+
+Les refus du serveur restent visibles tels quels dans la modale : un pair
+`chef_centre`, un `inspecteur`, un `admin` ou un compte d'un autre centre
+répondent `403` avec leur message, et le chef de centre lit la raison sans que
+l'interface ait à la re-prédire. Le `Header` complète `NAVIGATION_LINKS` d'une
+seule entrée « Mon équipe » vers `/admin/utilisateurs` pour ce rôle.
+
 ## `roles/pages/AdminRoles.jsx` — rôles et périmètre par centre
 
 Page `/admin/roles`, réservée aux administrateurs comme les autres pages du
@@ -449,9 +494,13 @@ Centre fiscal d'affectation / Périmètre de consultation ».
   `AdminUtilisateurs` — le tableau est paginé à 10 lignes, la recherche couvre
   aussi le nom du centre et le filtre remet la page à `1`.
 
-> L'accès au back-office reste binaire : `requireAdmin = authorize('admin')`. Tout
-> autre rôle reçoit `403` sur `/api/agents/*`, ne voit que les modules métier dans
-> le `Header` et atterrit sur `/acceuil`. Le périmètre de consultation, lui, est
+> Le back-office est administrateur, à une exception près : `GET /api/agents` et
+> `PATCH /api/agents/:id/statut` acceptent aussi `chef_centre` (`authorize('admin',
+> 'chef_centre')` dans `backend/src/routes/agent.routes.js`), bornés à son centre et
+> à ses subordonnés (`controleur`, `agent`) — voir « Mode restreint » plus haut.
+> Les autres routes de `/api/agents/*` répondent `403` à tout autre rôle. Un agent
+> ordinaire ne voit que les modules métier dans le `Header` et atterrit sur
+> `/acceuil`. Le périmètre de consultation, lui, est
 > réellement appliqué côté serveur : `admin` et `inspecteur` voient tous les
 > centres — mais l'`inspecteur` en consultation seule, ses `POST`, `PUT`, `PATCH`
 > et `DELETE` sur les routes métier répondent `403` —, `chef_centre` /
@@ -593,25 +642,28 @@ Les écrans de connexion et d'inscription s'appuient sur les routes publiques de
 | `POST /api/auth/reset-request` | `email` | appelé par `/mot-de-passe-oublie` ; `400` si le format est invalide ; `429` au-delà de 10 envois par IP et par fenêtre ; `200` avec un message unique, que le compte existe ou non. Une ligne
 `RESET_REQUEST` est ajoutée au journal, signée « Écran de connexion »
 (`id_agent_auteur` reste `NULL`), uniquement quand l'adresse correspond à un compte |
-| `POST /api/auth/register` | `nom`, `prenom`, `email`, `password` | `400` si un champ manque ou si un format est invalide ; `409` si l'e-mail est déjà utilisé ; `429` au-delà de 10 envois par IP et par fenêtre ; `201` avec un message d'attente |
+| `GET /api/auth/centres` | — | annuaire public du formulaire d'inscription : `{ id_centre, nom_centre, type_centre }` triés par nom, sans le centre `SSIF` ; `200` |
+| `POST /api/auth/register` | `nom`, `prenom`, `email`, `password`, `id_centre` | `400` si un champ manque, si un format est invalide, si `id_centre` est absent/inconnu ou désigne `SSIF` ; `409` si l'e-mail est déjà utilisé ; `429` au-delà de 10 envois par IP et par fenêtre ; `201` avec un message d'attente |
 
 Contraintes appliquées côté serveur (miroir des attributs HTML) :
 
 - `nom` et `prenom` : non vides, 100 caractères maximum ;
 - `email` : 255 caractères maximum, format `xxx@yyy.zzz` ;
 - `password` : 4 caractères minimum **et** 72 octets maximum ;
+- `id_centre` : entier positif désignant un centre existant, `SSIF` exclu ;
 - l'e-mail est normalisé en minuscules par le serveur ;
 - le mot de passe est haché avec bcrypt (12 tours) ; le compte est créé avec
-  `role = "agent"` et `statut = "en_attente"`.
+  `role = "agent"`, `statut = "en_attente"` et `id_centre` du centre choisi.
 
 La page `/admin` consomme les routes protégées de
 [`../../../backend/src/routes/agent.routes.js`](../../../backend/src/routes/agent.routes.js),
-toutes réservées au rôle `admin` (middleware `requireAdmin`) :
+presque toutes réservées au rôle `admin` (`requireAdmin`) : seules `GET /api/agents`
+et `PATCH /api/agents/:id/statut` acceptent aussi `chef_centre`, bornées à son centre.
 
 | Méthode et appel | Corps | Effet |
 | --- | --- | --- |
-| `GET /api/agents` | — | Liste des comptes (sans le mot de passe), chaque ligne portant `id_centre` et `nom_centre` ; filtres facultatifs `search`, `statut`, `role` |
-| `PATCH /api/agents/:id/statut` | `{ statut }` (`actif`, `en_attente` ou `inactif`) | Active ou désactive le compte |
+| `GET /api/agents` | — | Liste des comptes (sans le mot de passe), chaque ligne portant `id_centre` et `nom_centre` ; filtres facultatifs `search`, `statut`, `role` ; un `chef_centre` ne reçoit que son centre |
+| `PATCH /api/agents/:id/statut` | `{ statut }` (`actif`, `en_attente` ou `inactif`) | Active ou désactive le compte ; un `chef_centre` ne peut viser qu'un `controleur`/`agent` de son centre et ne peut pas poser `en_attente` |
 | `PATCH /api/agents/:id/role` | `{ role }` parmi `admin`, `chef_centre`, `inspecteur`, `controleur`, `agent`, `contribuable`, `autre` (validé par `AGENT_ROLES`) | Change le rôle / titre |
 | `PATCH /api/agents/:id/centre` | `{ id_centre }` (identifiant du centre, `null` pour retirer) | Affecte le centre de rattachement qui borne le périmètre de consultation |
 | `PATCH /api/agents/:id/identite` | `{ nom, prenom, email }` (obligatoires, e-mail validé et unique) | Corrige l'identité de l'agent ; `409` si l'e-mail est déjà pris |
@@ -639,7 +691,8 @@ Deux effets immédiats à connaître quand on administre un compte :
   valables jusqu'à l'expiration du cookie (8 h) ; blocage ou suppression du
   compte, eux, coupent la session au coup suivant.
 
-Réponses : `403` pour un rôle non administrateur, `404` si le compte n'existe
+Réponses : `403` pour un rôle non autorisé (y compris un `chef_centre` hors de
+son centre ou visant un compte qui n'est pas sous son autorité), `404` si le compte n'existe
 pas, `400` en cas de valeur invalide ou d'action sur son propre compte ou sur le
 dernier administrateur actif.
 
@@ -648,9 +701,10 @@ dernier administrateur actif.
 - **Aucun jeton n'est stocké côté frontend** : la session repose sur le cookie
   `fiscal_session` posé par le backend et sur `withCredentials: true` de
   l'instance Axios. Les appels `/auth/*` passent par les fonctions de
-  [`../api/auth.js`](../api/auth.js) (`connexion`, `inscrireAgent`, `getMoi`,
-  `deconnexion`, `demanderReinitialisationMotDePasse`,
-  `changerSonMotDePasse`), importées depuis le barrel `@/api`.
+  [`../api/auth.js`](../api/auth.js) (`connexion`, `inscrireAgent`,
+  `getCentresInscription`, `getMoi`, `deconnexion`,
+  `demanderReinitialisationMotDePasse`, `changerSonMotDePasse`), importées
+  depuis le barrel `@/api`.
 - **Un compte fraîchement créé ne peut pas se connecter** : `register` pose le
   statut `en_attente`, alors que `login` refuse tout statut différent de
   `actif` en renvoyant le même message qu'un mot de passe erroné. L'activation

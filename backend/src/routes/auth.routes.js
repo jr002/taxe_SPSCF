@@ -5,7 +5,7 @@ const prisma = require('../config/prisma');
 const { authenticate, getJwtSecret } = require('../middlewares/auth.middleware');
 const { rateLimit } = require('../middlewares/rate-limit.middleware');
 const HistoriqueUtilisateurModel = require('../models/historique-utilisateur.model');
-const { AgentModel } = require('../models/agent.model');
+const { AgentModel, CENTRE_ADMINISTRATEURS } = require('../models/agent.model');
 
 const router = express.Router();
 const cookieOptions = {
@@ -55,6 +55,24 @@ const changePasswordLimit = rateLimit({
   identity: (req) => String(req.user?.id ?? ''),
   message: (seconds) =>
     `Trop de tentatives de changement de mot de passe. Réessayez dans ${formatMinutes(seconds)} minute(s).`,
+});
+
+/**
+ * Annuaire des centres proposé au formulaire d'inscription : la personne n'a pas
+ * encore de session, elle ne peut donc pas interroger `/api/centres`. Le centre
+ * des administrateurs (`SSIF`) est exclu — il n'accueille pas de demande d'agent.
+ */
+router.get('/centres', async (req, res, next) => {
+  try {
+    const centres = await prisma.centres.findMany({
+      where: { nom_centre: { not: CENTRE_ADMINISTRATEURS } },
+      select: { id_centre: true, nom_centre: true, type_centre: true },
+      orderBy: { nom_centre: 'asc' },
+    });
+    return res.json({ success: true, data: centres });
+  } catch (error) {
+    return next(error);
+  }
 });
 
 router.post('/login', loginByEmailLimit, loginByIpLimit, async (req, res, next) => {
@@ -154,6 +172,7 @@ router.post('/register', formByIpLimit, async (req, res, next) => {
     const prenom = typeof body.prenom === 'string' ? body.prenom.trim() : '';
     const email = typeof body.email === 'string' ? body.email.trim().toLowerCase() : '';
     const password = typeof body.password === 'string' ? body.password : '';
+    const idCentre = Number(body.id_centre);
 
     if (!nom || !prenom || !email || !password) {
       return res.status(400).json({ success: false, message: 'Tous les champs sont obligatoires' });
@@ -166,6 +185,23 @@ router.post('/register', formByIpLimit, async (req, res, next) => {
     }
     if (password.length < 4 || Buffer.byteLength(password, 'utf8') > 72) {
       return res.status(400).json({ success: false, message: 'Le mot de passe doit contenir au moins 4 caractères et au maximum 72 octets' });
+    }
+    if (!Number.isInteger(idCentre) || idCentre <= 0) {
+      return res.status(400).json({ success: false, message: 'Sélectionnez votre centre de rattachement' });
+    }
+
+    const centre = await prisma.centres.findUnique({
+      where: { id_centre: idCentre },
+      select: { id_centre: true, nom_centre: true },
+    });
+    if (!centre) {
+      return res.status(400).json({ success: false, message: 'Le centre de rattachement choisi est inconnu' });
+    }
+    if (centre.nom_centre === CENTRE_ADMINISTRATEURS) {
+      return res.status(400).json({
+        success: false,
+        message: `Le centre ${CENTRE_ADMINISTRATEURS} est réservé aux administrateurs`,
+      });
     }
 
     const existingAgent = await prisma.agents.findUnique({ where: { email } });
@@ -182,6 +218,7 @@ router.post('/register', formByIpLimit, async (req, res, next) => {
         mot_de_passe: hashedPassword,
         role: 'agent',
         statut: 'en_attente',
+        id_centre: centre.id_centre,
       },
     });
 

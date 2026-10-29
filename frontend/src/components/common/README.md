@@ -65,11 +65,15 @@ Export par défaut `Header`. En-tête rendu par `App.jsx` pour toutes les routes
   `.topbar`) ; il reste donc collé là même quand les liens passent sur deux
   lignes, et son panneau se déroule juste dessous. Sous 1024 px, la barre passant
   sur deux lignes, le profil est réaligné sur celle du logo (`top: 0.9rem`).
-* **Deux espaces étanches, choisis par le rôle** : `links = isAdmin ?
-  ADMIN_LINKS : NAVIGATION_LINKS`. Le backoffice (`ADMIN_LINKS`, cinq entrées)
+* **Deux espaces, trois jeux de liens selon le rôle** : `links = isAdmin ?
+  ADMIN_LINKS : isChefCentre ? [...NAVIGATION_LINKS, LIEN_EQUIPE_CENTRE] :
+  NAVIGATION_LINKS`. Le backoffice (`ADMIN_LINKS`, cinq entrées)
   ignore les modules fiscaux — un administrateur n'a pas accès aux dossiers
   fiscaux — et l'espace agent ignore la gestion des utilisateurs, des rôles et du
-  journal d'audit. Aucun second bloc, aucun lien de bascule : `FISCAL_MODULE_LINKS`
+  journal d'audit. Le `chef_centre` conserve les six entrées agentes et reçoit une
+  seule entrée de gestion, `LIEN_EQUIPE_CENTRE` (« Mon équipe », `/admin/utilisateurs`
+  en mode restreint) ; les quatre autres écrans admin ne lui sont pas présentés.
+  Aucun second bloc, aucun lien de bascule : `FISCAL_MODULE_LINKS`
   et le `<nav className="nav-modules">` introduits un temps ont été retirés, avec
   leurs règles `.topbar { flex-wrap: wrap }` / `.nav-modules-label` dans
   [`../../App.css`](../../App.css).
@@ -78,8 +82,11 @@ Export par défaut `Header`. En-tête rendu par `App.jsx` pour toutes les routes
   centres), et un agent qui tape `/admin` tombe sur le refus rendu par chaque
   page du backoffice (`if (!isAdmin)` dans
   `src/backofficeadmin/dashboard/pages/AdminDashboard.jsx`,
-  `utilisateurs/AdminUtilisateurs.jsx`, `roles/AdminRoles.jsx`,
+  `roles/AdminRoles.jsx`,
   `historique/AdminHistorique.jsx` et `verification-nif/AdminVerificationNIF.jsx`).
+  `utilisateurs/AdminUtilisateurs.jsx` est la seule exception : sa garde teste
+  `peutGererComptes` (`admin` **ou** `chef_centre`) et rend le mode restreint pour
+  ce second rôle.
   Verrouiller `/admin*` et l'espace fiscal par des gardes de route reste à faire
   si l'exigence doit être absolue.
 

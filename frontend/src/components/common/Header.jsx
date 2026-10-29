@@ -12,10 +12,17 @@ const NAVIGATION_LINKS = [
 ];
 
 /**
+ * Le chef de centre garde la navigation de l'espace agent et reçoit une seule
+ * entrée de gestion : l'équipe de son centre, écran partagé avec le backoffice
+ * en mode restreint. Les quatre autres écrans d'administration ne lui sont pas
+ * présentés — l'API le lui refuse.
+ */
+const LIEN_EQUIPE_CENTRE = { to: '/admin/utilisateurs', label: 'Mon équipe' };
+
+/**
  * Espace administrateur : la navigation du backoffice est bornée aux cinq écrans
  * d'administration. Elle ne propose aucun module fiscal — un administrateur n'a
- * pas accès aux dossiers fiscaux — et l'espace agent ne propose en retour aucun
- * lien de gestion des utilisateurs.
+ * pas accès aux dossiers fiscaux.
  */
 const ADMIN_LINKS = [
   { to: '/admin', label: 'Tableau de bord' },
@@ -49,10 +56,15 @@ export default function Header({
   onLogout,
   user = null,
   isAdmin = false,
+  isChefCentre = false,
 }) {
   const { pathname } = useLocation();
 
-  const links = isAdmin ? ADMIN_LINKS : NAVIGATION_LINKS;
+  const links = isAdmin
+    ? ADMIN_LINKS
+    : isChefCentre
+      ? [...NAVIGATION_LINKS, LIEN_EQUIPE_CENTRE]
+      : NAVIGATION_LINKS;
   const homePath = isAdmin ? ADMIN_LINKS[0].to : '/acceuil';
   const activePath = pickActivePath(pathname, links);
 

@@ -11,7 +11,11 @@
  */
 import * as XLSX from 'xlsx';
 
-import { SEUIL_GRAND, SEUIL_MOYEN } from '@/frontofficeagent/contribuables/utils/classificationCgi.utils.js';
+import {
+  SEUIL_GRAND,
+  SEUIL_MOYEN,
+  getCaReference,
+} from '@/frontofficeagent/contribuables/utils/classificationCgi.utils.js';
 import { toNumber } from '@/utils';
 import { formatDateRelance, relanceStatut, relanceType } from '@/frontofficeagent/relance/utils/relance.utils';
 
@@ -98,13 +102,33 @@ function buildDeclarationRows(declarations) {
 }
 
 /** Onglet Nature d’impôt : fiche réglementaire de la catégorie. */
-function buildClassificationRows(fiche) {
+function buildClassificationRows(fiche, reference) {
   if (!fiche) return [];
 
-  return [
+  const lignes = [
     { Rubrique: 'Catégorie', Valeur: fiche.label },
     { Rubrique: 'Seuil', Valeur: fiche.seuil },
-    { Rubrique: 'Nature d’impôt & comptable', Valeur: fiche.regime },
+  ];
+
+  if (reference?.annee) {
+    lignes.push({
+      Rubrique: 'Chiffre d’affaires retenu',
+      Valeur: `${toNumber(reference.ca)} Ar (exercice ${reference.annee})`,
+    });
+  } else {
+    lignes.push({
+      Rubrique: 'Chiffre d’affaires retenu',
+      Valeur: 'aucune déclaration : fiche du petit contribuable par défaut',
+    });
+  }
+
+  lignes.push(
+    { Rubrique: 'Impôt principal', Valeur: fiche.impots },
+    { Rubrique: 'Régime', Valeur: fiche.regimeDetaille },
+    { Rubrique: 'TVA', Valeur: fiche.tva },
+    { Rubrique: 'Comptabilité', Valeur: fiche.comptabilite },
+    { Rubrique: 'Conservation des pièces', Valeur: fiche.conservation },
+    { Rubrique: 'En pratique', Valeur: fiche.enPratique },
     {
       Rubrique: 'Pénalités de retard de paiement',
       Valeur: (fiche.penaliteRetard || []).join(' ; '),
@@ -121,7 +145,9 @@ function buildClassificationRows(fiche) {
         .join(' ; '),
     },
     { Rubrique: 'Référence légale', Valeur: fiche.refArticle },
-  ];
+  );
+
+  return lignes;
 }
 
 /** Onglet Relances : relances enregistrées en base pour ce contribuable. */
@@ -142,7 +168,7 @@ function buildRows(activeTab, data) {
     case 'relances':
       return buildRelanceRows(data.relances);
     case 'classification':
-      return buildClassificationRows(data.fiche);
+      return buildClassificationRows(data.fiche, getCaReference(data.declarations));
     default:
       return buildOverviewRows(data.annualData, data.declarations);
   }

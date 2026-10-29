@@ -71,8 +71,9 @@ button, input, textarea { font: inherit; }
 .login-form h2 { margin: 0; color: #172033; font-family: Georgia, 'Times New Roman', serif; font-size: 2rem; font-weight: 500; }
 .login-intro { margin: .6rem 0 2rem; color: #657083; font-size: .88rem; line-height: 1.6; }
 .login-field { display: grid; gap: .45rem; margin-top: 1.1rem; color: #344054; font-size: .8rem; font-weight: 700; }
-.login-field input { width: 100%; min-height: 3rem; border: 1px solid #cbd5e1; border-radius: 7px; padding: .7rem .8rem; color: #172033; background: #fff; outline: none; }
-.login-field input:focus { border-color: #138b79; box-shadow: 0 0 0 3px rgba(19,139,121,.14); }
+.login-field input, .login-field select { width: 100%; min-height: 3rem; border: 1px solid #cbd5e1; border-radius: 7px; padding: .7rem .8rem; color: #172033; background: #fff; outline: none; }
+.login-field input:focus, .login-field select:focus { border-color: #138b79; box-shadow: 0 0 0 3px rgba(19,139,121,.14); }
+.login-field select:disabled { opacity: .7; cursor: wait; }
 .login-submit { width: 100%; min-height: 3rem; margin-top: 1.5rem; border: 0; border-radius: 7px; color: #fff; background: #138b79; font-weight: 800; cursor: pointer; }
 .login-submit:hover:not(:disabled) { background: #0e6f61; }
 .login-submit:disabled { cursor: wait; opacity: .7; }
@@ -394,9 +395,9 @@ button, input, textarea { font: inherit; }
 .dark-theme .login-form h2 { color: #f8fafc; }
 .dark-theme .login-intro, .dark-theme .login-security-note, .dark-theme .login-reset-note { color: #9caabd; }
 .dark-theme .login-field { color: #d1d5db; }
-.dark-theme .login-field input { color: #f8fafc; border-color: #405169; background: #111827; }
+.dark-theme .login-field input, .dark-theme .login-field select { color: #f8fafc; border-color: #405169; background: #111827; }
 .dark-theme .login-field input::placeholder { color: #718096; }
-.dark-theme .login-field input:focus { border-color: #7dd3fc; box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.16); }
+.dark-theme .login-field input:focus, .dark-theme .login-field select:focus { border-color: #7dd3fc; box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.16); }
 .dark-theme .login-password-toggle { color: #9caabd; }
 .dark-theme .login-password-toggle:hover { color: #7dd3fc; background: #203b55; }
 .dark-theme .login-forgot { color: #7dd3fc; }
@@ -1287,7 +1288,19 @@ body:has(.dark-theme) { background: #111827; }
   font-size: 0.84rem;
   line-height: 1.8;
 }
-
+/* Les valeurs de la fiche sont des phrases, pas des montants : on garde le
+   cartouche de la synthèse mais avec une typographie lisible. */
+.classification-panel .declaration-summary {
+  margin-bottom: 0.75rem;
+}
+.classification-panel .declaration-summary strong {
+  font-size: 0.92rem;
+  line-height: 1.55;
+}
+.classification-panel .declaration-summary + p {
+  color: #475467;
+  font-style: italic;
+}
 /* ---- Cartes d'amendes ---- */
 .amendes-grid {
   display: grid;

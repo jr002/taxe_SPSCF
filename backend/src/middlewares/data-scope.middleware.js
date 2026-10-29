@@ -8,8 +8,10 @@ const {
 
 /**
  * Préfixes qui servent des dossiers fiscaux. `/api/agents` et `/api/auth` en
- * sont absents : la gestion des comptes est déjà protégée par `requireAdmin`
- * et l'écran de connexion doit rester accessible.
+ * sont absents : ce ne sont pas des dossiers fiscaux. La gestion des comptes est
+ * bornée route par route (`authorize` dans `../routes/agent.routes.js`) — les
+ * comptes d'un centre sont tout de même filtrés par `req.dataScope` appliqué
+ * dans le contrôleur — et l'écran de connexion doit rester accessible.
  */
 const BUSINESS_PREFIXES = [
   '/api/contribuables',

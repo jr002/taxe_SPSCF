@@ -74,7 +74,7 @@ recherche ne doit pas empiler vingt entrées dans l'historique du navigateur.
 
 | Module | Contenu |
 | --- | --- |
-| [`../frontofficeagent/contribuables/utils/classificationCgi.utils.js`](../frontofficeagent/contribuables/utils/classificationCgi.utils.js) | seuils et fiches de catégorie du CGI malgache (`SEUIL_GRAND`, `SEUIL_MOYEN`, `getCategorie`, `getFicheCategorie`) |
+| [`../frontofficeagent/contribuables/utils/classificationCgi.utils.js`](../frontofficeagent/contribuables/utils/classificationCgi.utils.js) | seuils et fiches de catégorie du CGI malgache (`SEUIL_GRAND`, `SEUIL_MOYEN`, `SEUIL_SMT`, `getCaReference`, `getCategorieFromCa`, `getCategorie`, `getFicheCategorie`) |
 | [`../frontofficeagent/contribuables/utils/statistiques.utils.js`](../frontofficeagent/contribuables/utils/statistiques.utils.js) | agrégats VSP/CSP de l'onglet Statistique du registre |
 | [`../frontofficeagent/contribuables/utils/exportFicheContribuable.js`](../frontofficeagent/contribuables/utils/exportFicheContribuable.js) | classeur Excel de la fiche contribuable |
 | [`../frontofficeagent/decisionnel/utils/decisionnel.utils.js`](../frontofficeagent/decisionnel/utils/decisionnel.utils.js) | `getRegime`, `buildYears`, `buildCurves`, `getRegimePercentage` |

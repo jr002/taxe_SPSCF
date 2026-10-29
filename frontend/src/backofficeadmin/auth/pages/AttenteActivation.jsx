@@ -16,6 +16,7 @@ export default function AttenteActivation() {
   const estConnexionRefusee = state?.origine === 'connexion';
   const email = String(state?.email || '').trim();
   const titulaire = [state?.prenom, state?.nom].filter(Boolean).join(' ');
+  const centre = String(state?.centre || '').trim();
 
   return (
     <div className="login-page">
@@ -60,6 +61,12 @@ export default function AttenteActivation() {
                   <dd>{email}</dd>
                 </div>
               )}
+              {centre && (
+                <div>
+                  <dt>Centre de rattachement</dt>
+                  <dd>{centre}</dd>
+                </div>
+              )}
               <div>
                 <dt>État du compte</dt>
                 <dd>Non activé — accès à la plateforme fermé</dd>
@@ -68,8 +75,8 @@ export default function AttenteActivation() {
           )}
 
           <ol className="attente-etapes">
-            <li>Un administrateur examine la demande depuis « Gestion Utilisateurs ».</li>
-            <li>Le compte passe en statut « Actif », avec son rôle et son centre de rattachement.</li>
+            <li>Un administrateur ou le chef du centre choisi examine la demande depuis « Gestion Utilisateurs ».</li>
+            <li>Le compte passe en statut « Actif » avec son rôle de départ ; le centre peut être corrigé à cette étape.</li>
             <li>Vous pouvez alors vous connecter avec vos identifiants.</li>
           </ol>
 

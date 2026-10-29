@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getErrorMessage, inscrireAgent } from '@/api';
+import { getCentresInscription, getErrorMessage, inscrireAgent } from '@/api';
 import logoDgi from '@/assets/logodgi.jpg';
 
 export default function Signup() {
@@ -8,10 +8,39 @@ export default function Signup() {
     const [nom, setNom] = useState('');
     const [prenom, setPrenom] = useState('');
     const [email, setEmail] = useState('');
+    const [centres, setCentres] = useState([]);
+    const [chargementCentres, setChargementCentres] = useState(true);
+    const [idCentre, setIdCentre] = useState('');
     const [password, setPassword] = useState('');
     const [confirmation, setConfirmation] = useState('');
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        let monte = true;
+        getCentresInscription()
+            .then((liste) => {
+                if (monte) setCentres(Array.isArray(liste) ? liste : []);
+            })
+            .catch((chargementError) => {
+                if (monte) setError(getErrorMessage(chargementError));
+            })
+            .finally(() => {
+                if (monte) setChargementCentres(false);
+            });
+        return () => {
+            monte = false;
+        };
+    }, []);
+
+    // 107 centres : le regroupement par type garde la liste lisible une fois le
+    // menu déroulant ouvert.
+    const groupesCentres = centres.reduce((groupes, centre) => {
+        const groupe = groupes.find((entree) => entree.type === centre.type_centre);
+        if (groupe) groupe.centres.push(centre);
+        else groupes.push({ type: centre.type_centre, centres: [centre] });
+        return groupes;
+    }, []);
 
     const handleSubmit = async (event) => {
         event.preventDefault();
@@ -24,12 +53,19 @@ export default function Signup() {
 
         setIsSubmitting(true);
         try {
-            await inscrireAgent({ nom, prenom, email, password });
+            await inscrireAgent({ nom, prenom, email, password, id_centre: Number(idCentre) });
+            const centreChoisi = centres.find((centre) => String(centre.id_centre) === idCentre);
             // L'écran dédié tient lieu de confirmation : la demande y est
             // récapitulée avec le bouton de retour vers la connexion.
             navigate('/attente-activation', {
                 replace: true,
-                state: { origine: 'inscription', email: email.trim(), nom: nom.trim(), prenom: prenom.trim() },
+                state: {
+                    origine: 'inscription',
+                    email: email.trim(),
+                    nom: nom.trim(),
+                    prenom: prenom.trim(),
+                    centre: centreChoisi?.nom_centre ?? '',
+                },
             });
         } catch (registrationError) {
             setError(getErrorMessage(registrationError));
@@ -89,6 +125,33 @@ export default function Signup() {
                             onChange={(event) => setEmail(event.target.value)}
                             required
                         />
+                    </label>
+                    <label className="login-field">
+                        Centre de rattachement
+                        <select
+                            name="id_centre"
+                            value={idCentre}
+                            onChange={(event) => setIdCentre(event.target.value)}
+                            disabled={chargementCentres || centres.length === 0}
+                            required
+                        >
+                            <option value="">
+                                {chargementCentres
+                                    ? 'Chargement des centres…'
+                                    : centres.length === 0
+                                        ? 'Aucun centre disponible'
+                                        : 'Choisir un centre…'}
+                            </option>
+                            {groupesCentres.map((groupe) => (
+                                <optgroup key={groupe.type} label={groupe.type}>
+                                    {groupe.centres.map((centre) => (
+                                        <option key={centre.id_centre} value={centre.id_centre}>
+                                            {centre.nom_centre}
+                                        </option>
+                                    ))}
+                                </optgroup>
+                            ))}
+                        </select>
                     </label>
                     <label className="login-field">
                         Mot de passe (4 caractères minimum)

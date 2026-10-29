@@ -53,7 +53,7 @@ const getStatut = (statut) =>
 const formatDate = (value) => (value ? new Date(value).toLocaleDateString('fr-FR') : '—');
 
 /**
- * Page d'administration des comptes agents (`/admin`).
+ * Page de gestion des comptes agents (`/admin/utilisateurs`).
  *
  * La fiche d'un compte est un **brouillon** : nom, prénom, e-mail, rôle et centre
  * se modifient localement, aucune requête n'est envoyée avant le clic sur
@@ -63,17 +63,30 @@ const formatDate = (value) => (value ? new Date(value).toLocaleDateString('fr-FR
  * passent par la même boîte de dialogue, donc aucune action irréversible ne peut
  * être déclenchée par un simple clic.
  *
- * L'accès reste réservé aux administrateurs : le `Header` ne leur présente que ce
- * module et l'API répond `403` à tout autre rôle.
+ * Deux modes selon le rôle connecté :
+ * - `admin` : tous les comptes, tous les droits ;
+ * - `chef_centre` : **mode restreint** — les comptes du centre de rattachement
+ *   uniquement (le serveur borne la liste), la fiche en lecture seule et une
+ *   seule action possible, bloquer ou activer un subordonné. Pas de navigation
+ *   d'administration, puisque les quatre autres écrans lui sont fermés.
+ *
+ * Les API répondent `403` à tout autre rôle, et le `Header` ne présente cette
+ * écran qu'aux administrateurs et aux chefs de centre.
  */
 export default function AdminUtilisateurs({ currentUser }) {
   const location = useLocation();
   const isAdmin = currentUser?.role === 'admin';
+  const peutGererComptes = isAdmin || currentUser?.role === 'chef_centre';
   const currentUserId = currentUser?.id;
+  /**
+   * Un chef de centre consulte l'écran sans pouvoir éditer une fiche : le serveur
+   * ne lui laisse que le statut des comptes de son centre.
+   */
+  const estSeulementChefDeCentre = !isAdmin && currentUser?.role === 'chef_centre';
 
   const [agents, setAgents] = useState([]);
   const [centres, setCentres] = useState([]);
-  const [loading, setLoading] = useState(Boolean(isAdmin));
+  const [loading, setLoading] = useState(Boolean(peutGererComptes));
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busyId, setBusyId] = useState(null);
@@ -87,15 +100,17 @@ export default function AdminUtilisateurs({ currentUser }) {
   const [motDePasseVisible, setMotDePasseVisible] = useState(false);
 
   useEffect(() => {
-    if (!isAdmin) return undefined;
+    if (!peutGererComptes) return undefined;
 
     let isMounted = true;
 
     const load = async () => {
-      const [agentsResult, centresResult] = await Promise.allSettled([
-        getAgents(),
-        getCentres(),
-      ]);
+      // La liste des centres ne sert qu'à l'affectation du centre de
+      // rattachement, réservée aux administrateurs.
+      const demandes = [getAgents()];
+      if (isAdmin) demandes.push(getCentres());
+
+      const [agentsResult, centresResult] = await Promise.allSettled(demandes);
 
       if (!isMounted) return;
 
@@ -104,7 +119,7 @@ export default function AdminUtilisateurs({ currentUser }) {
       } else {
         setError(getErrorMessage(agentsResult.reason));
       }
-      if (centresResult.status === 'fulfilled') {
+      if (centresResult?.status === 'fulfilled') {
         setCentres(Array.isArray(centresResult.value) ? centresResult.value : []);
       }
       setLoading(false);
@@ -115,7 +130,7 @@ export default function AdminUtilisateurs({ currentUser }) {
     return () => {
       isMounted = false;
     };
-  }, [isAdmin]);
+  }, [isAdmin, peutGererComptes]);
 
   const reloadAgents = async () => {
     const result = await getAgents();
@@ -436,7 +451,7 @@ export default function AdminUtilisateurs({ currentUser }) {
     card.scrollIntoView({ block: 'nearest' });
   }, [success]);
 
-  if (!isAdmin) {
+  if (!peutGererComptes) {
     return (
       <section className="page">
         <div className="page-heading">
@@ -444,8 +459,8 @@ export default function AdminUtilisateurs({ currentUser }) {
           <h1>Utilisateurs</h1>
         </div>
         <p className="error">
-          Cette page est réservée aux administrateurs. Connectez-vous avec un compte
-          administrateur pour gérer les utilisateurs.
+          Cette page est réservée aux administrateurs et aux chefs de centre.
+          Connectez-vous avec l'un de ces comptes pour gérer les utilisateurs.
         </p>
       </section>
     );
@@ -563,17 +578,19 @@ export default function AdminUtilisateurs({ currentUser }) {
 
   const configModale = proprietesModale();
 
+  const nomCentreCourant = currentUser?.nom_centre;
+
   return (
     <section className="page">
-      <AdminNav />
+      {isAdmin && <AdminNav />}
 
       <div className="page-heading">
-        <p className="eyebrow">Backoffice Administration</p>
-        <h1>Gestion des Utilisateurs</h1>
+        <p className="eyebrow">{isAdmin ? 'Backoffice Administration' : 'Mon centre'}</p>
+        <h1>{isAdmin ? 'Gestion des Utilisateurs' : `Équipe du centre${nomCentreCourant ? ` — ${nomCentreCourant}` : ''}`}</h1>
         <p>
-          Modifiez une fiche puis appuyez sur « Enregistrer » : chaque changement,
-          blocage, suppression et mot de passe temporaire demande une validation dans une
-          fenêtre de confirmation. Rien n'est écrit avant ce clic.
+          {isAdmin
+            ? 'Modifiez une fiche puis appuyez sur « Enregistrer » : chaque changement, blocage, suppression et mot de passe temporaire demande une validation dans une fenêtre de confirmation. Rien n\'est écrit avant ce clic.'
+            : 'Les comptes rattachés à votre centre, consultables dans le détail mais sans modification possible : seul le bouton « Bloquer » ou « Activer » change un statut, après confirmation. Rôle, centre de rattachement, identité, mot de passe et suppression restent du ressort d\'un administrateur.'}
         </p>
       </div>
 
@@ -676,23 +693,27 @@ export default function AdminUtilisateurs({ currentUser }) {
                         </div>
                       </td>
                       <td>
-                        <select
-                          className="admin-role-select"
-                          value={brouillon.role}
-                          disabled={busy || self}
-                          title={
-                            self
-                              ? 'Vous ne pouvez pas modifier votre propre rôle.'
-                              : 'Changer le rôle, puis « Enregistrer » dans la fiche'
-                          }
-                          onChange={(event) => ecrireBrouillon(agent, 'role', event.target.value)}
-                        >
-                          {ROLES_AGENTS.map((role) => (
-                            <option key={role.role} value={role.role}>
-                              {role.label}
-                            </option>
-                          ))}
-                        </select>
+                        {estSeulementChefDeCentre ? (
+                          <span className="agent-profile-note">{getRoleLabel(agent.role)}</span>
+                        ) : (
+                          <select
+                            className="admin-role-select"
+                            value={brouillon.role}
+                            disabled={busy || self}
+                            title={
+                              self
+                                ? 'Vous ne pouvez pas modifier votre propre rôle.'
+                                : 'Changer le rôle, puis « Enregistrer » dans la fiche'
+                            }
+                            onChange={(event) => ecrireBrouillon(agent, 'role', event.target.value)}
+                          >
+                            {ROLES_AGENTS.map((role) => (
+                              <option key={role.role} value={role.role}>
+                                {role.label}
+                              </option>
+                            ))}
+                          </select>
+                        )}
                       </td>
                       <td>
                         <span className={`badge ${statut.badge}`}>{statut.label}</span>
@@ -752,102 +773,134 @@ export default function AdminUtilisateurs({ currentUser }) {
                             </div>
 
                             <dl className="agent-profile-champs">
-                              <div>
-                                <dt>Nom</dt>
-                                <dd>
-                                  <input
-                                    type="text"
-                                    value={brouillon.nom}
-                                    maxLength={100}
-                                    disabled={busy}
-                                    onChange={(event) => ecrireBrouillon(agent, 'nom', event.target.value)}
-                                  />
-                                </dd>
-                              </div>
-                              <div>
-                                <dt>Prénom</dt>
-                                <dd>
-                                  <input
-                                    type="text"
-                                    value={brouillon.prenom}
-                                    maxLength={100}
-                                    disabled={busy}
-                                    onChange={(event) =>
-                                      ecrireBrouillon(agent, 'prenom', event.target.value)
-                                    }
-                                  />
-                                </dd>
-                              </div>
-                              <div>
-                                <dt>Adresse e-mail</dt>
-                                <dd>
-                                  <input
-                                    type="email"
-                                    value={brouillon.email}
-                                    maxLength={255}
-                                    disabled={busy}
-                                    onChange={(event) =>
-                                      ecrireBrouillon(agent, 'email', event.target.value)
-                                    }
-                                  />
-                                </dd>
-                              </div>
-                              <div>
-                                <dt>Rôle / titre</dt>
-                                <dd>
-                                  <select
-                                    className="admin-role-select"
-                                    value={brouillon.role}
-                                    disabled={busy || self}
-                                    title={
-                                      self
-                                        ? 'Vous ne pouvez pas modifier votre propre rôle.'
-                                        : 'Changer le rôle de cet utilisateur'
-                                    }
-                                    onChange={(event) => ecrireBrouillon(agent, 'role', event.target.value)}
-                                  >
-                                    {ROLES_AGENTS.map((role) => (
-                                      <option key={role.role} value={role.role}>
-                                        {role.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </dd>
-                              </div>
-                              <div>
-                                <dt>Centre de rattachement</dt>
-                                <dd>
-                                  {isCentreScoped(brouillon.role) ? (
-                                    <select
-                                      className="admin-role-select"
-                                      value={brouillon.id_centre ?? ''}
-                                      disabled={busy}
-                                      title={`${centres.length} centres disponibles`}
-                                      onChange={(event) =>
-                                        ecrireBrouillon(
-                                          agent,
-                                          'id_centre',
-                                          event.target.value === '' ? null : Number(event.target.value),
-                                        )
-                                      }
-                                    >
-                                      <option value="">Aucun centre (accès fermé)</option>
-                                      {centres.map((centre) => (
-                                        <option key={centre.id_centre} value={centre.id_centre}>
-                                          {centre.nom_centre}
-                                        </option>
-                                      ))}
-                                    </select>
-                                  ) : (
-                                    <span
-                                      className="agent-profile-note"
-                                      style={{ color: horsCentre?.couleur }}
-                                    >
-                                      {horsCentre?.icon} {horsCentre?.texte}
-                                    </span>
-                                  )}
-                                </dd>
-                              </div>
+                              {estSeulementChefDeCentre && (
+                                <>
+                                  <div>
+                                    <dt>Nom</dt>
+                                    <dd>{agent.nom || '—'}</dd>
+                                  </div>
+                                  <div>
+                                    <dt>Prénom</dt>
+                                    <dd>{agent.prenom || '—'}</dd>
+                                  </div>
+                                  <div>
+                                    <dt>Adresse e-mail</dt>
+                                    <dd>{agent.email}</dd>
+                                  </div>
+                                  <div>
+                                    <dt>Rôle / titre</dt>
+                                    <dd>{getRoleLabel(agent.role)}</dd>
+                                  </div>
+                                  <div>
+                                    <dt>Centre de rattachement</dt>
+                                    <dd>
+                                      {isCentreScoped(agent.role)
+                                        ? (agent.nom_centre ?? 'Aucun centre')
+                                        : `${horsCentre?.icon ?? ''} ${horsCentre?.texte ?? ''}`}
+                                    </dd>
+                                  </div>
+                                </>
+                              )}
+                              {!estSeulementChefDeCentre && (
+                                <>
+                                  <div>
+                                    <dt>Nom</dt>
+                                    <dd>
+                                      <input
+                                        type="text"
+                                        value={brouillon.nom}
+                                        maxLength={100}
+                                        disabled={busy}
+                                        onChange={(event) => ecrireBrouillon(agent, 'nom', event.target.value)}
+                                      />
+                                    </dd>
+                                  </div>
+                                  <div>
+                                    <dt>Prénom</dt>
+                                    <dd>
+                                      <input
+                                        type="text"
+                                        value={brouillon.prenom}
+                                        maxLength={100}
+                                        disabled={busy}
+                                        onChange={(event) =>
+                                          ecrireBrouillon(agent, 'prenom', event.target.value)
+                                        }
+                                      />
+                                    </dd>
+                                  </div>
+                                  <div>
+                                    <dt>Adresse e-mail</dt>
+                                    <dd>
+                                      <input
+                                        type="email"
+                                        value={brouillon.email}
+                                        maxLength={255}
+                                        disabled={busy}
+                                        onChange={(event) =>
+                                          ecrireBrouillon(agent, 'email', event.target.value)
+                                        }
+                                      />
+                                    </dd>
+                                  </div>
+                                  <div>
+                                    <dt>Rôle / titre</dt>
+                                    <dd>
+                                      <select
+                                        className="admin-role-select"
+                                        value={brouillon.role}
+                                        disabled={busy || self}
+                                        title={
+                                          self
+                                            ? 'Vous ne pouvez pas modifier votre propre rôle.'
+                                            : 'Changer le rôle de cet utilisateur'
+                                        }
+                                        onChange={(event) => ecrireBrouillon(agent, 'role', event.target.value)}
+                                      >
+                                        {ROLES_AGENTS.map((role) => (
+                                          <option key={role.role} value={role.role}>
+                                            {role.label}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </dd>
+                                  </div>
+                                  <div>
+                                    <dt>Centre de rattachement</dt>
+                                    <dd>
+                                      {isCentreScoped(brouillon.role) ? (
+                                        <select
+                                          className="admin-role-select"
+                                          value={brouillon.id_centre ?? ''}
+                                          disabled={busy}
+                                          title={`${centres.length} centres disponibles`}
+                                          onChange={(event) =>
+                                            ecrireBrouillon(
+                                              agent,
+                                              'id_centre',
+                                              event.target.value === '' ? null : Number(event.target.value),
+                                            )
+                                          }
+                                        >
+                                          <option value="">Aucun centre (accès fermé)</option>
+                                          {centres.map((centre) => (
+                                            <option key={centre.id_centre} value={centre.id_centre}>
+                                              {centre.nom_centre}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <span
+                                          className="agent-profile-note"
+                                          style={{ color: horsCentre?.couleur }}
+                                        >
+                                          {horsCentre?.icon} {horsCentre?.texte}
+                                        </span>
+                                      )}
+                                    </dd>
+                                  </div>
+                                </>
+                              )}
                               <div>
                                 <dt>Périmètre de consultation</dt>
                                 <dd>{def.droits}</dd>
@@ -864,37 +917,39 @@ export default function AdminUtilisateurs({ currentUser }) {
 
                             <p className="agent-profile-description">{def.description}</p>
 
-                            <div className="agent-profile-pied">
-                              <p className="agent-profile-brouillon">
-                                {enAttente
-                                  ? `${modifications.length} modification(s) non enregistrée(s)`
-                                  : 'Aucune modification en attente'}
-                              </p>
-                              <div className="agent-profile-boutons">
-                                {enAttente && (
+                            {!estSeulementChefDeCentre && (
+                              <div className="agent-profile-pied">
+                                <p className="agent-profile-brouillon">
+                                  {enAttente
+                                    ? `${modifications.length} modification(s) non enregistrée(s)`
+                                    : 'Aucune modification en attente'}
+                                </p>
+                                <div className="agent-profile-boutons">
+                                  {enAttente && (
+                                    <button
+                                      type="button"
+                                      className="modale-confirmation-annuler"
+                                      onClick={() => reinitialiserBrouillon(agent)}
+                                    >
+                                      Reprendre les valeurs enregistrées
+                                    </button>
+                                  )}
                                   <button
                                     type="button"
-                                    className="modale-confirmation-annuler"
-                                    onClick={() => reinitialiserBrouillon(agent)}
+                                    className="primary"
+                                    disabled={!enAttente || busy}
+                                    title={
+                                      enAttente
+                                        ? 'Appliquer les modifications après confirmation'
+                                        : 'Modifiez un champ pour activer ce bouton'
+                                    }
+                                    onClick={() => demanderEnregistrement(agent)}
                                   >
-                                    Reprendre les valeurs enregistrées
+                                    {busy ? 'Enregistrement...' : '💾 Enregistrer'}
                                   </button>
-                                )}
-                                <button
-                                  type="button"
-                                  className="primary"
-                                  disabled={!enAttente || busy}
-                                  title={
-                                    enAttente
-                                      ? 'Appliquer les modifications après confirmation'
-                                      : 'Modifiez un champ pour activer ce bouton'
-                                  }
-                                  onClick={() => demanderEnregistrement(agent)}
-                                >
-                                  {busy ? 'Enregistrement...' : '💾 Enregistrer'}
-                                </button>
+                                </div>
                               </div>
-                            </div>
+                            )}
 
                             <div className="agent-profile-actions">
                               <button
@@ -912,28 +967,32 @@ export default function AdminUtilisateurs({ currentUser }) {
                               >
                                 {agent.statut === 'actif' ? '🚫 Bloquer' : '✓ Activer'}
                               </button>
-                              <button
-                                type="button"
-                                className={BLUE_BUTTON}
-                                disabled={busy}
-                                title="Définir un mot de passe temporaire pour cet utilisateur"
-                                onClick={() => demanderMotDePasse(agent)}
-                              >
-                                🔑 Mot de passe temporaire
-                              </button>
-                              <button
-                                type="button"
-                                className={RED_BUTTON}
-                                disabled={busy || self}
-                                title={
-                                  self
-                                    ? 'Vous ne pouvez pas supprimer votre propre compte.'
-                                    : 'Supprimer définitivement ce compte'
-                                }
-                                onClick={() => demanderSuppression(agent)}
-                              >
-                                🗑 Supprimer
-                              </button>
+                              {isAdmin && (
+                                <>
+                                  <button
+                                    type="button"
+                                    className={BLUE_BUTTON}
+                                    disabled={busy}
+                                    title="Définir un mot de passe temporaire pour cet utilisateur"
+                                    onClick={() => demanderMotDePasse(agent)}
+                                  >
+                                    🔑 Mot de passe temporaire
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className={RED_BUTTON}
+                                    disabled={busy || self}
+                                    title={
+                                      self
+                                        ? 'Vous ne pouvez pas supprimer votre propre compte.'
+                                        : 'Supprimer définitivement ce compte'
+                                    }
+                                    onClick={() => demanderSuppression(agent)}
+                                  >
+                                    🗑 Supprimer
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         </td>

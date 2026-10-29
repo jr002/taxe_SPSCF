@@ -167,6 +167,7 @@ export default function App() {
                   onLogout={handleLogout}
                   user={currentUser}
                   isAdmin={currentUser?.role === 'admin'}
+                  isChefCentre={currentUser?.role === 'chef_centre'}
                 />
                 <main className="app-main"><Outlet /></main>
               </>

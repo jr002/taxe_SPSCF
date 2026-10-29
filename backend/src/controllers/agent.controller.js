@@ -1,10 +1,39 @@
 const bcrypt = require('bcryptjs');
 const { AgentModel, AGENT_STATUTS, AGENT_ROLES } = require('../models/agent.model');
 const { CentreModel } = require('../models/centre.model');
-const { CENTRE_ROLES, ROLE_LABELS } = require('../utils/data-scope');
+const { CENTRE_ROLES, roleLabel, scopeDeniedMessage } = require('../utils/data-scope');
 const HistoriqueUtilisateurModel = require('../models/historique-utilisateur.model');
 
 const isSelf = (req, id) => String(req.user?.id ?? '') === String(id);
+
+/**
+ * Rôles sur lesquels un chef de centre peut agir dans son centre : ses
+ * subordonnés directs. Un pair (autre chef de centre), un inspecteur national,
+ * un administrateur ou un compte hors équipe restent du ressort des
+ * administrateurs.
+ */
+const SOUS_ORDRES_CENTRE = ['controleur', 'agent'];
+
+/**
+ * Motif de refus quand le chef de centre sort de son périmètre, `null` quand
+ * l'action est licite. Un appelant administrateur passe outre : son périmètre
+ * est national.
+ */
+const chefCentreRefus = (req, agent, statut) => {
+  if (req.user?.role !== 'chef_centre') return null;
+
+  if (agent.id_centre === null || Number(agent.id_centre) !== Number(req.user.id_centre)) {
+    return 'Ce compte ne dépend pas de votre centre.';
+  }
+  if (!SOUS_ORDRES_CENTRE.includes(agent.role)) {
+    return `Le rôle ${roleLabel(agent.role)} n'est pas sous votre autorité : seul un administrateur peut modifier ce compte.`;
+  }
+  if (statut === 'en_attente') {
+    return 'Le statut « en attente » est réservé aux administrateurs.';
+  }
+
+  return null;
+};
 
 const getAuteur = (req) => ({
   id: req.user?.id || null,
@@ -12,11 +41,18 @@ const getAuteur = (req) => ({
 });
 
 class AgentController {
-  // Liste des comptes agents (filtres facultatifs : search, statut, role)
+  // Liste des comptes agents (filtres facultatifs : search, statut, role).
+  // Un chef de centre n'y voit que les comptes de son centre ; un compte sans
+  // rattachement — donc sans équipe consultable — est refusé plutôt que vide.
   static async findAll(req, res) {
     try {
       const { search, statut, role } = req.query;
-      const agents = await AgentModel.findAll({ search, statut, role });
+
+      if (req.dataScope?.kind === 'none') {
+        return res.status(403).json({ success: false, message: scopeDeniedMessage(req.dataScope) });
+      }
+
+      const agents = await AgentModel.findAll({ search, statut, role, scope: req.dataScope });
 
       res.json({ success: true, data: agents });
     } catch (error) {
@@ -48,9 +84,18 @@ class AgentController {
         });
       }
 
+      if (req.dataScope?.kind === 'none') {
+        return res.status(403).json({ success: false, message: scopeDeniedMessage(req.dataScope) });
+      }
+
       const agent = await AgentModel.findById(id);
       if (!agent) {
         return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
+      }
+
+      const refus = chefCentreRefus(req, agent, statut);
+      if (refus) {
+        return res.status(403).json({ success: false, message: refus });
       }
 
       if (agent.role === 'admin' && statut !== 'actif') {
@@ -230,14 +275,14 @@ class AgentController {
         nouvelles_valeurs: { id_centre, nom_centre: updated.nom_centre ?? null },
       });
 
-      const roleLabel = ROLE_LABELS[agent.role] || agent.role;
+      const intituleRole = roleLabel(agent.role);
       const centreLabel = id_centre === null ? 'aucun centre' : (updated.nom_centre ?? `le centre #${id_centre}`);
       return res.json({
         success: true,
         data: updated,
         message: CENTRE_ROLES.includes(agent.role)
-          ? `Périmètre mis à jour : ${roleLabel} sur ${centreLabel}.`
-          : `Centre enregistré (${centreLabel}) : le rôle ${roleLabel} n'est pas restreint à un centre.`,
+          ? `Périmètre mis à jour : ${intituleRole} sur ${centreLabel}.`
+          : `Centre enregistré (${centreLabel}) : le rôle ${intituleRole} n'est pas restreint à un centre.`,
       });
     } catch (error) {
       console.error('Erreur affectation centre:', error);

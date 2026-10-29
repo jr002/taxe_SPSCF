@@ -155,13 +155,13 @@ Propriétés : `annualData`, `curveData`, `currentRegime`, `declarations`, `maxB
 
 ### `ClassificationPanel.jsx`
 
-Présente les règles correspondant à la catégorie fiscale du contribuable :
+Onglet « Nature d'impôt » de la fiche contribuable. Le panneau part du principe qu'un agent doit comprendre trois choses d'un coup : **pourquoi** cette catégorie, **ce que paie** le dossier, et **ce qu'il risque** en cas de manquement.
 
-- nature d'impôt et régime comptable ;
-- pénalités de retard (avec la référence d'article) ;
-- amendes administratives.
+- En-tête : badge de catégorie puis une ligne qui énonce le calcul réel — « Catégorie calculée sur le chiffre d'affaires 2025 : 320 000 000 Ar — 100 000 000 Ar ≤ CA < 400 000 000 Ar ». Sans déclaration, la ligne dit que la fiche est affichée par défaut et un avertissement invite à enregistrer une déclaration (lien vers l'onglet Déclarations).
+- « Ce que paie ce contribuable » : cartouches `Nature d'impôt portée au dossier` (`regime_fiscal` de la base, traduit IS/IR), `Impôt dû selon la catégorie`, `Régime`, `TVA`, `Comptabilité`, `Conservation des pièces`, suivis d'une phrase « en pratique ». Les cartouches réutilisent `.declaration-summary` de l'onglet Synthèse ; une phrase d'attention s'ajoute lorsque le régime saisi au dossier diffère de celui que la catégorie retient.
+- Pénalités de retard puis amendes administratives (`.amendes-grid` / `.amende-card`, inchangés).
 
-Le composant reçoit une unique propriété `fiche`, généralement construite avec `getFicheCategorie`.
+Propriétés : `fiche` (construite par `getFicheCategorie(categorie, ca)`), `reference` (`{ ca, annee }` renvoyé par `getCaReference(declarations)`), `regimeDeclare` (`contribuable.regime_fiscal`) et `idContribuable` (lien de l'avertissement). Les champs absents d'une fiche — TVA du moyen contribuable, conservation de ses pièces — ne sont pas inventés : la carte correspondante n'est pas rendue.
 
 ### `RecoupementsPanel.jsx`
 

@@ -1,20 +1,26 @@
 const express = require('express');
 const AgentController = require('../controllers/agent.controller');
-const { requireAdmin } = require('../middlewares/auth.middleware');
+const { authorize, requireAdmin } = require('../middlewares/auth.middleware');
 
 const router = express.Router();
 
-// Gestion des comptes agents : réservée aux administrateurs.
 // `authenticate` est déjà appliqué par `app.use('/api', authenticate)`.
-router.use(requireAdmin);
+//
+// Deux routes sont ouvertes au chef de centre, uniquement sur les comptes de son
+// centre (contrôle appliqué par `AgentController`) : la liste et le blocage /
+// activation d'un statut. Le reste de la gestion des comptes — rôle, centre de
+// rattachement, identité, mot de passe, suppression et journal d'audit — reste
+// réservé aux administrateurs.
+const manageOwnCentreAccounts = authorize('admin', 'chef_centre');
 
-router.get('/', AgentController.findAll);
-router.get('/historique', AgentController.getHistorique);
-router.patch('/:id/statut', AgentController.updateStatut);
-router.patch('/:id/role', AgentController.updateRole);
-router.patch('/:id/centre', AgentController.updateCentre);
-router.patch('/:id/identite', AgentController.updateIdentite);
-router.patch('/:id/password', AgentController.resetPassword);
-router.delete('/:id', AgentController.remove);
+router.get('/', manageOwnCentreAccounts, AgentController.findAll);
+router.patch('/:id/statut', manageOwnCentreAccounts, AgentController.updateStatut);
+
+router.get('/historique', requireAdmin, AgentController.getHistorique);
+router.patch('/:id/role', requireAdmin, AgentController.updateRole);
+router.patch('/:id/centre', requireAdmin, AgentController.updateCentre);
+router.patch('/:id/identite', requireAdmin, AgentController.updateIdentite);
+router.patch('/:id/password', requireAdmin, AgentController.resetPassword);
+router.delete('/:id', requireAdmin, AgentController.remove);
 
 module.exports = router;

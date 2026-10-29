@@ -150,8 +150,13 @@ La session repose sur un cookie, pas sur un jeton transmis par le client :
   renvoie toujours le même message et l'administrateur définit lui-même le mot
   de passe avec `PATCH /api/agents/:id/password` ;
 - `POST /api/auth/register` (public, rate-limited) enregistre une demande
-  d'accès, avec un
-  mot de passe haché et un compte `agent` au statut `en_attente` ;
+  d'accès avec un mot de passe haché et un compte `agent` au statut
+  `en_attente`, rattaché au centre choisi : `id_centre` est obligatoire, vérifié
+  en base, et le centre `SSIF` des administrateurs est refusé (`400`) ;
+- `GET /api/auth/centres` (public) renvoie les centres proposables à
+  l'inscription (`id_centre`, `nom_centre`, `type_centre`), triés par nom et
+  **sans** le centre `SSIF` ; l'appelant n'ayant pas encore de session, il ne
+  peut pas interroger `/api/centres` ;
 - `POST /api/auth/change-password` (authentifié, limité à 6 tentatives par agent
   et par fenêtre) remplace le mot de passe de l'agent connecté : il exige
   `password_actuel`, vérifié par `bcrypt.compare`, refuse un nouveau mot de passe
@@ -183,7 +188,7 @@ métier. Le rôle se combine au centre de rattachement enregistré dans
 | -------------- | ----------------------------------------------------- |
 | `admin`        | Back-office **et** tous les centres, en écriture comprise |
 | `inspecteur`   | Tous les centres, **consultation seule** (aucune écriture) |
-| `chef_centre`  | Uniquement le centre auquel l'agent est rattaché       |
+| `chef_centre`  | Uniquement le centre auquel l'agent est rattaché, **plus** le blocage et l'activation des comptes de ce centre |
 | `controleur`   | Uniquement le centre auquel l'agent est rattaché       |
 | `agent`        | Uniquement le centre auquel l'agent est rattaché       |
 | `contribuable` | Aucun dossier tant que le compte n'est pas lié à un NIF |
@@ -212,7 +217,21 @@ Conséquences pratiques :
   sur le contribuable (`contribuableInScope`) s'applique toujours, et les rôles
   `contribuable` / `autre` restent refusés (`403`, périmètre vide). Aucune autre
   méthode d'écriture n'est rouverte par cette exception ;
-- `/api/agents` et les écritures sur `/api/centres` restent réservées à `admin`.
+- `/api/centres` en écriture reste réservé à `admin` ;
+- `GET /api/agents` et `PATCH /api/agents/:id/statut` sont ouverts à `admin` **et**
+  `chef_centre`. Le chef de centre n'y voit que les comptes rattachés à son centre
+  (`applyScope` sur `agents.id_centre`, `req.dataScope` porté par le contrôleur) et
+  ne peut modifier que le statut d'un `controleur` ou d'un `agent` de son centre :
+  un pair (`chef_centre`), un `inspecteur`, un `admin`, un compte d'un autre centre
+  ou son propre compte lui répondent respectivement `403`, `403`, `403`, `403` et
+  `400`. Poser le statut `en_attente` lui est aussi refusé (`403`) — ce statut
+  naît de l'inscription publique et relève des administrateurs. Les autres routes
+  de `/api/agents` (`role`, `centre`, `identite`, `password`, `delete`,
+  `historique`) restent `requireAdmin` ;
+- les comptes créés par `POST /api/auth/register` sont `agent`, `en_attente` et
+  rattachés au centre choisi à l'inscription : le chef de ce centre peut donc
+  activer directement la demande depuis « Mon équipe », sans passer par un
+  administrateur.
 
 #### Affiliation automatique des administrateurs au centre `SSIF`
 
@@ -223,8 +242,9 @@ jamais un administrateur par `id_centre`, l'affiliation n'ouvre ni ne ferme
 aucun dossier. Elle est posée automatiquement par `PATCH /api/agents/:id/role`
 (entrée dans le rôle) et par `scripts/create-agent.js`, qui crée toujours un
 compte `admin` ; l'inscription publique `POST /api/auth/register` crée un compte
-`agent` et reste donc hors centre jusqu'à l'affectation par l'administrateur. La
-sortie du rôle `admin` libère le centre.
+`agent` rattaché au centre choisi, mais ne lui propose jamais `SSIF` et refuse
+une soumission directe sur ce centre (`400`). La sortie du rôle `admin` libère
+le centre.
 `AgentModel.findIdCentreAdministrateurs()` lit le centre par
 `(nom_centre = 'SSIF', type_centre = 'DGE')` ; s'il manque, le rôle change
 quand même et l'affiliation existante reste inchangée. La suppression du centre
@@ -258,7 +278,7 @@ Douze domaines sont montés par [`src/app.js`](src/app.js). Tous exigent le cook
 
 | Préfixe | Rôle | Auth |
 | --- | --- | --- |
-| `/api/auth` | connexion, inscription, session courante, déconnexion | publique, sauf `GET /api/auth/me` |
+| `/api/auth` | connexion, inscription et centres proposés, session courante, déconnexion | publique, sauf `GET /api/auth/me` |
 | `/api/acces-contribuable` | portail « Ma situation fiscale » du contribuable : état du lien puis ouverture après confirmation NIF + e-mail | publique, gardée par le jeton d'URL ; monté **avant** `authenticate` |
 | `/api/contribuables` | créer, consulter et modifier les contribuables | requise |
 | `/api/declarations` | gérer les déclarations, leurs statistiques et la procédure contradictoire | requise |
@@ -269,7 +289,7 @@ Douze domaines sont montés par [`src/app.js`](src/app.js). Tous exigent le cook
 | `/api/etat-contribuable` | historique et dernier état d'activité et de conformité | requise |
 | `/api/relances` | relances et recouvrement | requise |
 | `/api/centres` | gérer les centres fiscaux (lecture selon le périmètre, écritures réservées à `admin`) | requise |
-| `/api/agents` | administrer les comptes agents (activation, rôle, centre de rattachement, mot de passe, suppression) | requise **+ rôle `admin`** |
+| `/api/agents` | administrer les comptes agents (activation, rôle, centre de rattachement, mot de passe, suppression) | requise **+ rôle `admin`**, ou `chef_centre` pour `GET /` et `PATCH /:id/statut` dans son centre |
 
 Les lignes métier ci-dessus sont aussi filtrées selon le périmètre de l'agent :
 tous les centres pour `admin` (avec l'écriture) et `inspecteur` (consultation
@@ -283,6 +303,7 @@ sous `/api/contribuables` depuis la migration `001-rename-contribuables.sql`.
 Exemples :
 
 ```text
+GET  /api/auth/centres
 POST /api/auth/register
 POST /api/auth/login
 POST /api/auth/reset-request
@@ -328,13 +349,13 @@ POST   /api/centres              (rôle `admin`)
 PUT    /api/centres/:id          (rôle `admin`)
 DELETE /api/centres/:id          (rôle `admin`)
 
-GET    /api/agents
-PATCH  /api/agents/:id/statut
-PATCH  /api/agents/:id/role
-PATCH  /api/agents/:id/centre
-PATCH  /api/agents/:id/password
-PATCH  /api/agents/:id/identite
-DELETE /api/agents/:id
+GET    /api/agents               (rôle `admin`, ou `chef_centre` : liste bornée à son centre)
+PATCH  /api/agents/:id/statut    (rôle `admin`, ou `chef_centre` : subordonnés de son centre)
+PATCH  /api/agents/:id/role      (rôle `admin`)
+PATCH  /api/agents/:id/centre    (rôle `admin`)
+PATCH  /api/agents/:id/password  (rôle `admin`)
+PATCH  /api/agents/:id/identite  (rôle `admin`)
+DELETE /api/agents/:id           (rôle `admin`)
 ```
 
 Le détail des corps attendus, des codes HTTP et du mapping avec le client

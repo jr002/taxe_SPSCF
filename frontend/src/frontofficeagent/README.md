@@ -7,6 +7,14 @@ réservé à l'administrateur (comptes, rôles, vérification NIF, journal d'aud
 Il structure l'ensemble des écrans métiers selon une **architecture modulaire
 par domaine fonctionnel (feature-based)**.
 
+Une seule entorse à cette séparation : le **chef de centre** reçoit dans l'en-tête
+un lien « Mon équipe » vers `/admin/utilisateurs`, servi en **mode restreint** —
+il n'y voit que les comptes de son centre, sans `AdminNav`, et ne peut que
+bloquer ou réactiver un contrôleur ou un agent de ce centre (section « Mode
+restreint Équipe du centre » de
+[`../backofficeadmin/README.md`](../backofficeadmin/README.md)).
+Rien d'autre ne lui est ouvert dans le back-office.
+
 Toutes les pages peuvent être importées individuellement ou directement via le point d'entrée unique [`index.js`](index.js).
 
 ```javascript

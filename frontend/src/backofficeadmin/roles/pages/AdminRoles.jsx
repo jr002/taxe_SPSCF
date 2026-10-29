@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getAgents, getCentres, getErrorMessage, updateAgentCentre, updateAgentRole } from '@/api';
-import { Pagination } from '@/components/common';
+import { ModaleConfirmation, Pagination } from '@/components/common';
 import { useTablePagination } from '@/hooks';
 import AdminNav from '@/backofficeadmin/components/AdminNav';
 import {
@@ -22,6 +22,8 @@ export default function AdminRoles({ currentUser }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busyId, setBusyId] = useState(null);
+  const [changementRole, setChangementRole] = useState(null);
+  const [erreurChangementRole, setErreurChangementRole] = useState('');
   const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('TOUS');
 
@@ -56,11 +58,19 @@ export default function AdminRoles({ currentUser }) {
     setAgents(Array.isArray(updated) ? updated : []);
   };
 
-  const handleRoleChange = async (agent, newRole) => {
-    if (newRole === agent.role) return;
-    setBusyId(agent.id_agent);
+  const handleRoleChange = (agent, newRole) => {
+    if (newRole === (agent.role || 'agent')) return;
+    setChangementRole({ agent, newRole });
+    setErreurChangementRole('');
     setError('');
     setSuccess('');
+  };
+
+  const confirmerChangementRole = async () => {
+    if (!changementRole) return;
+    const { agent, newRole } = changementRole;
+    setBusyId(agent.id_agent);
+    setErreurChangementRole('');
 
     try {
       await updateAgentRole(agent.id_agent, newRole);
@@ -71,8 +81,9 @@ export default function AdminRoles({ currentUser }) {
           ? `${message} Attention : ce rôle consulte uniquement son centre, affectez-en un pour ouvrir l'accès aux dossiers.`
           : message
       );
+      setChangementRole(null);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setErreurChangementRole(getErrorMessage(err));
     } finally {
       setBusyId(null);
     }
@@ -303,6 +314,34 @@ export default function AdminRoles({ currentUser }) {
           showSinglePage={Boolean(filteredAgents.length)}
         />
       )}
+
+      <ModaleConfirmation
+        ouvert={Boolean(changementRole)}
+        etiquette="Changement de rôle"
+        titre="Confirmer le changement de rôle"
+        intro="Cette modification changera les droits d'accès de cet utilisateur."
+        modifications={
+          changementRole
+            ? [
+                {
+                  label: `Rôle de ${changementRole.agent.email}`,
+                  avant: getRoleLabel(changementRole.agent.role || 'agent'),
+                  apres: getRoleLabel(changementRole.newRole),
+                },
+              ]
+            : []
+        }
+        messageErreur={erreurChangementRole}
+        texteValider="Confirmer le changement"
+        enCours={Boolean(changementRole && busyId === changementRole.agent.id_agent)}
+        onValider={confirmerChangementRole}
+        onFermer={() => {
+          if (busyId === null) {
+            setChangementRole(null);
+            setErreurChangementRole('');
+          }
+        }}
+      />
     </section>
   );
 }

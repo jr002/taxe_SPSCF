@@ -82,7 +82,7 @@ Chaque page d'enregistrement charge le contribuable par `getContribuableById(id)
 Contenu des onglets :
 
 - **Synthèse** : TVA payée cumulée, dernière déclaration enregistrée, graphiques `ContribVolumeChart` et `ContribComparisonChart` ;
-- **Nature d'impôt** : règles de la catégorie fiscale (`getFicheCategorie`), pénalités et amendes ;
+- **Nature d'impôt** : catégorie déduite du dernier chiffre d'affaires déclaré (`getCaReference` + `getFicheCategorie(categorie, ca)`), nature d'impôt du dossier confrontée à celle de la catégorie, pénalités et amendes ;
 - **Déclarations** : historique cliquable (vers `/suivi/:id`) et barre d'actions « + Ajouter une déclaration » / retour confrontation ;
 - **Recoupements** : `RecoupementsPanel`, liste auto-suffisante (`getRecoupements({ id_contribuable, limit: 100 })`) avec bouton d'enregistrement ;
 - **Droits de communication** : `DroitCommunicationPanel`, même logique sur `getDroitsCommunication`, statuts rendus en badges (`demande`, `reponse`, `partiel`, `relance`, `sans_suite`) ;
@@ -166,7 +166,7 @@ Exporte `AmountFormatter({ amount })`, qui affiche un montant arrondi et abrég�
 ## Dépendances principales
 
 - `../../api/api` : `getContribuables`, `getContribuableById`, `createDeclaration`, `getRecoupements`, `createRecoupement`, `getDroitsCommunication`, `createDroitCommunication`, `getErrorMessage` ;
-- `../../frontofficeagent/contribuables/utils/classificationCgi.utils` : `getCategorie`, `getFicheCategorie` ;
+- `../../frontofficeagent/contribuables/utils/classificationCgi.utils` : `getCaReference`, `getCategorie` (liste des contribuables), `getCategorieFromCa` et `getFicheCategorie` (fiche de la fiche contribuable) ;
 - `../../frontofficeagent/decisionnel/utils/decisionnel.utils` : `getRegime` ;
 - `../../utils/formatters` : `formatAriary`, `formatNumber`, `toNumber` ;
 - `../../components/forms/ExcelImportModal` : import Excel/CSV ;

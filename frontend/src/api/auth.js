@@ -10,6 +10,9 @@ export const connexion = (email, password) =>
 /** Demande d'inscription ; le serveur crée un compte en attente d'activation. */
 export const inscrireAgent = (payload) => api.post('/auth/register', payload).then((res) => res.data);
 
+/** Centres proposés au formulaire d'inscription (public, hors centre des administrateurs). */
+export const getCentresInscription = () => api.get('/auth/centres').then((res) => res.data.data);
+
 /** Agent connecté ; renvoie `{ user }`. */
 export const getMoi = () => api.get('/auth/me').then((res) => res.data);
 

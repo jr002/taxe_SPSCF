@@ -11,7 +11,11 @@ import {
 import { getRegime } from '@/frontofficeagent/decisionnel/utils/decisionnel.utils.js';
 import { formatDateRelance, relanceType } from '@/frontofficeagent/relance/utils/relance.utils';
 import { toNumber } from '@/utils';
-import { getCategorie, getFicheCategorie } from '@/frontofficeagent/contribuables/utils/classificationCgi.utils.js';
+import {
+  getCategorieFromCa,
+  getCaReference,
+  getFicheCategorie,
+} from '@/frontofficeagent/contribuables/utils/classificationCgi.utils.js';
 import { DossierFiscalNavigation } from '@/components/common';
 import RappelOrdreModal from '@/frontofficeagent/relance/components/RappelOrdreModal';
 import ClassificationPanel from '@/frontofficeagent/contribuables/components/ClassificationPanel';
@@ -123,8 +127,10 @@ export default function ContribuableDetail() {
     (total, row) => total + toNumber(row.tva_payee),
     0,
   );
+  const reference = useMemo(() => getCaReference(declarations), [declarations]);
   const fiche = getFicheCategorie(
-    contribuable ? getCategorie(contribuable) : 'Petit',
+    getCategorieFromCa(reference.ca),
+    reference.ca,
   );
 
   const chartYears = useMemo(
@@ -398,7 +404,14 @@ export default function ContribuableDetail() {
           />
         )}
 
-        {activeTab === 'classification' && <ClassificationPanel fiche={fiche} />}
+        {activeTab === 'classification' && (
+          <ClassificationPanel
+            fiche={fiche}
+            idContribuable={id}
+            regimeDeclare={contribuable?.regime_fiscal}
+            reference={reference}
+          />
+        )}
 
         {activeTab === 'declarations' && (
           <DeclarationHistory
