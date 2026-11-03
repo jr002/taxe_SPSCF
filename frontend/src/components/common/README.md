@@ -43,14 +43,9 @@ côté administration, et par `useContribuablesList` (15 lignes) côté registre
 
 Export par défaut `Header`. En-tête rendu par `App.jsx` pour toutes les routes protégées.
 
-* Liens statiques déclarés dans `NAVIGATION_LINKS` (huit entrées, toutes routées) :
-  `/acceuil` (Accueil), `/collecte` (Collecte), `/decisionnel` (Statistique),
-  `/suivi` (Dossier fiscal), `/relance` (Relances), `/contribuables`
-  (Contribuables), `/centres-fiscaux` (Centres) et `/register` (Registre).
-* Le lien actif est celui dont le chemin est le **préfixe le plus long** de
-  `pathname` (calcul `reduce` dans le composant) : `/contribuables/51/relances`
-  surligne « Contribuables », et côté admin `/admin/verification-nif/sql`
-  surligne « Vérification NIF » sans surligner « Tableau de bord ».
+* La marque renvoie vers `/admin` pour un administrateur et `/accueil` pour les rôles opérationnels.
+* **Backoffice inchangé** : les cinq entrées `ADMIN_LINKS` restent dans le `<nav>` du header. Le préfixe de route le plus long garde « Vérification NIF » actif sur `/admin/verification-nif/sql`, sans activer « Tableau de bord ».
+* **Frontoffice agent** : les liens de modules sont déplacés dans [`AgentSidebar.jsx`](AgentSidebar.jsx). Le bouton `#agent-navigation-toggle` (« Modules ») commande cette sidebar avec `aria-expanded` et `aria-controls`.
 * Barre rendue **fixe** (`position: sticky; top: 0; z-index: 40` dans
   [`../../App.css`](../../App.css)) au-dessus de 1024 px ; en dessous elle passe
   en `position: relative` — elle défile avec la page, mais reste le repère du
@@ -65,30 +60,8 @@ Export par défaut `Header`. En-tête rendu par `App.jsx` pour toutes les routes
   `.topbar`) ; il reste donc collé là même quand les liens passent sur deux
   lignes, et son panneau se déroule juste dessous. Sous 1024 px, la barre passant
   sur deux lignes, le profil est réaligné sur celle du logo (`top: 0.9rem`).
-* **Deux espaces, trois jeux de liens selon le rôle** : `links = isAdmin ?
-  ADMIN_LINKS : isChefCentre ? [...NAVIGATION_LINKS, LIEN_EQUIPE_CENTRE] :
-  NAVIGATION_LINKS`. Le backoffice (`ADMIN_LINKS`, cinq entrées)
-  ignore les modules fiscaux — un administrateur n'a pas accès aux dossiers
-  fiscaux — et l'espace agent ignore la gestion des utilisateurs, des rôles et du
-  journal d'audit. Le `chef_centre` conserve les six entrées agentes et reçoit une
-  seule entrée de gestion, `LIEN_EQUIPE_CENTRE` (« Mon équipe », `/admin/utilisateurs`
-  en mode restreint) ; les quatre autres écrans admin ne lui sont pas présentés.
-  Aucun second bloc, aucun lien de bascule : `FISCAL_MODULE_LINKS`
-  et le `<nav className="nav-modules">` introduits un temps ont été retirés, avec
-  leurs règles `.topbar { flex-wrap: wrap }` / `.nav-modules-label` dans
-  [`../../App.css`](../../App.css).
-* Cette étanchéité est celle de la **navigation**, pas des routes : un admin qui
-  tape `/suivi` y accède toujours (le `data-scope` de son rôle couvre tous les
-  centres), et un agent qui tape `/admin` tombe sur le refus rendu par chaque
-  page du backoffice (`if (!isAdmin)` dans
-  `src/backofficeadmin/dashboard/pages/AdminDashboard.jsx`,
-  `roles/AdminRoles.jsx`,
-  `historique/AdminHistorique.jsx` et `verification-nif/AdminVerificationNIF.jsx`).
-  `utilisateurs/AdminUtilisateurs.jsx` est la seule exception : sa garde teste
-  `peutGererComptes` (`admin` **ou** `chef_centre`) et rend le mode restreint pour
-  ce second rôle.
-  Verrouiller `/admin*` et l'espace fiscal par des gardes de route reste à faire
-  si l'exigence doit être absolue.
+* Les styles spécifiques à la barre agent utilisent `.agent-topbar`, sans modifier les surcharges responsive de l'administration.
+* L'étanchéité de la navigation ne remplace pas les gardes de routes et d'API : le portefeuille contribuable reste fermé à l'administrateur et « Mon équipe » reste le seul écran d'administration accessible au chef de centre.
 
 Props :
 
@@ -101,7 +74,28 @@ Props :
 | `onToggleTheme` | `function` | Bascule clair / sombre, déclenchée depuis le profil |
 | `onLogout` | `function` | Déconnexion, transmise au profil |
 | `user` | `object \| null` | Agent renvoyé par `GET /api/auth/me` (défaut `null`) |
-| `isAdmin` | `boolean` | Bascule la navigation sur les entrées du backoffice (défaut `false`) |
+| `isAdmin` | `boolean` | Affiche les cinq liens du backoffice au lieu du bouton de sidebar |
+| `agentNavigationOpen` | `boolean` | État de la sidebar, exposé par `aria-expanded` |
+| `onToggleAgentNavigation` | `function` | Ouvre ou réduit la navigation agent |
+
+---
+
+## [`AgentSidebar.jsx`](AgentSidebar.jsx)
+
+Export par défaut `AgentSidebar`, réservé au shell des rôles opérationnels dans `App.jsx`.
+
+* Six liens : `/accueil`, `/decisionnel`, `/suivi`, `/contribuables`, `/centres-fiscaux` et `/register`. Le chef de centre reçoit en plus « Mon équipe » (`/admin/utilisateurs` en mode restreint), soit sept entrées.
+* Le lien actif est le préfixe de route le plus long : `/contribuables/72/relances` active « Contribuables » et `/admin/utilisateurs` active « Mon équipe ».
+* Au-dessus de 1024 px, `.agent-layout` aligne une sidebar de 14,5 rem et le contenu. Le bouton « Modules » peut la réduire ; elle est alors masquée et `inert`, et le contenu occupe toute la grille.
+* À 1024 px et moins, elle devient un tiroir fixe avec backdrop. À l'ouverture, le défilement du body est bloqué et le bouton de fermeture reçoit le focus ; Tab et Maj+Tab restent dans le tiroir, Échap le ferme et restitue le focus au bouton « Modules ». Un lien referme aussi le tiroir après navigation.
+* `App.jsx` possède l'état ouvert/fermé, initialise le bon mode selon le viewport et écoute le breakpoint. L'administrateur ne monte ni la sidebar ni `.agent-layout` ; le portail contribuable n'utilise pas ce shell.
+* Les styles desktop, mobile, sombres et d'impression sont regroupés en fin de [`../../App.css`](../../App.css).
+
+| Prop | Type | Rôle |
+| --- | --- | --- |
+| `isChefCentre` | `boolean` | Ajoute le lien « Mon équipe » |
+| `isOpen` | `boolean` | Contrôle la visibilité et `inert` |
+| `onClose` | `function` | Fermeture par Échap, backdrop, bouton ou navigation mobile |
 
 ---
 

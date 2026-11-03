@@ -2170,3 +2170,84 @@ body:has(.dark-theme) { background: #111827; }
   .portail table { font-size: 0.68rem; }
   .portail-footer { color: #344054; }
 }
+
+/* Navigation de l'espace agent : les modules quittent la barre supérieure,
+   tandis que le backoffice administrateur conserve sa navigation existante. */
+.agent-topbar { padding-inline: 1.5rem; }
+.agent-topbar .user-profile { right: 1.5rem; }
+.agent-navigation-toggle {
+  display: inline-flex; flex: 0 0 auto; align-items: center; gap: 0.45rem;
+  min-height: 2.5rem; margin-right: auto; padding: 0.55rem 0.75rem;
+  border: 1px solid #cbd5e1; border-radius: 10px; color: #12558c;
+  background: #f4f7fb; font-size: 0.875rem; font-weight: 700; cursor: pointer;
+  transition: color 180ms ease, background 180ms ease, border-color 180ms ease;
+}
+.agent-navigation-toggle:hover { color: #0f4c81; border-color: #9fc5e3; background: #eaf3fb; }
+.agent-navigation-toggle svg { width: 1.15rem; height: 1.15rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.agent-layout { display: grid; grid-template-columns: 14.5rem minmax(0, 1fr); align-items: start; min-height: calc(100vh - 4.75rem); }
+.agent-layout.agent-navigation-closed { grid-template-columns: minmax(0, 1fr); }
+.agent-layout > .app-main { width: min(100%, 1180px); min-width: 0; }
+.agent-sidebar {
+  position: sticky; top: 4.75rem; z-index: 20; height: calc(100vh - 4.75rem);
+  padding: 1.25rem 0.8rem; overflow-y: auto; border-right: 1px solid #dfe5ed;
+  background: #fff;
+}
+.agent-navigation-closed .agent-sidebar { display: none; }
+.agent-sidebar-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; padding: 0 0.65rem 1rem; }
+.agent-sidebar-heading strong { color: #172033; font-size: 0.875rem; font-weight: 800; }
+.agent-sidebar-close { display: none; width: 2.4rem; height: 2.4rem; place-items: center; padding: 0; border: 0; border-radius: 9px; color: #5a6577; background: transparent; cursor: pointer; }
+.agent-sidebar-close:hover { color: #12558c; background: #eaf3fb; }
+.agent-sidebar-close svg { width: 1.2rem; height: 1.2rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.agent-sidebar nav { display: grid; gap: 0.35rem; }
+.agent-sidebar nav a { display: flex; align-items: center; min-height: 2.7rem; padding: 0.7rem 0.8rem; border-radius: 10px; color: #5a6577; font-size: 0.875rem; font-weight: 600; text-decoration: none; transition: color 180ms ease, background 180ms ease; }
+.agent-sidebar nav a:hover { color: #12558c; background: #eaf3fb; }
+.agent-sidebar nav a.active { color: #0f4c81; background: #dcecf9; box-shadow: inset 0 0 0 1px rgba(23, 105, 170, 0.2); }
+.agent-navigation-backdrop { display: none; }
+
+.dark-theme .agent-navigation-toggle { color: #bae6fd; border-color: #405169; background: #111827; }
+.dark-theme .agent-navigation-toggle:hover { border-color: #52759a; background: #223c58; }
+.dark-theme .agent-sidebar { border-color: #2d3a4d; background: #182231; }
+.dark-theme .agent-sidebar-heading strong { color: #f8fafc; }
+.dark-theme .agent-sidebar-close { color: #9caabd; }
+.dark-theme .agent-sidebar-close:hover { color: #bae6fd; background: #223c58; }
+.dark-theme .agent-sidebar nav a { color: #9caabd; }
+.dark-theme .agent-sidebar nav a:hover { color: #bae6fd; background: #223c58; }
+.dark-theme .agent-sidebar nav a.active { color: #bae6fd; background: #26445f; box-shadow: inset 0 0 0 1px rgba(125, 211, 252, 0.28); }
+
+@media (max-width: 1024px) {
+  .agent-topbar { padding-inline: 1rem; }
+  .agent-topbar .user-profile { right: 1rem; }
+  .agent-layout, .agent-layout.agent-navigation-open, .agent-layout.agent-navigation-closed { display: block; min-height: 0; }
+  .agent-sidebar, .agent-navigation-closed .agent-sidebar {
+    display: block; position: fixed; inset: 0 auto 0 0; z-index: 70;
+    width: min(19rem, 86vw); height: 100dvh; border-right: 1px solid #dfe5ed;
+    box-shadow: 16px 0 38px rgba(24, 45, 72, 0.18); visibility: hidden;
+    transform: translateX(-105%); transition: transform 200ms ease, visibility 200ms ease;
+  }
+  .agent-navigation-open .agent-sidebar { visibility: visible; transform: translateX(0); }
+  .agent-sidebar-close { display: grid; }
+  .agent-navigation-backdrop { display: block; position: fixed; inset: 0; z-index: 60; padding: 0; border: 0; background: rgba(15, 23, 42, 0.48); cursor: pointer; }
+}
+
+@media (max-width: 760px) {
+  .agent-topbar { flex-direction: row; align-items: center; gap: 0.5rem; }
+  .agent-topbar .brand { width: auto; }
+  .agent-topbar nav { flex: 1 0 100%; }
+}
+
+@media (max-width: 520px) {
+  .agent-topbar { padding-inline: 0.8rem; }
+  .agent-topbar .user-profile { right: 0.8rem; }
+  .agent-topbar .brand { max-width: calc(100% - 10rem); }
+  .agent-topbar .brand small { display: none; }
+  .agent-navigation-toggle { padding-inline: 0.65rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-sidebar { transition: none; }
+}
+
+@media print {
+  .agent-navigation-toggle, .agent-sidebar, .agent-navigation-backdrop { display: none !important; }
+  .agent-layout, .agent-layout.agent-navigation-open, .agent-layout.agent-navigation-closed { display: block; }
+}

@@ -7,7 +7,7 @@ réservé à l'administrateur (comptes, rôles, vérification NIF, journal d'aud
 Il structure l'ensemble des écrans métiers selon une **architecture modulaire
 par domaine fonctionnel (feature-based)**.
 
-Une seule entorse à cette séparation : le **chef de centre** reçoit dans l'en-tête
+Une seule entorse à cette séparation : le **chef de centre** reçoit dans la sidebar
 un lien « Mon équipe » vers `/admin/utilisateurs`, servi en **mode restreint** —
 il n'y voit que les comptes de son centre, sans `AdminNav`, et ne peut que
 bloquer ou réactiver un contrôleur ou un agent de ce centre (section « Mode
@@ -31,7 +31,7 @@ pages. La règle complète est dans
 
 ## 🧭 Routes déclarées (`frontend/src/App.jsx`)
 
-Toutes les routes protégées ci-dessous sont des enfants du layout authentifié (`Header` + `Outlet`). L'application est montée avec `react-router-dom` v7 dans [`../App.jsx`](../App.jsx).
+Toutes les routes protégées ci-dessous sont des enfants du layout authentifié. Pour les rôles opérationnels, `App.jsx` associe `Header`, [`AgentSidebar`](../components/common/AgentSidebar.jsx) et `Outlet` dans `.agent-layout` : la sidebar est réductible sur desktop et devient un tiroir avec backdrop, Échap et gestion du focus à 1024 px et moins. Le bouton « Modules » et les onglets de Collecte restent dans le header. L'administrateur conserve uniquement `Header` + `Outlet`, sans sidebar. L'application est montée avec `react-router-dom` v7 dans [`../App.jsx`](../App.jsx).
 
 | Route | Composant | Fichier |
 | --- | --- | --- |
@@ -40,7 +40,7 @@ Toutes les routes protégées ci-dessous sont des enfants du layout authentifié
 | `/signup` | `Signup` (demande de création de compte) | [`../backofficeadmin/auth/pages/Signup.jsx`](../backofficeadmin/auth/pages/Signup.jsx) |
 | `/attente-activation` | `AttenteActivation` (statut d'un compte en attente) | [`../backofficeadmin/auth/pages/AttenteActivation.jsx`](../backofficeadmin/auth/pages/AttenteActivation.jsx) |
 | `/mot-de-passe-oublie` | `MotDePasseOublie` (demande de réinitialisation du mot de passe) | [`../backofficeadmin/auth/pages/MotDePasseOublie.jsx`](../backofficeadmin/auth/pages/MotDePasseOublie.jsx) |
-| `/acceuil` | `Accueil` | [`accueil/pages/Accueil.jsx`](accueil/pages/Accueil.jsx) |
+| `/accueil` | `Accueil` | [`accueil/pages/Accueil.jsx`](accueil/pages/Accueil.jsx) |
 | `/collecte` | `Collecte` | [`collecte/pages/Collecte.jsx`](collecte/pages/Collecte.jsx) |
 | `/entreprises/nouveau` | `PhaseClassement` | [`entreprises/pages/PhaseClassement.jsx`](entreprises/pages/PhaseClassement.jsx) |
 | `/entreprises/nouveau/form` | `FormInformation` | [`entreprises/pages/FormInformation.jsx`](entreprises/pages/FormInformation.jsx) |
@@ -73,7 +73,10 @@ Toutes les routes protégées ci-dessous sont des enfants du layout authentifié
 | `/admin/historique` | `AdminHistorique` | [`../backofficeadmin/historique/pages/AdminHistorique.jsx`](../backofficeadmin/historique/pages/AdminHistorique.jsx) |
 | `*` | Redirection vers `/` | — |
 
-> ⚠️ La route de l'accueil est déclarée `/acceuil` dans [`../App.jsx`](../App.jsx) (coquille). Les liens du code doivent utiliser cette orthographe, pas `/accueil`.
+> ✅ L'accueil agent est routé `/accueil` dans [`../App.jsx`](../App.jsx).
+> L'ancienne coquille `/acceuil` n'est plus qu'une redirection `Navigate` vers
+> `/accueil`, pour ne casser aucun lien déjà partagé ; les liens du code
+> (`NAVIGATION_LINKS` d'`AgentSidebar`, `homePath`) écrivent `/accueil`.
 
 > ⚠️ Terminologie : les écrans « Contribuables » parlent de **centre gestionnaire**
 > et de **nature d'impôt**, mais le formulaire d'immatriculation
@@ -89,7 +92,7 @@ Toutes les routes protégées ci-dessous sont des enfants du layout authentifié
 ## 📁 Organisation par Domaine Métier
 
 ### 1. 🏠 Accueil & Vue Globale (`accueil/`)
-* **[`accueil/pages/Accueil.jsx`](accueil/pages/Accueil.jsx)** (`/acceuil`) : Tableau de bord d'accueil institutionnel (Hero DGI, accès rapides, situation fiscale globale). Les raccourcis pointent vers `/collecte`, `/entreprises/nouveau`, `/suivi`, `/register` et `/decisionnel`. Un `chef_centre` reçoit `currentUser` : la carte d'état « Situation fiscale » cède sa place au total **TVA théorique · DGI** (`stats.tva_theorique_dgi`, agrégat national que seul ce rôle obtient), et la pile en bas à droite affiche le total du centre de rattachement (`stats.tva_theorique_totale`, filtré par `req.dataScope`). Les autres rôles voient la carte d'état et le seul total de leur périmètre.
+* **[`accueil/pages/Accueil.jsx`](accueil/pages/Accueil.jsx)** (`/accueil`) : Tableau de bord d'accueil institutionnel (Hero DGI, accès rapides, situation fiscale globale). Les raccourcis pointent vers `/collecte`, `/entreprises/nouveau`, `/suivi`, `/register` et `/decisionnel`. Un `chef_centre` reçoit `currentUser` : la carte d'état « Situation fiscale » cède sa place au total **TVA théorique · DGI** (`stats.tva_theorique_dgi`, agrégat national que seul ce rôle obtient), et la pile en bas à droite affiche le total du centre de rattachement (`stats.tva_theorique_totale`, filtré par `req.dataScope`). Les autres rôles voient la carte d'état et le seul total de leur périmètre.
 
 ### 2. ⚡ Collecte & Simulation Dynamique (`collecte/`)
 * **[`collecte/pages/Collecte.jsx`](collecte/pages/Collecte.jsx)** (`/collecte`) : Page pivot orchestrant les sous-modules de collecte dynamique. Elle reçoit `currentModule` depuis `App.jsx` (`sales`, `theoretical`, `reconciliation`, `declaration`) et affiche le module correspondant ; le défaut est `sales`. `handleCollect` passe désormais par [`collecte/utils/enregistrerCollecte.js`](collecte/utils/enregistrerCollecte.js) : l'enregistrement est réel, le retour à l'agent s'affiche dans un `.form-submit-message` (`role="status"` en succès, `role="alert"` en erreur) et le bouton d'envoi est désactivé pendant l'appel (`enCours`).

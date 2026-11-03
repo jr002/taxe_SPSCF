@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import '@/App.css';
 import { deconnexion, getMoi } from '@/api';
 
 // Composants transverses, hooks et portes d'entrée des espaces
-import { Header } from '@/components/common';
+import { AgentSidebar, Header } from '@/components/common';
 import { getLandingPath } from '@/utils';
 
 // Espace contribuable : une page publique, atteinte par un jeton, hors session agent
@@ -59,12 +59,25 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentModule, setCurrentModule] = useState('sales');
+  const [agentNavigationOpen, setAgentNavigationOpen] = useState(
+    () => !window.matchMedia('(max-width: 1024px)').matches
+  );
   const [isDarkMode, setIsDarkMode] = useState(
     () => localStorage.getItem('tva-ssif-theme') === 'dark'
   );
 
   // Le portail contribuable s'ouvre hors session agent : il n'a rien à vérifier.
   const isCheckingSession = !estPortailContribuable && !sessionVerifiee;
+  const isAdmin = currentUser?.role === 'admin';
+  const closeAgentNavigation = useCallback(() => setAgentNavigationOpen(false), []);
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 1024px)');
+    const handleBreakpointChange = (event) => setAgentNavigationOpen(!event.matches);
+
+    media.addEventListener('change', handleBreakpointChange);
+    return () => media.removeEventListener('change', handleBreakpointChange);
+  }, []);
 
   useEffect(() => {
     localStorage.setItem('tva-ssif-theme', isDarkMode ? 'dark' : 'light');
@@ -166,15 +179,28 @@ export default function App() {
                   onToggleTheme={() => setIsDarkMode((prev) => !prev)}
                   onLogout={handleLogout}
                   user={currentUser}
-                  isAdmin={currentUser?.role === 'admin'}
-                  isChefCentre={currentUser?.role === 'chef_centre'}
+                  isAdmin={isAdmin}
+                  agentNavigationOpen={agentNavigationOpen}
+                  onToggleAgentNavigation={() => setAgentNavigationOpen((prev) => !prev)}
                 />
-                <main className="app-main"><Outlet /></main>
+                {isAdmin ? (
+                  <main className="app-main"><Outlet /></main>
+                ) : (
+                  <div className={`agent-layout${agentNavigationOpen ? ' agent-navigation-open' : ' agent-navigation-closed'}`}>
+                    <AgentSidebar
+                      isChefCentre={currentUser?.role === 'chef_centre'}
+                      isOpen={agentNavigationOpen}
+                      onClose={closeAgentNavigation}
+                    />
+                    <main className="app-main"><Outlet /></main>
+                  </div>
+                )}
               </>
             ) : <Navigate to="/" replace />
           )}
         >
-          <Route path="/acceuil" element={<Accueil currentUser={currentUser} />} />
+          <Route path="/accueil" element={<Accueil currentUser={currentUser} />} />
+          <Route path="/acceuil" element={<Navigate to="/accueil" replace />} />
           <Route path="/collecte" element={<Collecte currentModule={currentModule} />} />
           <Route path="/entreprises/nouveau" element={<PhaseClassement />} />
           <Route path="/entreprises/nouveau/form" element={<FormInformation />} />

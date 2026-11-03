@@ -1,8 +1,9 @@
 /**
- * Porte d'entrée des composants transverses : en-tête, profil, pagination,
- * modales et navigation de dossier fiscal.
+ * Porte d'entrée des composants transverses : en-tête, navigation agent, profil,
+ * pagination, modales et navigation de dossier fiscal.
  */
 export { default as Header } from '@/components/common/Header';
+export { default as AgentSidebar } from '@/components/common/AgentSidebar';
 export { default as UserProfile } from '@/components/common/UserProfile';
 export { default as Pagination } from '@/components/common/Pagination';
 export { default as ModaleConfirmation } from '@/components/common/ModaleConfirmation';

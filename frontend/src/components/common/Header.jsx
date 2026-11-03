@@ -2,23 +2,6 @@ import { Link, useLocation } from 'react-router-dom';
 import logoDgi from '@/assets/logodgi.jpg';
 import UserProfile from '@/components/common/UserProfile';
 
-const NAVIGATION_LINKS = [
-  { to: '/acceuil', label: 'Accueil' },
-  { to: '/decisionnel', label: 'Statistique' },
-  { to: '/suivi', label: 'Dossier fiscal' },
-  { to: '/contribuables', label: 'Contribuables' },
-  { to: '/centres-fiscaux', label: 'Centres' },
-  { to: '/register', label: 'Registre' },
-];
-
-/**
- * Le chef de centre garde la navigation de l'espace agent et reçoit une seule
- * entrée de gestion : l'équipe de son centre, écran partagé avec le backoffice
- * en mode restreint. Les quatre autres écrans d'administration ne lui sont pas
- * présentés — l'API le lui refuse.
- */
-const LIEN_EQUIPE_CENTRE = { to: '/admin/utilisateurs', label: 'Mon équipe' };
-
 /**
  * Espace administrateur : la navigation du backoffice est bornée aux cinq écrans
  * d'administration. Elle ne propose aucun module fiscal — un administrateur n'a
@@ -33,10 +16,7 @@ const ADMIN_LINKS = [
 ];
 
 /**
- * Le lien actif est celui dont le chemin est le préfixe le plus long de l'URL
- * courante : `/contribuables/51/declarations` surligne « Contribuables » et
- * `/admin/verification-nif/sql` surligne « Vérification NIF », ce que la
- * comparaison exacte ne faisait pas pour les autres entrées.
+ * Le préfixe le plus long conserve « Vérification NIF » actif sur ses sous-routes.
  */
 const pickActivePath = (pathname, links) =>
   links.reduce((longest, link) => {
@@ -45,7 +25,7 @@ const pickActivePath = (pathname, links) =>
   }, '');
 
 /**
- * Barre de navigation principale avec gestion du thème et des onglets de modules
+ * Barre supérieure : navigation admin, commandes de l'espace agent et profil.
  */
 export default function Header({
   modules = [],
@@ -56,20 +36,17 @@ export default function Header({
   onLogout,
   user = null,
   isAdmin = false,
-  isChefCentre = false,
+  agentNavigationOpen = false,
+  onToggleAgentNavigation,
 }) {
   const { pathname } = useLocation();
 
-  const links = isAdmin
-    ? ADMIN_LINKS
-    : isChefCentre
-      ? [...NAVIGATION_LINKS, LIEN_EQUIPE_CENTRE]
-      : NAVIGATION_LINKS;
-  const homePath = isAdmin ? ADMIN_LINKS[0].to : '/acceuil';
-  const activePath = pickActivePath(pathname, links);
+  const homePath = isAdmin ? ADMIN_LINKS[0].to : '/accueil';
+  const activePath = pickActivePath(pathname, ADMIN_LINKS);
+  const showModuleTabs = pathname === '/collecte' && modules.length > 0;
 
   return (
-    <header className="topbar">
+    <header className={`topbar${isAdmin ? '' : ' agent-topbar'}`}>
       <Link to={homePath} className="brand">
         <img
           className="brand-logo"
@@ -84,35 +61,56 @@ export default function Header({
         </div>
       </Link>
 
-      <nav aria-label="Navigation principale">
-        {links.map((link) => {
-          return (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={link.to === activePath ? 'active' : ''}
-            >
-              {link.label}
-            </Link>
-          );
-        })}
+      {!isAdmin && (
+        <button
+          id="agent-navigation-toggle"
+          type="button"
+          className="agent-navigation-toggle"
+          aria-label={agentNavigationOpen ? 'Réduire la navigation' : 'Ouvrir la navigation'}
+          aria-expanded={agentNavigationOpen}
+          aria-controls="agent-navigation"
+          onClick={onToggleAgentNavigation}
+        >
+          <svg viewBox="0 0 20 20" aria-hidden="true">
+            <path d="M3 5h14M3 10h14M3 15h14" />
+          </svg>
+          <span>Modules</span>
+        </button>
+      )}
 
-        {/* Onglets de sous-modules lors de la saisie de collecte */}
-        {pathname === '/collecte' && modules.length > 0 && (
-          <div className="module-tabs">
-            {modules.map((module) => (
-              <button
-                key={module.id}
-                type="button"
-                className={currentModule === module.id ? 'active' : ''}
-                onClick={() => onSelectModule?.(module.id)}
+      {(isAdmin || showModuleTabs) && (
+        <nav aria-label={isAdmin ? 'Navigation principale' : 'Modules de collecte'}>
+          {isAdmin && ADMIN_LINKS.map((link) => {
+            const actif = link.to === activePath;
+            return (
+              <Link
+                key={link.to}
+                to={link.to}
+                className={actif ? 'active' : ''}
+                aria-current={actif ? 'page' : undefined}
               >
-                {module.label}
-              </button>
-            ))}
-          </div>
-        )}
-      </nav>
+                {link.label}
+              </Link>
+            );
+          })}
+
+          {/* Onglets de sous-modules lors de la saisie de collecte */}
+          {showModuleTabs && (
+            <div className="module-tabs">
+              {modules.map((module) => (
+                <button
+                  key={module.id}
+                  type="button"
+                  className={currentModule === module.id ? 'active' : ''}
+                  onClick={() => onSelectModule?.(module.id)}
+                >
+                  {module.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </nav>
+      )}
 
       {/* Profil de l'agent connecté : ancré au coin supérieur droit de la barre,
           hors du flux de la navigation pour ne jamais suivre ses retours à la ligne. */}
