@@ -13,6 +13,7 @@ Aucun fichier n'importe React ; tous portent l'extension `.js`.
 | Fichier | Rôle |
 | --- | --- |
 | [`formatters.js`](formatters.js) | formatage des montants et des nombres |
+| [`fiscal.utils.js`](fiscal.utils.js) | seuils d'écart et statut dérivé d'une déclaration |
 | [`session.utils.js`](session.utils.js) | atterrissage selon le rôle et initiales du profil |
 | [`pagination.utils.js`](pagination.utils.js) | numérotation des pages affichées |
 | [`searchParams.utils.js`](searchParams.utils.js) | état d'une liste lu et écrit dans l'URL |
@@ -34,17 +35,35 @@ Fondé sur un `Intl.NumberFormat('fr-FR')` commun (`maximumFractionDigits: 0`).
 * `formatAxisValue(value)` : format compact des graduations d'axes, arrondi à l'entier (`"2 Md"`, `"3 M"`, `"5 k"`).
 * `toNumber(val)` : conversion défensive en nombre, `0` si la conversion échoue.
 
+## [`fiscal.utils.js`](fiscal.utils.js)
+
+Les seuils d'écart de TVA, parce qu'ils sont écrits par deux domaines : le module
+Collecte ([`../frontofficeagent/collecte/utils/enregistrerCollecte.js`](../frontofficeagent/collecte/utils/enregistrerCollecte.js))
+et l'import Excel du dossier contribuable
+([`../components/forms/ExcelImportModal.jsx`](../components/forms/ExcelImportModal.jsx)).
+
+* `SEUIL_CONFORMITE = 25` : écart en deçà duquel le dossier reste `conforme`.
+* `SEUIL_CRITIQUE = 50` : écart au-delà duquel il passe `critique` (entre les deux, `alerte`).
+* `statutSelonEcart(tvaTheorique, tvaPayee)` : statut de contrôle déduit de l'écart en pourcentage ; une théorique absente ou à zéro ne fait pas un écart et rend `conforme`.
+
+Ce ne sont pas des réglages d'affichage : ils doivent rester alignés sur
+`FiscalService.determinerStatut` côté backend, car `PUT /api/declarations/:id` ne
+recalcule **pas** le statut. Un écran qui écrirait des montants sans recaler le
+statut laisserait un dossier « conforme » avec un écart de 80 %. À l'inverse, un
+écran qui ne peut pas mesurer l'écart (théorique ou payée non renseignée) ne pousse
+aucun statut plutôt que d'en inventer un.
+
 ## [`session.utils.js`](session.utils.js)
 
 Ce qui concerne la session de l'agent connecté, unique source de vérité partagée
 par [`../App.jsx`](../App.jsx) (route `/`),
 [`Signin`](../backofficeadmin/auth/pages/Signin.jsx) et les affichages du profil :
 
-* `getLandingPath(user)` : renvoie `'/admin'` si `user?.role === 'admin'`, sinon `'/acceuil'`. Le rôle provient toujours de la réponse de `POST /api/auth/login` ou de `GET /api/auth/me`, jamais d'une saisie.
+* `getLandingPath(user)` : renvoie `'/admin'` si `user?.role === 'admin'`, sinon `'/accueil'`. Le rôle provient toujours de la réponse de `POST /api/auth/login` ou de `GET /api/auth/me`, jamais d'une saisie.
 * `initialsOf(user)` : deux initiales (première lettre du prénom + première lettre du nom, en majuscules), repli sur les deux premiers caractères de l'e-mail si l'un des deux manque et `'??'` sans utilisateur. Affichées sur le bouton rond `.user-profile-toggle` de l'en-tête, dans la pastille `.user-profile-avatar` du panneau déroulé et dans la fiche de profil d'`AdminUtilisateurs`.
 
 Le helper doit rester partagé : lorsque la route `/` redirigeait seule vers
-`/acceuil`, elle écrasait la navigation vers `/admin` déclenchée par l'écran de
+`/accueil`, elle écrasait la navigation vers `/admin` déclenchée par l'écran de
 connexion et un administrateur atterrissait d'abord sur l'espace agent.
 
 ## [`pagination.utils.js`](pagination.utils.js)

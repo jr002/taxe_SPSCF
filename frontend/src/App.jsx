@@ -1,52 +1,48 @@
-import { useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import '@/App.css';
 import { deconnexion, getMoi } from '@/api';
 
-// Composants transverses, hooks et portes d'entrée des espaces
-import { AgentSidebar, Header } from '@/components/common';
+// Composants transverses et utilitaires chargés avec la coquille de l'application
+import { AgentSidebar, Header, EspaceOperateurs } from '@/components/common';
 import { getLandingPath } from '@/utils';
+// L'écran de connexion reste dans le bundle initial : c'est la porte d'entrée.
+import Signin from '@/backofficeadmin/auth/pages/Signin';
 
-// Espace contribuable : une page publique, atteinte par un jeton, hors session agent
-import { EspaceContribuable } from '@/accountcontribuable';
+// Chaque page est un module séparé, chargé à la première visite de sa route.
+const EspaceContribuable = lazy(() => import('@/accountcontribuable/pages/EspaceContribuable'));
 
-// Back-office : écran de connexion, d'inscription et pages réservées à l'admin
-import {
-  AdminDashboard,
-  AdminHistorique,
-  AdminRoles,
-  AdminUtilisateurs,
-  AdminVerificationNIF,
-  AttenteActivation,
-  MotDePasseOublie,
-  Signin,
-  Signup,
-  VerificationNifExcel,
-  VerificationNifJson,
-  VerificationNifSql,
-} from '@/backofficeadmin';
+const AdminDashboard = lazy(() => import('@/backofficeadmin/dashboard/pages/AdminDashboard'));
+const AdminHistorique = lazy(() => import('@/backofficeadmin/historique/pages/AdminHistorique'));
+const AdminRoles = lazy(() => import('@/backofficeadmin/roles/pages/AdminRoles'));
+const AdminUtilisateurs = lazy(() => import('@/backofficeadmin/utilisateurs/pages/AdminUtilisateurs'));
+const AdminVerificationNIF = lazy(() => import('@/backofficeadmin/verification-nif/pages/AdminVerificationNIF'));
+const VerificationNifExcel = lazy(() => import('@/backofficeadmin/verification-nif/pages/VerificationNifExcel'));
+const VerificationNifJson = lazy(() => import('@/backofficeadmin/verification-nif/pages/VerificationNifJson'));
+const VerificationNifSql = lazy(() => import('@/backofficeadmin/verification-nif/pages/VerificationNifSql'));
+const AttenteActivation = lazy(() => import('@/backofficeadmin/auth/pages/AttenteActivation'));
+const MotDePasseOublie = lazy(() => import('@/backofficeadmin/auth/pages/MotDePasseOublie'));
+const Signup = lazy(() => import('@/backofficeadmin/auth/pages/Signup'));
 
-// Front-office : les pages routées de chaque domaine fiscal
-import {
-  Accueil,
-  CentreDetail,
-  CentreListe,
-  Collecte,
-  Confrontation,
-  ContribuableDetail,
-  Contribuables,
-  DeclarationCreate,
-  DeclarationDetail,
-  DroitCommunicationCreate,
-  FormInformation,
-  PhaseClassement,
-  RecoupementCreate,
-  Register,
-  RelanceFiscale,
-  SuiviFiscal,
-  TableauDecisionnel,
-  UniteFiscaleDetail,
-} from '@/frontofficeagent';
+const Accueil = lazy(() => import('@/frontofficeagent/accueil/pages/Accueil'));
+const CentreDetail = lazy(() => import('@/frontofficeagent/centres/pages/CentreDetail'));
+const CentreListe = lazy(() => import('@/frontofficeagent/centres/pages/CentreListe'));
+const Register = lazy(() => import('@/frontofficeagent/centres/pages/Register'));
+const UniteFiscaleDetail = lazy(() => import('@/frontofficeagent/centres/pages/UniteFiscaleDetail'));
+const Collecte = lazy(() => import('@/frontofficeagent/collecte/pages/Collecte'));
+const Confrontation = lazy(() => import('@/frontofficeagent/confrontation/pages/Confrontation'));
+const ContribuableDetail = lazy(() => import('@/frontofficeagent/contribuables/pages/ContribuableDetail'));
+const Contribuables = lazy(() => import('@/frontofficeagent/contribuables/pages/Contribuables'));
+const DeclarationCreate = lazy(() => import('@/frontofficeagent/contribuables/pages/DeclarationCreate'));
+const DroitCommunicationCreate = lazy(() => import('@/frontofficeagent/contribuables/pages/DroitCommunicationCreate'));
+const RecoupementCreate = lazy(() => import('@/frontofficeagent/contribuables/pages/RecoupementCreate'));
+const TableauDecisionnel = lazy(() => import('@/frontofficeagent/decisionnel/pages/TableauDecisionnel'));
+const PhaseClassement = lazy(() => import('@/frontofficeagent/entreprises/pages/PhaseClassement'));
+const FormInformation = lazy(() => import('@/frontofficeagent/entreprises/pages/FormInformation'));
+const FileTravail = lazy(() => import('@/frontofficeagent/file-travail/pages/FileTravail'));
+const RelanceFiscale = lazy(() => import('@/frontofficeagent/relance/pages/RelanceFiscale'));
+const SuiviFiscal = lazy(() => import('@/frontofficeagent/suivi-fiscal/pages/SuiviFiscal'));
+const DeclarationDetail = lazy(() => import('@/frontofficeagent/suivi-fiscal/pages/DeclarationDetail'));
 
 /**
  * Composant racine de l'application SP2CF / TVA•SSIF
@@ -59,9 +55,6 @@ export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentModule, setCurrentModule] = useState('sales');
-  const [agentNavigationOpen, setAgentNavigationOpen] = useState(
-    () => !window.matchMedia('(max-width: 1024px)').matches
-  );
   const [isDarkMode, setIsDarkMode] = useState(
     () => localStorage.getItem('tva-ssif-theme') === 'dark'
   );
@@ -69,16 +62,6 @@ export default function App() {
   // Le portail contribuable s'ouvre hors session agent : il n'a rien à vérifier.
   const isCheckingSession = !estPortailContribuable && !sessionVerifiee;
   const isAdmin = currentUser?.role === 'admin';
-  const closeAgentNavigation = useCallback(() => setAgentNavigationOpen(false), []);
-
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 1024px)');
-    const handleBreakpointChange = (event) => setAgentNavigationOpen(!event.matches);
-
-    media.addEventListener('change', handleBreakpointChange);
-    return () => media.removeEventListener('change', handleBreakpointChange);
-  }, []);
-
   useEffect(() => {
     localStorage.setItem('tva-ssif-theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
@@ -133,7 +116,8 @@ export default function App() {
 
   return (
     <div className={`app-shell${isDarkMode ? ' dark-theme' : ''}`}>
-      <Routes>
+      <Suspense fallback={<p className="auth-loading">Chargement de la page…</p>}>
+        <Routes>
         <Route
           path="/espace-contribuable/:token"
           element={(
@@ -180,17 +164,13 @@ export default function App() {
                   onLogout={handleLogout}
                   user={currentUser}
                   isAdmin={isAdmin}
-                  agentNavigationOpen={agentNavigationOpen}
-                  onToggleAgentNavigation={() => setAgentNavigationOpen((prev) => !prev)}
                 />
                 {isAdmin ? (
                   <main className="app-main"><Outlet /></main>
                 ) : (
-                  <div className={`agent-layout${agentNavigationOpen ? ' agent-navigation-open' : ' agent-navigation-closed'}`}>
+                  <div className="agent-layout">
                     <AgentSidebar
                       isChefCentre={currentUser?.role === 'chef_centre'}
-                      isOpen={agentNavigationOpen}
-                      onClose={closeAgentNavigation}
                     />
                     <main className="app-main"><Outlet /></main>
                   </div>
@@ -210,18 +190,21 @@ export default function App() {
           <Route path="/centres-fiscaux" element={<CentreListe />} />
           <Route path="/centres-fiscaux/:type/:index" element={<UniteFiscaleDetail />} />
           <Route path="/suivi" element={<SuiviFiscal />} />
+          <Route path="/file-de-travail" element={<FileTravail />} />
           <Route path="/suivi/:id" element={<DeclarationDetail />} />
-          <Route path="/contribuables" element={<Contribuables />} />
-          <Route path="/contribuables/:id" element={<ContribuableDetail />} />
-          <Route path="/contribuables/:id/classification" element={<ContribuableDetail />} />
-          <Route path="/contribuables/:id/declarations" element={<ContribuableDetail />} />
-          <Route path="/contribuables/:id/declarations/nouveau" element={<DeclarationCreate />} />
-          <Route path="/contribuables/:id/recoupements" element={<ContribuableDetail />} />
-          <Route path="/contribuables/:id/recoupements/nouveau" element={<RecoupementCreate />} />
-          <Route path="/contribuables/:id/droits-communication" element={<ContribuableDetail />} />
-          <Route path="/contribuables/:id/droits-communication/nouveau" element={<DroitCommunicationCreate />} />
-          <Route path="/contribuables/:id/relances" element={<ContribuableDetail />} />
-          <Route path="/contribuables/:id/confrontation" element={<Confrontation currentUser={currentUser} />} />
+          {/* Portefeuille contribuable : espace des rôles opérationnels, fermé à
+              l'administrateur même quand il tape l'URL directement. */}
+          <Route path="/contribuables" element={<EspaceOperateurs currentUser={currentUser}><Contribuables /></EspaceOperateurs>} />
+          <Route path="/contribuables/:id" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
+          <Route path="/contribuables/:id/classification" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
+          <Route path="/contribuables/:id/declarations" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
+          <Route path="/contribuables/:id/declarations/nouveau" element={<EspaceOperateurs currentUser={currentUser}><DeclarationCreate /></EspaceOperateurs>} />
+          <Route path="/contribuables/:id/recoupements" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
+          <Route path="/contribuables/:id/recoupements/nouveau" element={<EspaceOperateurs currentUser={currentUser}><RecoupementCreate /></EspaceOperateurs>} />
+          <Route path="/contribuables/:id/droits-communication" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
+          <Route path="/contribuables/:id/droits-communication/nouveau" element={<EspaceOperateurs currentUser={currentUser}><DroitCommunicationCreate /></EspaceOperateurs>} />
+          <Route path="/contribuables/:id/relances" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
+          <Route path="/contribuables/:id/confrontation" element={<EspaceOperateurs currentUser={currentUser}><Confrontation currentUser={currentUser} /></EspaceOperateurs>} />
           <Route path="/relance" element={<RelanceFiscale />} />
           <Route path="/admin" element={<AdminDashboard currentUser={currentUser} />} />
           <Route path="/admin/utilisateurs" element={<AdminUtilisateurs currentUser={currentUser} />} />
@@ -233,7 +216,8 @@ export default function App() {
           <Route path="/admin/historique" element={<AdminHistorique currentUser={currentUser} />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+        </Routes>
+      </Suspense>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getDroitsCommunication, getErrorMessage } from '@/api';
+import { AideTerme } from '@/frontofficeagent/aide';
 
 const STATUTS = {
   demande: { label: 'Demande', badge: 'badge surveillance' },
@@ -70,45 +71,52 @@ export default function DroitCommunicationPanel({ id }) {
         <span>{rows.length} droit(s) de communication</span>
       </div>
 
-      {loading && <p className="status">Chargement des droits de communication…</p>}
+      {loading && <p className="status" role="status">Chargement des droits de communication…</p>}
       {error && (
         <p className="error form-submit-message" role="alert">{error}</p>
       )}
 
       {!loading && !error && (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Date de demande</th>
-                <th>Tiers</th>
-                <th>Type de tiers</th>
-                <th>Objet</th>
-                <th>Statut</th>
-                <th>Date de réponse</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => {
-                const statut = STATUTS[row.statut] || { label: row.statut, badge: 'badge' };
+        <>
+          <p className="aide-ecran-intro">
+            <AideTerme id="droit_communication">Droit de communication</AideTerme> : demande
+            adressée à un tiers pour obtenir des documents ou des informations. Son statut dit où
+            en est la réponse du tiers — jamais l’état de l’imposition du contribuable.
+          </p>
+          <div className="table-wrap">
+            <table aria-label="Droits de communication du contribuable">
+              <thead>
+                <tr>
+                  <th>Date de demande</th>
+                  <th><AideTerme id="droit_communication">Tiers</AideTerme></th>
+                  <th>Type de tiers</th>
+                  <th>Objet</th>
+                  <th><AideTerme id="statut_droit">Statut</AideTerme></th>
+                  <th>Date de réponse</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row) => {
+                  const statut = STATUTS[row.statut] || { label: row.statut, badge: 'badge' };
 
-                return (
-                  <tr key={row.id_droit}>
-                    <td><strong>{formatDate(row.date_demande)}</strong></td>
-                    <td>{row.tier}</td>
-                    <td>{TYPE_TIER_LABELS[row.type_tier] || row.type_tier || '—'}</td>
-                    <td>{row.objet}</td>
-                    <td><span className={statut.badge}>{statut.label}</span></td>
-                    <td>{formatDate(row.date_reponse)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {rows.length === 0 && (
-            <p className="empty">Aucun droit de communication enregistré pour ce contribuable.</p>
-          )}
-        </div>
+                  return (
+                    <tr key={row.id_droit}>
+                      <td><strong>{formatDate(row.date_demande)}</strong></td>
+                      <td>{row.tier}</td>
+                      <td>{TYPE_TIER_LABELS[row.type_tier] || row.type_tier || '—'}</td>
+                      <td>{row.objet}</td>
+                      <td><span className={statut.badge}>{statut.label}</span></td>
+                      <td>{formatDate(row.date_reponse)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {rows.length === 0 && (
+              <p className="empty">Aucun droit de communication enregistré pour ce contribuable.</p>
+            )}
+          </div>
+        </>
       )}
     </>
   );

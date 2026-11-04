@@ -3,6 +3,19 @@
  * Relance Fiscale et la lettre imprimable. Les clés `type_relance` et `statut`
  * sont celles acceptées par la base (`relances_type_relance_check` et
  * `relances_statut_check`) : inutile de les traduire une seconde fois côté API.
+ *
+ * Sur les délais portés ci-dessous, deux natures différentes, à ne pas confondre
+ * sur un acte imprimé :
+ *
+ * - les 8, 8 et 5 jours francs des relances de recouvrement sont les règles du
+ *   module de relances de ce système. Aucun article du Code des procédures
+ *   fiscales ne les énonce : le code ne connaît la mise en demeure que comme la
+ *   lettre de notification du titre de perception, qui « tient lieu de mise en
+ *   demeure » et commande un paiement immédiat (art. VII-33, p. 128-129). Un acte qui
+ *   présenterait ces délais comme légaux serait faux ;
+ * - les 30 jours de la demande d'éclaircissements sont plus favorables que le
+ *   texte : l'article V-02 (p. 87) assigne « un délai franc de 15 jours » pour
+ *   répondre à une demande écrite.
  */
 export const RELANCE_TYPES = {
   rappel1: { label: '1er Rappel à l’Ordre', titre: "1ER RAPPEL À L'ORDRE", delai: '8 (huit) jours francs', ref: 'R1', couleur: '#f2b84b', severity: 'sev-faible' },

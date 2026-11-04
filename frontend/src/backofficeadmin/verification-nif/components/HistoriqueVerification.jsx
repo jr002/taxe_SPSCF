@@ -11,7 +11,7 @@ export default function HistoriqueVerification({ entries, emptyLabel }) {
 
       {entries.length ? (
         <div className="table-wrap">
-          <table>
+          <table aria-label="Historique des vérifications de NIF">
             <thead>
               <tr>
                 <th style={{ width: '190px' }}>Date & heure</th>
@@ -42,7 +42,7 @@ export default function HistoriqueVerification({ entries, emptyLabel }) {
           </table>
         </div>
       ) : (
-        <p className="status">{emptyLabel}</p>
+        <p className="status" role="status">{emptyLabel}</p>
       )}
     </div>
   );

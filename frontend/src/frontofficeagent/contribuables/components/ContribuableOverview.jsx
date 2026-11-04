@@ -1,11 +1,12 @@
 import { ContribComparisonChart, ContribVolumeChart } from '@/components/charts';
+import { AideTerme } from '@/frontofficeagent/aide';
 import { formatAriary } from '@/utils';
 
 export default function ContribuableOverview({ annualData, curveData, currentRegime, declarations, maxBars, curveMax, totalPaid }) {
   return <>
     <div className="declaration-summary">
       <div>
-        <span>TVA payée cumulée</span>
+        <span><AideTerme id="tva_payee">TVA payée cumulée</AideTerme></span>
         <strong>{formatAriary(totalPaid)}</strong>
         </div>
       <div>

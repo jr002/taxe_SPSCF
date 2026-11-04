@@ -95,7 +95,7 @@ export default function DroitCommunicationCreate() {
         </Link>
       </section>
     ) : (
-      <p className="page status">Chargement du contribuable…</p>
+      <p className="page status" role="status">Chargement du contribuable…</p>
     );
   }
 

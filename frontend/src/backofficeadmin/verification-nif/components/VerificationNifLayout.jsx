@@ -10,7 +10,7 @@ export default function VerificationNifLayout({ currentUser, eyebrow, titre, des
   if (currentUser?.role !== 'admin') {
     return (
       <section className="page">
-        <p className="error">Cette page est réservée aux administrateurs.</p>
+        <p className="error" role="alert">Cette page est réservée aux administrateurs.</p>
       </section>
     );
   }

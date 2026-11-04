@@ -237,11 +237,9 @@ class AccesContribuableModel {
 
     return {
       contribuable: identite,
-      situation: etat_contribuable?.[0] || {
-        statut_activite: 'Actif',
-        statut_conformite: 'En règle',
-        date_modification: null,
-      },
+      // Aucun état enregistré n'est un état « Actif / En règle » : la valeur vide
+      // doit se lire comme telle sur le portail, pas comme une conformité accordée.
+      situation: etat_contribuable?.[0] || null,
       declarations,
       droits_communication: droits,
       recoupements,

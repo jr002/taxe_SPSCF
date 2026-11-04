@@ -28,6 +28,7 @@ export default function ConfrontationLaunch({
   onShowList,
   apercu = null,
   apercuLoading = false,
+  apercuError = '',
   readOnly = false,
 }) {
   const declarations = Number(apercu?.declarations?.total ?? 0);
@@ -117,10 +118,16 @@ export default function ConfrontationLaunch({
           </div>
         )}
 
-        {apercuLoading && <p className="status">Vérification des données disponibles…</p>}
+        {apercuLoading && <p className="status" role="status">Vérification des données disponibles…</p>}
 
-        {!apercuLoading && !apercu && (
-          <p className="status">L’aperçu des données est indisponible. La confrontation reste possible sans période.</p>
+        {!apercuLoading && apercuError && (
+          <p className="status error" role="alert">
+            {apercuError} — la période n’a pas pu être préremplie, mais la confrontation reste possible.
+          </p>
+        )}
+
+        {!apercuLoading && !apercuError && !apercu && (
+          <p className="status" role="status">L’aperçu des données est indisponible. La confrontation reste possible sans période.</p>
         )}
 
         {apercu && (
@@ -163,7 +170,7 @@ export default function ConfrontationLaunch({
               </article>
             </div>
 
-            <p className="status">
+            <p className="status" role="status">
               {apercu.rapprochements.total > 0
                 ? `Dernière confrontation : ${formatDateTime(apercu.rapprochements.derniere_date)} · ${apercu.rapprochements.total} rapprochement(s) enregistré(s).`
                 : 'Aucune confrontation lancée pour ce contribuable.'}
@@ -228,7 +235,7 @@ export default function ConfrontationLaunch({
             </div>
 
             {sansPeriode > 0 && (
-              <p className="status">
+              <p className="status" role="status">
                 {sansPeriode} recoupement(s) sans période ni date d’opération ne peuvent être rattachés à un
                 exercice et restent hors comparaison.
               </p>
@@ -294,7 +301,7 @@ export default function ConfrontationLaunch({
           <div>
             <p className="eyebrow subtle">Résultat de la confrontation</p>
             <h3>{total > 0 ? 'Comparaison terminée' : 'Aucun rapprochement trouvé'}</h3>
-            {result.at && <p className="status">{formatDateTime(result.at)}</p>}
+            {result.at && <p className="status" role="status">{formatDateTime(result.at)}</p>}
           </div>
 
           {total > 0 ? (
@@ -303,11 +310,11 @@ export default function ConfrontationLaunch({
                 Nouveaux rapprochements créés : <strong>{created}</strong> · Déjà existants :{' '}
                 <strong>{existing}</strong>
               </p>
-              <p className="status">
+              <p className="status" role="status">
                 Types — Exact {typeCount('exact')} · Tolérance {typeCount('tolerance')} · Partiel{' '}
                 {typeCount('partiel')} · Manuel {typeCount('manuel')}
               </p>
-              <p className="status">
+              <p className="status" role="status">
                 Statuts — Rapproché {statusCount('rapproche')} · À vérifier {statusCount('a_verifier')} ·
                 Écart {statusCount('ecart')} · Validé {statusCount('valide')}
               </p>

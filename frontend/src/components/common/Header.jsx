@@ -36,8 +36,6 @@ export default function Header({
   onLogout,
   user = null,
   isAdmin = false,
-  agentNavigationOpen = false,
-  onToggleAgentNavigation,
 }) {
   const { pathname } = useLocation();
 
@@ -54,29 +52,16 @@ export default function Header({
           alt="Logo de la Direction Générale des Impôts"
         />
         <div>
-          <strong>
-            TVA<span className="brand-dot">•</span>SSIF
+          <strong className="brand-project-name">
+            <span>DGI</span>
+            <span className="brand-dot" aria-hidden="true">·</span>
+            <span>SPSCF</span>
           </strong>
-          <small>DGI · Système d'information fiscal</small>
+          <small className="brand-project-description">
+            Système de pilotage du suivi de la conformité fiscale
+          </small>
         </div>
       </Link>
-
-      {!isAdmin && (
-        <button
-          id="agent-navigation-toggle"
-          type="button"
-          className="agent-navigation-toggle"
-          aria-label={agentNavigationOpen ? 'Réduire la navigation' : 'Ouvrir la navigation'}
-          aria-expanded={agentNavigationOpen}
-          aria-controls="agent-navigation"
-          onClick={onToggleAgentNavigation}
-        >
-          <svg viewBox="0 0 20 20" aria-hidden="true">
-            <path d="M3 5h14M3 10h14M3 15h14" />
-          </svg>
-          <span>Modules</span>
-        </button>
-      )}
 
       {(isAdmin || showModuleTabs) && (
         <nav aria-label={isAdmin ? 'Navigation principale' : 'Modules de collecte'}>

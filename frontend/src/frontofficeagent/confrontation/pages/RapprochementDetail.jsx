@@ -39,8 +39,8 @@ export default function RapprochementDetail({
   onMotifChange,
   onConfirm,
 }) {
-  if (loading) return <p className="status">Chargement…</p>;
-  if (error) return <p className="empty error">{error}</p>;
+  if (loading) return <p className="status" role="status">Chargement…</p>;
+  if (error) return <p className="empty error" role="alert">{error}</p>;
   if (!data) {
     return (
       <div>

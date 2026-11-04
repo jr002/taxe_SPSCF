@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getCentres, getErrorMessage } from '@/api';
+import { useFiltresUrl } from '@/hooks';
 
 const PAGE_SIZE = 10;
 
@@ -9,11 +10,12 @@ const PAGE_SIZE = 10;
  */
 export default function Register() {
   const navigate = useNavigate();
+  const { lire, patch, page } = useFiltresUrl();
   const [centres, setCentres] = useState([]);
-  const [search, setSearch] = useState('');
-  const [typeFilter, setTypeFilter] = useState('');
-  const [sort, setSort] = useState({ field: 'nom_centre', direction: 'asc' });
-  const [page, setPage] = useState(1);
+  const search = lire('q', '');
+  const typeFilter = lire('type', '');
+  const sortField = lire('tri', 'nom_centre');
+  const sortDirection = lire('sens', 'asc') === 'desc' ? 'desc' : 'asc';
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -52,39 +54,38 @@ export default function Register() {
     });
 
     return filtered.sort((first, second) => {
-      const firstValue = sort.field === 'contribuables'
+      const firstValue = sortField === 'contribuables'
         ? first._count?.contribuables || 0
-        : first[sort.field] || '';
-      const secondValue = sort.field === 'contribuables'
+        : first[sortField] || '';
+      const secondValue = sortField === 'contribuables'
         ? second._count?.contribuables || 0
-        : second[sort.field] || '';
+        : second[sortField] || '';
       const comparison = typeof firstValue === 'number'
         ? firstValue - secondValue
         : String(firstValue).localeCompare(String(secondValue), 'fr', { sensitivity: 'base' });
 
-      return sort.direction === 'asc' ? comparison : -comparison;
+      return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [centres, search, sort, typeFilter]);
+  }, [centres, search, sortField, sortDirection, typeFilter]);
 
   const pageCount = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
-  const visibleRows = rows.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const visiblePage = Math.min(page, pageCount);
+  const visibleRows = rows.slice((visiblePage - 1) * PAGE_SIZE, visiblePage * PAGE_SIZE);
 
-  const changeFilter = (setter, value) => {
-    setter(value);
-    setPage(1);
-  };
+  const goToPage = (valeur) => patch({ page: valeur <= 1 ? '' : valeur });
 
   const changeSort = (field) => {
-    setSort((previous) => ({
-      field,
-      direction: previous.field === field && previous.direction === 'asc' ? 'desc' : 'asc',
-    }));
-    setPage(1);
+    const prochainSens = sortField === field && sortDirection === 'asc' ? 'desc' : 'asc';
+    patch({
+      tri: field === 'nom_centre' ? '' : field,
+      sens: prochainSens === 'asc' ? '' : 'desc',
+      page: '',
+    });
   };
 
   const sortIndicator = (field) => {
-    if (sort.field !== field) return '↕';
-    return sort.direction === 'asc' ? '↑' : '↓';
+    if (sortField !== field) return '↕';
+    return sortDirection === 'asc' ? '↑' : '↓';
   };
 
   return (
@@ -98,13 +99,13 @@ export default function Register() {
       <div className="datatable-toolbar register-toolbar">
         <input
           value={search}
-          onChange={(event) => changeFilter(setSearch, event.target.value)}
+          onChange={(event) => patch({ q: event.target.value, page: '' })}
           placeholder="Rechercher un centre..."
           aria-label="Rechercher un centre"
         />
         <select
           value={typeFilter}
-          onChange={(event) => changeFilter(setTypeFilter, event.target.value)}
+          onChange={(event) => patch({ type: event.target.value, page: '' })}
           aria-label="Filtrer par type de centre"
         >
           <option value="">Tous les types</option>
@@ -117,14 +118,14 @@ export default function Register() {
         <span>{rows.length} centre(s)</span>
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
 
       {loading ? (
-        <p className="status">Chargement des centres...</p>
+        <p className="status" role="status">Chargement des centres...</p>
       ) : (
         <>
           <div className="table-wrap">
-            <table className="register-table">
+            <table aria-label="Registre des centres fiscaux" className="register-table">
               <thead>
                 <tr>
                   {[
@@ -135,13 +136,22 @@ export default function Register() {
                     ['telephone_centre', 'Téléphone'],
                     ['contribuables', 'Contribuables rattachés'],
                   ].map(([field, label]) => (
-                    <th key={field}>
+                    <th
+                      key={field}
+                      aria-sort={
+                        sortField !== field
+                          ? 'none'
+                          : sortDirection === 'asc'
+                            ? 'ascending'
+                            : 'descending'
+                      }
+                    >
                       <button
                         type="button"
                         className="table-sort-button"
                         onClick={() => changeSort(field)}
                       >
-                        {label} <span>{sortIndicator(field)}</span>
+                        {label} <span aria-hidden="true">{sortIndicator(field)}</span>
                       </button>
                     </th>
                   ))}
@@ -182,19 +192,19 @@ export default function Register() {
           </div>
 
           <div className="datatable-pagination">
-            <span>Page {page} sur {pageCount}</span>
+            <span>Page {visiblePage} sur {pageCount}</span>
             <div>
               <button
                 type="button"
-                onClick={() => setPage((current) => Math.max(1, current - 1))}
-                disabled={page === 1}
+                onClick={() => goToPage(visiblePage - 1)}
+                disabled={visiblePage === 1}
               >
                 ← Précédent
               </button>
               <button
                 type="button"
-                onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-                disabled={page === pageCount}
+                onClick={() => goToPage(visiblePage + 1)}
+                disabled={visiblePage === pageCount}
               >
                 Suivant →
               </button>
@@ -203,7 +213,7 @@ export default function Register() {
         </>
       )}
 
-      <div className="home-footer-note" style={{ marginTop: '2rem' }}>
+      <div className="home-footer-note">
         <button
           className="detail-close"
           onClick={() => navigate('/')}

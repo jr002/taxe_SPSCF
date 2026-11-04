@@ -1,16 +1,20 @@
-import { useEffect, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 const NAVIGATION_LINKS = [
-  { to: '/accueil', label: 'Accueil' },
-  { to: '/decisionnel', label: 'Décisionnel' },
-  { to: '/suivi', label: 'Dossier fiscal' },
-  { to: '/contribuables', label: 'Contribuables' },
-  { to: '/centres-fiscaux', label: 'Centres fiscaux' },
-  { to: '/register', label: 'Registre' },
+  { to: '/accueil', label: 'Accueil', icon: ['M3 10.5 12 3l9 7.5', 'M5.5 9.5V21h13V9.5', 'M9.5 21v-7h5v7'] },
+  { to: '/file-de-travail', label: 'File de travail', icon: ['M3 7h18v14H3z', 'M8 7V4h8v3', 'M3 12h18'] },
+  { to: '/decisionnel', label: 'Statistique', icon: ['M4 20V4', 'M4 20h17', 'm8 16 4-5 3 2 5-7'] },
+  { to: '/suivi', label: 'Dossier fiscal', icon: ['M3 4.5h5.5l1.8 2.2H21V20.5H3z', 'M8 13h8'] },
+  { to: '/contribuables', label: 'Contribuables', icon: ['M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2', 'M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8', 'M20 21v-2a4 4 0 0 0-3-3.87', 'M16 3.13a4 4 0 0 1 0 7.75'] },
+  { to: '/centres-fiscaux', label: 'Centres fiscaux', icon: ['M3 21h18', 'M5 21V7l7-4 7 4v14', 'M9 10h.01', 'M15 10h.01', 'M9 14h.01', 'M15 14h.01', 'M10 21v-4h4v4'] },
+  { to: '/register', label: 'Registre', icon: ['M4.5 5h.01', 'M4.5 12h.01', 'M4.5 19h.01', 'M9 5h11', 'M9 12h11', 'M9 19h7'] },
 ];
 
-const LIEN_EQUIPE_CENTRE = { to: '/admin/utilisateurs', label: 'Mon équipe' };
+const LIEN_EQUIPE_CENTRE = {
+  to: '/admin/utilisateurs',
+  label: 'Mon équipe',
+  icon: ['M3.5 5h17v14h-17z', 'M9 11.1a1.8 1.8 0 1 0 0-3.6 1.8 1.8 0 0 0 0 3.6', 'M6 16.6c0-1.66 1.34-3 3-3s3 1.34 3 3', 'M15 8.5h3.5', 'M15 11.5h3.5'],
+};
 
 const pickActivePath = (pathname, links) =>
   links.reduce((longest, link) => {
@@ -18,102 +22,39 @@ const pickActivePath = (pathname, links) =>
     return matches && link.to.length > longest.length ? link.to : longest;
   }, '');
 
-export default function AgentSidebar({ isChefCentre = false, isOpen = false, onClose }) {
+export default function AgentSidebar({ isChefCentre = false }) {
   const { pathname } = useLocation();
-  const sidebarRef = useRef(null);
-  const closeButtonRef = useRef(null);
   const links = isChefCentre ? [...NAVIGATION_LINKS, LIEN_EQUIPE_CENTRE] : NAVIGATION_LINKS;
   const activePath = pickActivePath(pathname, links);
 
-  useEffect(() => {
-    if (!isOpen || !window.matchMedia('(max-width: 1024px)').matches) return undefined;
-
-    const previousOverflow = document.body.style.overflow;
-    const handleKeyDown = (event) => {
-      if (event.key === 'Escape') {
-        onClose?.();
-        return;
-      }
-
-      if (event.key !== 'Tab') return;
-      const focusable = sidebarRef.current?.querySelectorAll('a[href], button:not([disabled])');
-      if (!focusable?.length) return;
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    document.body.style.overflow = 'hidden';
-    document.addEventListener('keydown', handleKeyDown);
-    closeButtonRef.current?.focus();
-
-    return () => {
-      document.body.style.overflow = previousOverflow;
-      document.removeEventListener('keydown', handleKeyDown);
-      document.getElementById('agent-navigation-toggle')?.focus();
-    };
-  }, [isOpen, onClose]);
-
-  const closeOnMobile = () => {
-    if (window.matchMedia('(max-width: 1024px)').matches) onClose?.();
-  };
-
   return (
-    <>
-      <aside
-        ref={sidebarRef}
-        id="agent-navigation"
-        className="agent-sidebar"
-        aria-label="Navigation de l’espace agent"
-        inert={!isOpen}
-      >
-        <div className="agent-sidebar-heading">
-          <strong>Modules fiscaux</strong>
-          <button
-            ref={closeButtonRef}
-            type="button"
-            className="agent-sidebar-close"
-            aria-label="Fermer la navigation"
-            onClick={onClose}
-          >
-            <svg viewBox="0 0 20 20" aria-hidden="true">
-              <path d="m5 5 10 10M15 5 5 15" />
-            </svg>
-          </button>
-        </div>
-        <nav aria-label="Modules du frontoffice agent">
-          {links.map((link) => {
-            const actif = link.to === activePath;
-            return (
-              <Link
-                key={link.to}
-                to={link.to}
-                className={actif ? 'active' : ''}
-                aria-current={actif ? 'page' : undefined}
-                onClick={closeOnMobile}
-              >
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </aside>
-      {isOpen && (
-        <button
-          type="button"
-          className="agent-navigation-backdrop"
-          aria-hidden="true"
-          tabIndex={-1}
-          onClick={onClose}
-        />
-      )}
-    </>
+    <aside id="agent-navigation" className="agent-sidebar" aria-label="Navigation de l’espace agent">
+      <div className="agent-sidebar-heading">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
+        </svg>
+        <strong>Modules fiscaux</strong>
+      </div>
+      <nav aria-label="Modules du frontoffice agent">
+        {links.map((link) => {
+          const actif = link.to === activePath;
+          return (
+            <Link
+              key={link.to}
+              to={link.to}
+              className={actif ? 'active' : ''}
+              aria-current={actif ? 'page' : undefined}
+              aria-label={link.label}
+              title={link.label}
+            >
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                {link.icon.map((path) => <path key={path} d={path} />)}
+              </svg>
+              <span>{link.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </aside>
   );
 }

@@ -1,6 +1,6 @@
 /**
- * Relances et recouvrement, y compris la demande d'éclaircissements (CPF V-17),
- * qui est portée par le même table `relances`.
+ * Relances et recouvrement, y compris la demande d'éclaircissements (code des
+ * procédures fiscales, art. V-02), qui est portée par le même table `relances`.
  */
 import api from '@/api/client';
 

@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 
 import { createDeclaration, getContribuableById, getErrorMessage } from '@/api';
-import { getRegime } from '@/frontofficeagent/decisionnel/utils/decisionnel.utils.js';
 import DeclarationForm from '@/frontofficeagent/contribuables/components/DeclarationForm';
 
 const REQUIRED_FIELDS = [
@@ -81,7 +80,10 @@ export default function DeclarationCreate() {
         tva_collectee: Number(form.tva_collectee),
         tva_deductible: Number(form.tva_deductible),
         tva_payee: Number(form.tva_payee),
-        regime_fiscal: contribuable.regime_fiscal || getRegime(contribuable),
+        // La nature d'impôt n'est pas déduite du chiffre d'affaires : elle est
+        // celle du dossier. Sans mention au dossier, la déclaration n'en porte
+        // pas, et l'onglet « Nature d'impôt » la dira non renseignée.
+        ...(contribuable?.regime_fiscal ? { regime_fiscal: contribuable.regime_fiscal } : {}),
       });
       navigate(`/contribuables/${id}/declarations`);
     } catch (requestError) {
@@ -101,7 +103,7 @@ export default function DeclarationCreate() {
         </Link>
       </section>
     ) : (
-      <p className="page status">Chargement du contribuable…</p>
+      <p className="page status" role="status">Chargement du contribuable…</p>
     );
   }
 

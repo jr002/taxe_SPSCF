@@ -34,7 +34,7 @@ export default function CentreDetail() {
     loadCentre();
   }, [id]);
 
-  if (loading) return <p className="page status">Chargement du centre...</p>;
+  if (loading) return <p className="page status" role="status">Chargement du centre...</p>;
 
   if (error || !centre) {
     return (
@@ -69,7 +69,7 @@ export default function CentreDetail() {
       </div>
 
       <div className="table-wrap">
-        <table className="register-table">
+        <table aria-label="Contribuables du centre" className="register-table">
           <thead>
             <tr>
               <th>Raison sociale</th>

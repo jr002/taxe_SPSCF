@@ -23,7 +23,7 @@ router.get('/:id', declarationInScope, DeclarationController.findById);
 router.post('/', targetContribuableInScope, validate(declarationValidators), DeclarationController.create);
 router.put('/:id', declarationInScope, validate(declarationUpdateValidators), DeclarationController.update);
 
-// Procédure contradictoire & Redressements (CGI LFI 2026)
+// Procédure contradictoire & Redressements (code des procédures fiscales, art. V-03 à V-07)
 router.post('/:id/notification-primitive', declarationInScope, validate(notificationPrimitiveValidators), DeclarationController.emettreNotificationPrimitive);
 router.post('/:id/notification-definitive', declarationInScope, validate(notificationDefinitiveValidators), DeclarationController.emettreNotificationDefinitive);
 router.post('/:id/imputer-credit', declarationInScope, validate(imputationCreditValidators), DeclarationController.imputerCreditImpot);

@@ -310,11 +310,13 @@ const swaggerSpec = {
     schemas: {
       ContribuableInput: {
         type: 'object',
-        required: ['nif', 'raison_sociale', 'secteur_activite', 'adresse', 'telephone'],
+        required: ['nif', 'raison_sociale', 'secteur_activite'],
         properties: {
           nif: { type: 'string', example: '1234567890' },
           raison_sociale: { type: 'string', example: 'Ma Société' },
           secteur_activite: { type: 'string', example: 'Commerce' },
+          // Nullables en base : un import Excel sans ces colonnes crée le
+          // contribuable avec le champ vide plutôt qu'une valeur inventée.
           adresse: { type: 'string', example: 'Antananarivo' },
           telephone: { type: 'string', example: '+261340000000' },
           email: { type: 'string', format: 'email' },
@@ -380,10 +382,15 @@ const swaggerSpec = {
       },
       EtatContribuableInput: {
         type: 'object',
+        // Les deux statuts sont obligatoires : écrits par défaut par le modèle,
+        // ils déclareraient « Actif / En règle » un dossier jamais examiné.
+        // `id_contribuable` ne sert que si l'URL ne porte pas le contribuable
+        // (`POST /api/etat-contribuable`) ; sinon l'ID de l'URL gagne.
+        required: ['statut_activite', 'statut_conformite'],
         properties: {
           id_contribuable: { type: 'integer', example: 1 },
-          statut_activite: { type: 'string', example: 'Actif' },
-          statut_conformite: { type: 'string', example: 'En règle' },
+          statut_activite: { type: 'string', enum: ['Actif', 'En sommeil', 'En cessation', 'Radié'], example: 'Actif' },
+          statut_conformite: { type: 'string', enum: ['En règle', 'Défaillant', 'Sous contrôle', 'Bloqué'], example: 'En règle' },
           motif: { type: 'string', example: 'Régularisation effectuée' },
         },
       },

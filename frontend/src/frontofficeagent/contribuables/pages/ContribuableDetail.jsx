@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+
+import { ExcelImportModal } from '@/components/forms';
 
 import {
   createRelance,
@@ -16,7 +18,9 @@ import {
   getCaReference,
   getFicheCategorie,
 } from '@/frontofficeagent/contribuables/utils/classificationCgi.utils.js';
-import { DossierFiscalNavigation } from '@/components/common';
+import {
+  AideLectureModal,
+} from '@/frontofficeagent/aide';
 import RappelOrdreModal from '@/frontofficeagent/relance/components/RappelOrdreModal';
 import ClassificationPanel from '@/frontofficeagent/contribuables/components/ClassificationPanel';
 import ContribuableHeader from '@/frontofficeagent/contribuables/components/ContribuableHeader';
@@ -78,29 +82,39 @@ export default function ContribuableDetail() {
   const [relanceError, setRelanceError] = useState('');
   const [exportSuccess, setExportSuccess] = useState('');
   const [lienAccesOpen, setLienAccesOpen] = useState(false);
+  const [aideOuverte, setAideOuverte] = useState(false);
+  const [importOuverte, setImportOuverte] = useState(false);
+  const [bilanImport, setBilanImport] = useState('');
   const [currentTimestamp] = useState(() => Date.now());
 
   const activeTab = getActiveTab(location.pathname);
+
+  /**
+   * Relit la fiche et ses déclarations depuis la base. L'import Excel écrit
+   * réellement en base : l'écran doit afficher ce qui y est stocké après chaque
+   * import, pas ce que la page avait en mémoire.
+   */
+  const rechargerFiche = useCallback(async () => {
+    try {
+      const result = await getContribuableById(id);
+      setContribuable(result);
+      setDeclarations(result.declarations || []);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    }
+  }, [id]);
 
   useEffect(() => {
     if (sourceContribuable) return;
 
     const loadHistory = async () => {
       setLoading(true);
-
-      try {
-        const result = await getContribuableById(id);
-        setContribuable(result);
-        setDeclarations(result.declarations || []);
-      } catch (requestError) {
-        setError(getErrorMessage(requestError));
-      } finally {
-        setLoading(false);
-      }
+      await rechargerFiche();
+      setLoading(false);
     };
 
     loadHistory();
-  }, [id, sourceContribuable]);
+  }, [rechargerFiche, sourceContribuable]);
 
   // Les relances viennent de la table `relances`, filtrée par le périmètre de l'agent.
   useEffect(() => {
@@ -191,6 +205,8 @@ export default function ContribuableDetail() {
   );
 
   const lastDeclaration = declarations[0];
+  // Somme des montants réellement enregistrés (`montant_net_a_payer`) ; à défaut,
+  // l'écart de TVA du dossier sert d'assiette à l'émission, que l'agent confirme.
   const totalDuRelance = declarations.reduce(
     (total, declaration) =>
       total +
@@ -209,8 +225,12 @@ export default function ContribuableDetail() {
         nif: contribuable.nif,
         raisonSociale: contribuable.raison_sociale,
         secteur: contribuable.secteur_activite,
-        annee:
-          lastDeclaration?.annee || new Date(currentTimestamp).getFullYear(),
+        // Le centre gestionnaire est la seule source du téléphone et de l'e-mail
+        // portés en pied de lettre : rien n'est inventé quand il est absent.
+        centre_nom: contribuable.centres?.nom_centre ?? null,
+        centre_telephone: contribuable.centres?.telephone_centre ?? null,
+        centre_email: contribuable.centres?.email_centre ?? null,
+        annee: lastDeclaration?.annee ?? null,
         montantDu: totalDuRelance,
         joursRetard: referenceDate
           ? Math.max(
@@ -227,6 +247,15 @@ export default function ContribuableDetail() {
   const issueRelance = async (type) => {
     if (!dossierRelance) return;
 
+    // `relances.annee` est obligatoire en base et dans l'API : sans déclaration,
+    // aucun exercice n'est connu et l'émission serait une invention.
+    if (!dossierRelance.annee) {
+      setRelanceError(
+        'Aucune déclaration au dossier : l’exercice de la relance est inconnu, le rappel ne peut pas être émis.',
+      );
+      return;
+    }
+
     setRelanceSubmitting(true);
     setRelanceSuccess('');
     setRelanceError('');
@@ -237,14 +266,21 @@ export default function ContribuableDetail() {
         id_declaration: lastDeclaration?.id_declaration ?? null,
         type_relance: type,
         statut: 'emise',
-        annee: Number(dossierRelance.annee) || new Date().getFullYear(),
+        annee: Number(dossierRelance.annee),
         montant_du: dossierRelance.montantDu,
         jours_retard: dossierRelance.joursRetard,
         date_emission: new Date().toISOString(),
       });
 
       setRelances((previous) => [created, ...previous]);
-      setRappelDossier({ ...dossierRelance, dateEmission: created?.date_emission });
+      // La lettre reporte la ligne telle qu'enregistrée, pas l'estimation de l'écran.
+      setRappelDossier({
+        ...dossierRelance,
+        annee: created?.annee ?? dossierRelance.annee,
+        montantDu: created?.montant_du ?? dossierRelance.montantDu,
+        joursRetard: created?.jours_retard ?? dossierRelance.joursRetard,
+        dateEmission: created?.date_emission,
+      });
       setRappelModalType(type);
       setRappelModalOpen(true);
       setRelanceSuccess(
@@ -295,8 +331,11 @@ export default function ContribuableDetail() {
 
     setRappelDossier({
       ...dossierRelance,
-      annee: relance.annee ?? dossierRelance.annee,
-      montantDu: toNumber(relance.montant_du) || dossierRelance.montantDu,
+      annee: relance.annee ?? null,
+      // La ligne enregistrée porte son propre montant : on ne la remplace pas par
+      // l'estimation calculée pour l'écran.
+      montantDu: relance.montant_du ?? null,
+      joursRetard: relance.jours_retard ?? null,
       dateEmission: relance.date_emission,
     });
     setRappelModalType(relance.type_relance);
@@ -325,7 +364,7 @@ export default function ContribuableDetail() {
   };
 
   if (loading) {
-    return <p className="page status">Chargement de l'historique du contribuable...</p>;
+    return <p className="page status" role="status">Chargement de l'historique du contribuable...</p>;
   }
 
   if (error || !contribuable) {
@@ -343,8 +382,6 @@ export default function ContribuableDetail() {
   return (
     <>
       <section className="page declaration-page contribuable-detail-page">
-        <DossierFiscalNavigation mode="collecte" />
-
         <ContribuableHeader
           activeTab={activeTab}
           contribuable={contribuable}
@@ -355,7 +392,12 @@ export default function ContribuableDetail() {
           fiche={fiche}
           id={id}
           onExport={handleExport}
+          onImporter={() => {
+            setBilanImport('');
+            setImportOuverte(true);
+          }}
           onPartager={() => setLienAccesOpen(true)}
+          onOuvrirAide={() => setAideOuverte(true)}
         />
 
         {activeTab === 'overview' && (
@@ -389,6 +431,12 @@ export default function ContribuableDetail() {
         {exportSuccess && (
           <p className="success form-submit-message" role="status">
             {exportSuccess}
+          </p>
+        )}
+
+        {bilanImport && (
+          <p className="success form-submit-message" role="status">
+            {bilanImport}
           </p>
         )}
 
@@ -448,6 +496,11 @@ export default function ContribuableDetail() {
         dossier={rappelDossier}
         type={rappelModalType}
       />
+      <AideLectureModal
+        ouvert={aideOuverte}
+        ecran={activeTab}
+        onFermer={() => setAideOuverte(false)}
+      />
       {lienAccesOpen && (
         <LienAccesModal
           ouvert
@@ -455,6 +508,17 @@ export default function ContribuableDetail() {
           onFermer={() => setLienAccesOpen(false)}
         />
       )}
+      {/* Mode « dossier » : le classeur alimente les déclarations TVA de ce
+          contribuable, sans jamais toucher à la fiche elle-même. */}
+      <ExcelImportModal
+        contribuable={contribuable}
+        isOpen={importOuverte}
+        onClose={() => setImportOuverte(false)}
+        onSuccess={(bilan) => {
+          setBilanImport(bilan || 'Déclarations du dossier enregistrées.');
+          void rechargerFiche();
+        }}
+      />
     </>
   );
 }

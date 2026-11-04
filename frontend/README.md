@@ -74,8 +74,8 @@ contribuable n'a pas de session agent, et le réseau du navigateur ne montre ni
 
 | Route | Écran | Accès |
 | --- | --- | --- |
-| `/` | écran de connexion, ou redirection vers l'accueil du rôle (`/admin` pour un administrateur, `/acceuil` sinon) si la session est valide | public |
-| `/espace-contribuable/:token` | `EspaceContribuable` — portail contribuable en lecture seule : formulaire NIF + e-mail, puis tableau de bord des taxes, conseils et pénalités, historique TVA, droits de communication, recoupements et confrontation | public, protégé par le jeton (voir [`src/accountcontribuable/README.md`](src/accountcontribuable/README.md)) |
+| `/` | écran de connexion, ou redirection vers l'accueil du rôle (`/admin` pour un administrateur, `/accueil` sinon) si la session est valide | public |
+| `/espace-contribuable/:token` | `EspaceContribuable` — portail contribuable en lecture seule, à deux vues : formulaire NIF + e-mail, puis tableau de bord des taxes, conseils et pénalités, historique TVA, droits de communication, recoupements et confrontation ; et « Aide & repères légaux » (texte général, sans appel d'API) ; chaque règle énoncée porte une explication au survol et un renvoi vers sa rubrique d'aide, tous deux issus de `src/accountcontribuable/data/regles.data.js` | public, protégé par le jeton (voir [`src/accountcontribuable/README.md`](src/accountcontribuable/README.md)) |
 | `/signin` | redirection vers `/` | public |
 | `/signup` | `Signup` — demande de création de compte agent | public |
 | `/attente-activation` | `AttenteActivation` — statut d'un compte en attente d'activation | public |
@@ -88,7 +88,7 @@ contribuable n'a pas de session agent, et le réseau du navigateur ne montre ni
 | `/admin/verification-nif/excel` | `VerificationNifExcel` — liaison depuis un fichier Excel, 3 dernières opérations | protégé, administrateurs |
 | `/admin/verification-nif/json` | `VerificationNifJson` — synchronisation avec le catalogue JSON, 3 dernières opérations | protégé, administrateurs |
 | `/admin/historique` | `AdminHistorique` — journal des opérations d'administration | protégé, administrateurs |
-| `/acceuil` | `Accueil` — tableau de bord | protégé |
+| `/accueil` | `Accueil` — tableau de bord | protégé |
 | `/collecte` | `Collecte` + onglets de modules TVA | protégé |
 | `/entreprises/nouveau` | `PhaseClassement` | protégé |
 | `/entreprises/nouveau/form` | `FormInformation` | protégé |
@@ -127,8 +127,9 @@ qui demande le mot de passe actuel puis le nouveau deux fois, et appelle
 `POST /api/auth/change-password`), la bascule du thème et « Se déconnecter ».
 Aucune de ces commandes n'est alignée dans la barre.
 
-> Remarque : la route du tableau de bord est orthographiée `/acceuil` dans le
-> code (`App.jsx`, `Header.jsx`, écrans de connexion), et non `/accueil`.
+> Remarque : la route du tableau de bord est `/accueil`. L'ancienne coquille
+> `/acceuil` n'est conservée dans `App.jsx` que comme redirection vers `/accueil`,
+> pour ne casser aucun lien déjà partagé.
 
 ## 5. Appels à l'API
 
@@ -168,7 +169,7 @@ La liste complète des fonctions et leur endpoint est dans
   renvoyées par l'API et désactive le bouton pendant l'envoi.
 - En cas de succès, le cookie de session est posé pour 8 heures et
   l'utilisateur est redirigé vers `/admin` si son rôle est `admin`, sinon vers
-  `/acceuil` (`getLandingPath` de `src/utils/session.utils.js`, utilisé à la fois
+  `/accueil` (`getLandingPath` de `src/utils/session.utils.js`, utilisé à la fois
   par `App.jsx` et par l'écran de connexion). Le rôle est celui
   renvoyé par `POST /api/auth/login`, donc aucune redirection ne peut être
   forcée sans authentification valide.

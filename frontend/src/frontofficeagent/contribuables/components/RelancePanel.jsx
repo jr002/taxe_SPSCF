@@ -1,3 +1,4 @@
+import { AideTerme } from '@/frontofficeagent/aide';
 import { relanceStatut, relanceType } from '@/frontofficeagent/relance/utils/relance.utils';
 
 const RELANCE_ACTIONS = [
@@ -7,7 +8,7 @@ const RELANCE_ACTIONS = [
     className: 'relance-action-warning',
     icon: '📨',
     title: '1er Rappel à l’Ordre',
-    detail: 'Délai de régularisation : 8 jours ',
+    detail: 'Délai de régularisation : 8 jours francs',
   },
   {
     type: 'rappel2',
@@ -15,7 +16,7 @@ const RELANCE_ACTIONS = [
     className: 'relance-action-danger',
     icon: '📨',
     title: '2ème Rappel à l’Ordre',
-    detail: 'Délai de régularisation : 8 jours ',
+    detail: 'Délai de régularisation : 8 jours francs',
   },
   {
     type: 'mise_en_demeure',
@@ -23,7 +24,7 @@ const RELANCE_ACTIONS = [
     className: 'relance-action-critical',
     icon: '⚖',
     title: 'Mise en Demeure de Payer',
-    detail: 'Délai de régularisation : 5 jours',
+    detail: 'Délai de régularisation : 5 jours francs',
   },
 ];
 
@@ -120,13 +121,13 @@ function RelanceHistory({ relances, onOpenHistoryEntry }) {
     <div className="relance-panel-history">
       <h3>Historique des relances pour ce contribuable</h3>
       <div className="table-scroll">
-        <table className="register-table relance-table">
+        <table aria-label="Relances du contribuable" className="register-table relance-table">
           <thead>
             <tr>
               <th>Date</th>
-              <th>Type</th>
-              <th>Montant (Ar)</th>
-              <th>Statut</th>
+              <th><AideTerme id="relance">Type</AideTerme></th>
+              <th><AideTerme id="montant_du">Montant (Ar)</AideTerme></th>
+              <th><AideTerme id="statut_relance">Statut</AideTerme></th>
             </tr>
           </thead>
           <tbody>
@@ -162,11 +163,13 @@ export default function RelancePanel({
           <h2>Actions de Relance Fiscale</h2>
           <p className="relance-panel-subtitle">
             Émettez un rappel à l’ordre officiel, une mise en demeure ou marquez
-            le dossier comme régularisé.
+            le dossier comme régularisé. Chaque acte se suit dans l’ordre : une
+            ligne d’historique reste <AideTerme id="statut_relance">émise</AideTerme>{' '}
+            tant que le contribuable n’a pas régularisé.
             {montantDu > 0 && (
               <strong className="relance-panel-du">
                 {' '}
-                Montant dû estimé : {formatAmount(montantDu)}
+                <AideTerme id="montant_du">Montant dû estimé</AideTerme> : {formatAmount(montantDu)}
               </strong>
             )}
           </p>

@@ -1,13 +1,137 @@
 import { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { createContribuable, createDeclaration, getCentres, getErrorMessage } from '@/api';
-import { formatAriary } from '@/utils';
+import {
+  createContribuable,
+  createDeclaration,
+  getCentres,
+  getDeclarations,
+  getErrorMessage,
+  updateDeclaration,
+} from '@/api';
+import { formatAriary, statutSelonEcart } from '@/utils';
 import { useModalA11y } from '@/hooks';
 
 /**
- * Modale personnalisée d'importation de fichiers Excel / CSV pour les contribuables
+ * Valeur numérique d'une cellule monétaire, ou `null` quand elle n'est pas
+ * lisible. `null` veut dire « le fichier ne le dit pas » : la cellule est alors
+ * omise de la requête, jamais remplacée par 0.
  */
-export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
+const nombreOuRien = (valeur) => {
+  const texte = String(valeur ?? '')
+    .replace(/\s|\u00a0/g, '')
+    .replace(/,(?=[0-9]{1,2}$)/, '.');
+  if (!texte) return null;
+  const nombre = Number(texte);
+  return Number.isFinite(nombre) ? nombre : null;
+};
+
+/**
+ * Montant déjà enregistré en base, tenu pour « renseigné » seulement s'il est
+ * positif : la table `declarations` autorise `null` comme `0`, et l'un comme
+ * l'autre signifient qu'aucune assiette n'est connue du dossier.
+ */
+const nombreStrictementPositif = (valeur) => {
+  const nombre = Number(valeur);
+  return Number.isFinite(nombre) && nombre > 0 ? nombre : null;
+};
+
+/**
+ * Colonnes d'un classeur qui alimentent la table `declarations` (une ligne = une
+ * déclaration TVA d'un exercice). Ce sont exactement les colonnes que le modèle
+ * sait enregistrer ; aucune autre valeur du fichier n'est envoyée.
+ */
+const COLONNES_DECLARATION = {
+  ca: "Chiffre d'affaires",
+  benefice: 'Bénéfice',
+  tva_collectee: 'TVA collectée',
+  tva_deductible: 'TVA déductible',
+  tva_payee: 'TVA payée',
+  tva_theorique: 'TVA théorique',
+};
+
+/** Montants d'une ligne : `null` quand la cellule est vide ou illisible. */
+const montantsDuneLigne = (ligne) =>
+  Object.fromEntries(
+    Object.keys(COLONNES_DECLARATION).map((colonne) => [colonne, nombreOuRien(ligne[colonne])]),
+  );
+
+/**
+ * Incident sur les montants manquants, accordé : un classeur peut n'en laisser
+ * qu'un seul en suspens comme cinq, et l'agent lit le même message dans les deux
+ * cas.
+ */
+const montantsAbsentsDuFichier = (noms) =>
+  noms.length > 1
+    ? `les montants ${noms.join(', ')} étaient absents du fichier`
+    : `le montant ${noms.join(', ')} était absent du fichier`;
+
+/**
+ * Lecture d'une cellule d'exercice. La base accepte une période annuelle —
+ * `2024`, ce que saisit le module Collecte — ou mensuelle — `2024-03`, ce que
+ * saisit le formulaire de déclaration de la fiche : le classeur peut porter
+ * l'un ou l'autre, et c'est cette clé qui sert au rapprochement.
+ */
+const lireExercice = (valeur) => {
+  // Une cellule de classeur est parfois typée « date » par le tableur : « 2024-03 »
+  // arrive alors comme un objet Date, pas comme du texte. L'année et le mois
+  // affichés dans la cellule sont ceux à retenir, sinon la période serait lue
+  // comme un nombre de série et refusée à tort.
+  if (valeur instanceof Date && !Number.isNaN(valeur.getTime())) {
+    const anneeDate = valeur.getFullYear();
+    if (anneeDate >= 2000 && anneeDate <= 2100) {
+      const mois = String(valeur.getMonth() + 1).padStart(2, '0');
+      return { annee: anneeDate, periode: `${anneeDate}-${mois}` };
+    }
+    return { annee: null, periode: '' };
+  }
+
+  const texte = String(valeur ?? '').trim().replace(/\s/g, '');
+  const mensuelle = texte.match(/^(\d{4})[-/](\d{1,2})$/);
+  if (mensuelle) {
+    return {
+      annee: Number(mensuelle[1]),
+      periode: `${mensuelle[1]}-${mensuelle[2].padStart(2, '0')}`,
+    };
+  }
+  if (/^\d{4}$/.test(texte)) return { annee: Number(texte), periode: texte };
+  return { annee: null, periode: '' };
+};
+
+/** Clé de période réellement stockée sur une déclaration de la base. */
+const cleDePeriode = (declaration) =>
+  String(declaration.periode ?? '').trim() || String(declaration.annee ?? '').trim();
+
+/** Déclaration déjà enregistrée pour cet exercice, ou `null` s'il faut la créer. */
+const trouverDeclarationExistante = (declarations, periode) =>
+  declarations.find((declaration) => cleDePeriode(declaration) === periode) || null;
+
+/**
+ * Cellule d'aperçu d'un montant : une case vide du classeur se lit « absente »,
+ * elle ne se lit jamais 0 — c'est ce qui sera enregistré en base.
+ */
+const CelluleMontant = ({ valeur }) => {
+  const nombre = nombreOuRien(valeur);
+  return nombre === null ? (
+    <span className="text-[10px] font-semibold text-gray-400">Absente du fichier</span>
+  ) : (
+    <span className="text-gray-800">{formatAriary(nombre)}</span>
+  );
+};
+
+/**
+ * Modale personnalisée d'importation de fichiers Excel / CSV pour les contribuables.
+ *
+ * Règle de fidélité : une colonne absente du fichier reste absente à la base. Le
+ * formulaire n'ajoute ni adresse, ni téléphone, ni nature d'impôt qu'un agent
+ * n'aurait pas écrits ; les manquants sont listés comme avertissements par ligne.
+ * Le secteur d'activité, lui, est exigé par la base : une ligne sans secteur est
+ * refusée plutôt que d'être créée sous un libellé inventé.
+ */
+export default function ExcelImportModal({ isOpen, onClose, onSuccess, contribuable = null }) {
+  // Passer `contribuable` bascule la modale en mode « dossier » : plus aucune
+  // fiche n'est créée, chaque ligne du classeur alimente une déclaration TVA du
+  // contribuable affiché, rapprochée de celles déjà enregistrées.
+  const enModeFiche = Boolean(contribuable?.id_contribuable);
   const [dragActive, setDragActive] = useState(false);
   const [file, setFile] = useState(null);
   const [parsedRows, setParsedRows] = useState([]);
@@ -48,10 +172,22 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
     setErrorLog([]);
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
-        const data = new Uint8Array(e.target.result);
-        const workbook = XLSX.read(data, { type: 'array' });
+        // Un CSV n'annonce pas son encodage dans le fichier : lu en octets,
+        // SheetJS applique cp1252 et les en-têtes accentués (« TVA Déductible »)
+        // deviennent méconnaissables, donc leurs montants sont perdus. Il est donc
+        // lu en texte UTF-8 ; .xlsx et .xls portent leur encodage et se lisent en
+        // octets. `cellDates` empêche qu'une période mensuelle comme « 2024-03 »
+        // arrive sous forme de numéro de série de date.
+        const enTexte = fileExtension === 'csv';
+        const source = enTexte
+          ? String(e.target.result).replace(/^\uFEFF/, '')
+          : new Uint8Array(e.target.result);
+        const workbook = XLSX.read(source, {
+          type: enTexte ? 'string' : 'array',
+          cellDates: true,
+        });
         const firstSheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[firstSheetName];
         const rawJson = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
@@ -65,7 +201,33 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
           return;
         }
 
+        // Mode dossier : chaque ligne est rapprochée des déclarations TVA déjà
+        // enregistrées pour ce contribuable, pour annoncer « mise à jour » ou
+        // « création ». Sans cette lecture l'import ne peut pas dire ce qu'il va
+        // écrire : on interrompt avant toute modification.
+        let declarationsDuDossier = [];
+        if (enModeFiche) {
+          try {
+            const resultat = await getDeclarations({
+              search: String(contribuable.nif ?? ''),
+              type_declaration: 'TVA',
+            });
+            declarationsDuDossier = (resultat?.data || []).filter(
+              (declaration) =>
+                Number(declaration.id_contribuable) === Number(contribuable.id_contribuable),
+            );
+          } catch (lectureError) {
+            setStatusMessage({
+              type: 'error',
+              text: `Impossible de lire les déclarations déjà enregistrées de ce dossier (${getErrorMessage(lectureError)}). Import interrompu avant toute écriture.`,
+            });
+            setParsedRows([]);
+            return;
+          }
+        }
+
         // Mappage dynamique des colonnes
+        const periodesDejaPorteesParLeFichier = new Set();
         const mappedRows = rawJson.map((row, index) => {
           const rowKeys = Object.keys(row);
           const mapped = {
@@ -81,12 +243,22 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
             telephone: '',
             email: '',
             annee: '',
+            periode: '',
             tva_payee: '',
             tva_collectee: '',
             tva_deductible: '',
+            tva_theorique: '',
             isValid: true,
             errors: [],
+            avertissements: [],
+            declarationExistante: null,
           };
+
+          // « Activité » sert aussi d'en-tête à des colonnes qui ne décrivent pas le
+          // secteur (statut de l'entreprise). Sa valeur n'est conservée ici qu'en
+          // repli, pour être retenue seulement si aucune colonne « Secteur … » n'a
+          // été lue — et donc indépendamment de l'ordre des colonnes.
+          let secteurDepuisActivite = null;
 
           rowKeys.forEach((key) => {
             const normalized = normalizeColumnName(key);
@@ -95,8 +267,17 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
             if (normalized === 'nif' || normalized === 'numeronif') mapped.nif = val;
             else if (['raisonsociale', 'nom', 'societe', 'entreprise'].includes(normalized))
               mapped.raison_sociale = val;
-            else if (['secteur', 'secteuractivite', 'activite'].includes(normalized))
+            else if (['secteur', 'secteuractivite', 'secteurdactivite'].includes(normalized))
+              // « Secteur d'Activité », l'en-tête du modèle téléchargeable, se
+              // normalise avec le « d » de l'élision : sans cette variante, un
+              // classeur rempli depuis le modèle perdait son secteur et chaque
+              // ligne était refusée.
               mapped.secteur_activite = val;
+            else if (normalized === 'activite') {
+              if (!mapped.secteur_activite && secteurDepuisActivite === null) {
+                secteurDepuisActivite = val;
+              }
+            }
             else if (['ca', 'chiffredaffaires', 'chiffreaffaire', 'revenue'].includes(normalized))
               mapped.ca = val;
             else if (['benefice', 'beneficefiscal'].includes(normalized)) mapped.benefice = val;
@@ -108,15 +289,94 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
             else if (['telephone', 'tel', 'phone', 'contact'].includes(normalized))
               mapped.telephone = val;
             else if (['email', 'mail', 'courriel'].includes(normalized)) mapped.email = val;
-            else if (['annee', 'anneefiscale', 'exercice'].includes(normalized))
-              mapped.annee = val;
+            else if (['annee', 'anneefiscale', 'exercice', 'periode'].includes(normalized))
+              // La cellule brute est conservée quand le tableur l'a typée en date :
+              // `lireExercice` la lit correctement, alors que sa représentation
+              // textuelle (« Fri Mar 01 2024 … ») serait illisible.
+              mapped.annee = row[key] instanceof Date ? row[key] : val;
             else if (['tvapayee', 'tvapaye'].includes(normalized)) mapped.tva_payee = val;
             else if (['tvacollectee', 'tvacollecte'].includes(normalized))
               mapped.tva_collectee = val;
             else if (['tvadeductible'].includes(normalized)) mapped.tva_deductible = val;
+            else if (['tvatheorique', 'tvat'].includes(normalized)) mapped.tva_theorique = val;
           });
 
-          // Validation de la ligne
+          if (!mapped.secteur_activite && secteurDepuisActivite) {
+            mapped.secteur_activite = secteurDepuisActivite;
+          }
+
+          if (enModeFiche) {
+            // Une ligne du classeur devient une déclaration TVA de CE dossier :
+            // il lui faut un exercice lisible et au moins un montant lisible.
+            const exercice = lireExercice(mapped.annee);
+            mapped.annee = exercice.annee;
+            mapped.periode = exercice.periode;
+
+            if (mapped.nif && String(mapped.nif) !== String(contribuable.nif)) {
+              mapped.isValid = false;
+              mapped.errors.push(
+                `NIF « ${mapped.nif} » différent du dossier (${contribuable.nif}) — ligne refusée`,
+              );
+            }
+
+            if (!exercice.annee || exercice.annee < 2000 || exercice.annee > 2100) {
+              mapped.isValid = false;
+              mapped.errors.push("Exercice manquant ou illisible (2024 ou 2024-03)");
+            }
+
+            // La base n'admet qu'une déclaration par contribuable, période et type
+            // (`@@unique` sur `declarations`) : deux lignes du même classeur sur le
+            // même exercice écriraient l'une sur l'autre, la seconde est écartée.
+            if (exercice.annee) {
+              if (periodesDejaPorteesParLeFichier.has(mapped.periode)) {
+                mapped.isValid = false;
+                mapped.errors.push(
+                  `Exercice ${mapped.periode} déjà porté par une ligne précédente du classeur — une seule déclaration par période au dossier, cette ligne est écartée`,
+                );
+              } else {
+                periodesDejaPorteesParLeFichier.add(mapped.periode);
+              }
+            }
+
+            const montantsLigne = montantsDuneLigne(mapped);
+            const absentsLigne = Object.entries(montantsLigne)
+              .filter(([, valeur]) => valeur === null)
+              .map(([colonne]) => COLONNES_DECLARATION[colonne]);
+            mapped.montantsAbsents = absentsLigne;
+            if (absentsLigne.length === Object.keys(montantsLigne).length) {
+              mapped.isValid = false;
+              mapped.errors.push("Aucun montant lisible — la ligne n'apporte rien à enregistrer");
+            } else if (absentsLigne.length) {
+              mapped.avertissements.push(`Absent(s) du fichier : ${absentsLigne.join(', ')}`);
+            }
+
+            // Deux colonnes commandent ce que le serveur sait écrire : sans TVA
+            // théorique, la création déclenche son calcul automatique depuis le CA ;
+            // sans TVA payée, aucun écart n'est mesurable. L'agent est averti avant
+            // l'enregistrement : le dossier ne gardera ni un montant ni un statut
+            // que le classeur n'a pas apportés.
+            if (montantsLigne.tva_theorique === null) {
+              mapped.avertissements.push(
+                'TVA théorique absente du fichier : à la création, le dossier la laissera non renseignée (le calcul automatique du serveur sera retiré) ; à la mise à jour, le statut déjà enregistré ne sera pas recalculé.',
+              );
+            } else if (montantsLigne.tva_payee === null) {
+              mapped.avertissements.push(
+                'TVA payée absente du fichier : aucun écart mesurable, le statut de la déclaration sera laissé tel quel.',
+              );
+            }
+
+            if (exercice.annee) {
+              mapped.declarationExistante = trouverDeclarationExistante(
+                declarationsDuDossier,
+                mapped.periode,
+              );
+            }
+
+            return mapped;
+          }
+
+          // Validation de la ligne : seuls blocages, les colonnes que la base
+          // exige réellement (NIF, raison sociale, secteur d'activité).
           if (!mapped.nif) {
             mapped.isValid = false;
             mapped.errors.push('NIF manquant');
@@ -131,29 +391,49 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
           }
 
           if (!mapped.secteur_activite) {
-            mapped.secteur_activite = 'Activités commerciales générales';
-          }
-          if (!mapped.adresse) {
-            mapped.adresse = 'Antananarivo, Madagascar';
-          }
-          if (!mapped.telephone) {
-            mapped.telephone = '+261 34 00 000 00';
+            mapped.isValid = false;
+            mapped.errors.push("Secteur d'activité manquant — la base l'exige à la création");
           }
 
-          // Détermination auto du régime fiscal si absent
+          // Renseignements absents : ils sont signalés, jamais inventés.
+          if (!mapped.adresse) mapped.avertissements.push('Adresse non fournie');
+          if (!mapped.telephone) mapped.avertissements.push('Téléphone non fourni');
+          if (!mapped.email) mapped.avertissements.push('E-mail non fourni');
+
+          // La nature d'impôt n'est pas déduite du chiffre d'affaires : un seuil
+          // de CA ne dit rien du régime réellement souscrit par le contribuable.
           if (!['IS', 'IR'].includes(mapped.regime_fiscal)) {
-            const parsedCA = Number(mapped.ca) || 0;
-            mapped.regime_fiscal = parsedCA < 400000000 ? 'IS' : 'IR';
+            mapped.avertissements.push(
+              mapped.regime_fiscal
+                ? `Nature d’impôt « ${mapped.regime_fiscal} » non reconnue (IS ou IR) — non envoyée`
+                : 'Nature d’impôt non déclarée',
+            );
+            mapped.regime_fiscal = '';
           }
+
+          // La colonne d'année peut arriver typée en date par le tableur : le
+          // registre n'en retient que l'année, seule colonne qu'il sait stocker.
+          const exerciceRegistre = lireExercice(mapped.annee);
+          if (exerciceRegistre.annee) mapped.annee = exerciceRegistre.annee;
 
           return mapped;
         });
 
         setParsedRows(mappedRows);
         const validCount = mappedRows.filter((r) => r.isValid).length;
+        const avecAvertissement = mappedRows.filter((r) => r.avertissements.length).length;
+        const dejaSuivies = enModeFiche
+          ? mappedRows.filter((ligne) => ligne.isValid && ligne.declarationExistante).length
+          : 0;
         setStatusMessage({
-          type: 'info',
-          text: `${mappedRows.length} ligne(s) détectée(s) : ${validCount} valide(s), ${mappedRows.length - validCount} avec avertissement(s).`,
+          type: validCount ? 'info' : 'error',
+          text: `${mappedRows.length} ligne(s) détectée(s) : ${validCount} importable(s), ${
+            mappedRows.length - validCount
+          } refusée(s) ; ${avecAvertissement} ligne(s) avec renseignement(s) absent(s) du fichier.${
+            enModeFiche && validCount
+              ? ` ${dejaSuivies} exercice(s) figure(nt) déjà au dossier et seront mis à jour, ${validCount - dejaSuivies} créé(s).`
+              : ''
+          }`,
         });
       } catch (err) {
         setStatusMessage({
@@ -163,7 +443,8 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
         setParsedRows([]);
       }
     };
-    reader.readAsArrayBuffer(selectedFile);
+    if (fileExtension === 'csv') reader.readAsText(selectedFile, 'UTF-8');
+    else reader.readAsArrayBuffer(selectedFile);
   };
 
   // Gestion du Drag & Drop
@@ -183,44 +464,49 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
     }
   };
 
-  // Télécharger un modèle Excel vierge
+  // Télécharger un modèle Excel : l'en-tête exact des colonnes reconnues, suivi
+  // d'une unique ligne neutre. Les valeurs sont des libellés d'aide, pas des
+  // contribuables : l'agent les remplace avant d'importer le classeur.
   const handleDownloadTemplate = () => {
+    if (enModeFiche) {
+      // Classeur d'un dossier : une ligne par exercice, uniquement les colonnes
+      // que la table `declarations` sait enregistrer.
+      const templateFiche = [
+        {
+          NIF: String(contribuable.nif ?? ''),
+          Exercice: '2024 (ou 2024-03 pour une période mensuelle)',
+          "Chiffre d'Affaires": 0,
+          Bénéfice: 0,
+          'TVA Collectée': 0,
+          'TVA Déductible': 0,
+          'TVA Payée': 0,
+          'TVA Théorique': 0,
+        },
+      ];
+      const feuilleFiche = XLSX.utils.json_to_sheet(templateFiche);
+      const classeurFiche = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(classeurFiche, feuilleFiche, 'Déclarations');
+      XLSX.writeFile(classeurFiche, 'Modele_Import_Declarations_DGI.xlsx');
+      return;
+    }
+
     const templateData = [
       {
-        NIF: '1000000001',
-        'Raison Sociale': 'Madagascar Tech Solutions SARL',
-        "Secteur d'Activité": 'Développement de logiciels & Informatique',
-        Adresse: 'Analakely, Antananarivo 101',
-        Téléphone: '+261 34 11 222 33',
-        Email: 'contact@madatech.mg',
-        'Centre gestionnaire': 'Centre des Impôts d’Antananarivo',
-        'Nature d’impôt': 'IR',
-        "Chiffre d'Affaires": 450000000,
-        Bénéfice: 65000000,
+        NIF: '1234567890',
+        'Raison Sociale': 'RAISON SOCIALE DU CONTRIBUTABLE',
+        "Secteur d'Activité": 'Commerce de détail (à remplacer par le secteur réel)',
+        Adresse: 'Adresse telle que déclarée par le contribuable',
+        Téléphone: '+261340000000',
+        Email: 'contact@entreprise.mg',
+        'Centre gestionnaire': 'Nom exact du centre, tel qu’il figure à l’annuaire',
+        'Nature d’impôt': 'IS ou IR — ne pas déduire du chiffre d’affaires',
+        "Chiffre d'Affaires": 0,
+        Bénéfice: 0,
         Année: 2026,
-        'TVA Payée': 90000000,
-        'TVA Collectée': 90000000,
-        'TVA Déductible': 15000000,
-        Activité: 'Actif/ En veille / En liquidation/ Dissous',
-        Conformité: 'Conformité/ Défaillant /  En vérification / Bloqué ',
-      },
-      {
-        NIF: '1000000002',
-        'Raison Sociale': 'Boutique Ravinala',
-        "Secteur d'Activité": 'Commerce de détail & Produits artisanaux',
-        Adresse: 'Isoraka, Antananarivo 101',
-        Téléphone: '+261 32 44 555 66',
-        Email: 'ravinala@boutique.mg',
-        'Centre gestionnaire': 'Centre des Impôts d’Antananarivo',
-        'Nature d’impôt': 'IS',
-        "Chiffre d'Affaires": 180000000,
-        Bénéfice: 28000000,
-        Année: 2026,
-        'TVA Payée': 9000000,
-        'TVA Collectée': 12000000,
-        'TVA Déductible': 3000000,
-        Activité: 'Actif/ En veille / En liquidation/ Dissous',
-        Conformité: 'Conformité/ Défaillant /  En vérification / Bloqué ',
+        'TVA Payée': 0,
+        'TVA Collectée': 0,
+        'TVA Déductible': 0,
+        'TVA Théorique': 0,
       },
     ];
 
@@ -228,6 +514,141 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, 'Contribuables');
     XLSX.writeFile(workbook, 'Modele_Import_Contribuables_DGI.xlsx');
+  };
+
+  /**
+   * Enregistrement par lot, mode dossier. Une ligne = une déclaration TVA du
+   * contribuable affiché, repérée par sa période :
+   * - l'exercice déjà au dossier est **mis à jour** (`PUT /declarations/:id`,
+   *   partiel : un montant absent du fichier garde la valeur enregistrée) ;
+   * - un exercice nouveau est **créé** (`POST /declarations`, type TVA).
+   * La fiche elle-même n'est jamais modifiée ni recréée, et un autre NIF que
+   * celui du dossier est refusé ligne par ligne. Rien n'est inventé : un montant
+   * que le classeur n'apporte pas reste non renseigné, et le calcul automatique
+   * de la TVA théorique que le serveur applique à la création est retiré du
+   * dossier quand la colonne manquait — le dossier ne porte que les chiffres de
+   * l'agent.
+   */
+  const importerLignesDossier = async (validRows) => {
+    setImporting(true);
+    setProgress(0);
+    const erreurs = [];
+    let creees = 0;
+    let misesAJour = 0;
+
+    for (let i = 0; i < validRows.length; i++) {
+      const ligne = validRows[i];
+      const montants = montantsDuneLigne(ligne);
+      const presents = Object.fromEntries(
+        Object.entries(montants).filter(([, valeur]) => valeur !== null),
+      );
+      const absents = Object.entries(montants)
+        .filter(([, valeur]) => valeur === null)
+        .map(([colonne]) => COLONNES_DECLARATION[colonne]);
+
+      try {
+        const existante = ligne.declarationExistante;
+        // Valeurs qui seront réellement au dossier après l'écriture : celles du
+        // classeur, sinon celles déjà enregistrées. `0` et `null` disent tous deux
+        // « non renseigné » : sans assiette lisible, aucun écart n'est calculable.
+        const theorieApres =
+          presents.tva_theorique ?? nombreStrictementPositif(existante?.tva_theorique);
+        const payeeApres = presents.tva_payee ?? nombreStrictementPositif(existante?.tva_payee);
+        // Un écart ne se mesure qu'avec une assiette ET un paiement connu : sans
+        // l'un des deux, écrire un statut serait affirmer une situation que personne
+        // n'a déclarée.
+        const statutCalculable = theorieApres !== null && payeeApres !== null;
+
+        if (existante?.id_declaration) {
+          const corps = { ...presents };
+          // `PUT /declarations/:id` ne recalcule pas le statut : on ne pousse le
+          // statut dérivé que si le classeur ou le dossier de quoi le calculer ;
+          // sinon le statut déjà enregistré reste en place, rien n'est inventé.
+          if (statutCalculable) corps.statut = statutSelonEcart(theorieApres, payeeApres);
+          await updateDeclaration(existante.id_declaration, corps);
+          misesAJour += 1;
+          if (absents.length) {
+            erreurs.push(
+              `Ligne ${ligne.id} (${ligne.periode}) : mise à jour partielle — ${montantsAbsentsDuFichier(absents)} ; la valeur déjà enregistrée reste en place.`,
+            );
+          }
+          if (!statutCalculable) {
+            erreurs.push(
+              `Ligne ${ligne.id} (${ligne.periode}) : statut non recalculé — sans TVA théorique et TVA payée lisibles au fichier ou au dossier, aucun écart n'est mesurable ; le statut enregistré reste celui d'avant l'import.`,
+            );
+          }
+        } else {
+          const creee = await createDeclaration({
+            id_contribuable: Number(contribuable.id_contribuable),
+            annee: ligne.annee,
+            periode: ligne.periode,
+            type_declaration: 'TVA',
+            ...presents,
+          });
+          creees += 1;
+          if (absents.length) {
+            erreurs.push(
+              `Ligne ${ligne.id} (${ligne.periode}) : déclaration créée incomplète — ${montantsAbsentsDuFichier(absents)} ; rien n'est compté à zéro au dossier.`,
+            );
+          }
+
+          // À la création, le serveur ne laisse jamais ces deux colonnes vides : il
+          // calcule une TVA théorique depuis le CA et en déduit un statut. Ces
+          // chiffres ne viennent pas de l'agent, ils sont donc retirés du dossier
+          // pour qu'il ne porte que ce que le classeur apporte.
+          const aRetirer = {};
+          if (presents.tva_theorique === undefined) {
+            aRetirer.tva_theorique = null;
+            aRetirer.statut = null;
+          } else if (payeeApres === null) {
+            aRetirer.statut = null;
+          }
+          if (Object.keys(aRetirer).length) {
+            const idCree = creee?.declaration?.id_declaration ?? creee?.id_declaration;
+            if (idCree) {
+              await updateDeclaration(idCree, aRetirer);
+              erreurs.push(
+                `Ligne ${ligne.id} (${ligne.periode}) : ${
+                  presents.tva_theorique === undefined
+                    ? 'TVA théorique et statut calculés automatiquement par le serveur, le classeur ne les portait pas — retirés du dossier'
+                    : 'statut calculé sans TVA payée lisible — retiré du dossier'
+                }, à établir après contrôle.`,
+              );
+            } else {
+              erreurs.push(
+                `Ligne ${ligne.id} (${ligne.periode}) : le serveur a calculé une TVA théorique et un statut que le classeur ne portait pas ; identifiant de la déclaration illisible, retrait impossible — à vérifier au dossier.`,
+              );
+            }
+          }
+        }
+      } catch (erreurImport) {
+        erreurs.push(
+          `Ligne ${ligne.id} (${ligne.periode || 'exercice illisible'}) : ${getErrorMessage(erreurImport)}`,
+        );
+      }
+
+      setProgress(Math.round(((i + 1) / validRows.length) * 100));
+    }
+
+    setImporting(false);
+    setErrorLog(erreurs);
+
+    const bilan = `${creees} déclaration(s) créée(s) · ${misesAJour} mise(s) à jour · ${erreurs.length} incident(s) pour ${contribuable.raison_sociale || contribuable.nif}`;
+    const rienEcrit = creees === 0 && misesAJour === 0;
+
+    setStatusMessage({
+      type: rienEcrit ? 'error' : erreurs.length ? 'warning' : 'success',
+      text: rienEcrit
+        ? `Aucune déclaration n'a été enregistrée dans ce dossier. ${bilan}.`
+        : `${bilan}. Un montant absent du classeur n'est jamais compté à zéro.`,
+    });
+
+    if (rienEcrit) return;
+
+    onSuccess?.(bilan);
+    if (erreurs.length === 0) {
+      setTimeout(() => onClose?.(), 2500);
+    }
   };
 
   // Exécution de l'importation par lot vers la base de données
@@ -241,10 +662,17 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
       return;
     }
 
+    if (enModeFiche) {
+      await importerLignesDossier(validRows);
+      return;
+    }
+
     setImporting(true);
     setProgress(0);
     const errors = [];
-    let successCount = 0;
+    let contribuableCount = 0;
+    let declarationCount = 0;
+    let ignores = 0;
 
     const centres = await getCentres().catch(() => []);
     const centreByName = new Map(
@@ -260,40 +688,101 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
           String(row.centre_gestionnaire || '').trim().toLowerCase(),
         );
 
-        // 1. Créer ou mettre à jour l'entreprise
-        const createdContribuable = await createContribuable({
+        // 1. Contribuable : seuls les champs réellement lus dans le fichier sont
+        //    envoyés. Un champ absent reste absent en base, il n'est pas comblé.
+        const contribution = {
           nif: row.nif,
           raison_sociale: row.raison_sociale,
           secteur_activite: row.secteur_activite,
-          regime_fiscal: row.regime_fiscal,
-          adresse: row.adresse,
-          telephone: row.telephone,
-          email: row.email || null,
+          ...(row.adresse ? { adresse: row.adresse } : {}),
+          ...(row.telephone ? { telephone: row.telephone } : {}),
+          ...(row.email ? { email: row.email } : {}),
+          ...(row.regime_fiscal ? { regime_fiscal: row.regime_fiscal } : {}),
           ...(centreId ? { id_centre: centreId } : {}),
-        });
+        };
+
+        const createdContribuable = await createContribuable(contribution);
 
         const contribuableId =
           createdContribuable?.id_contribuable || createdContribuable?.data?.id_contribuable;
-
-        // 2. Si des données de déclaration sont renseignées, créer la déclaration associée
-        if (contribuableId && row.annee && row.ca) {
-          try {
-            await createDeclaration({
-              id_contribuable: Number(contribuableId),
-              annee: Number(row.annee) || new Date().getFullYear(),
-              ca: Number(row.ca) || 0,
-              benefice: Number(row.benefice) || 0,
-              tva_collectee: Number(row.tva_collectee) || 0,
-              tva_deductible: Number(row.tva_deductible) || 0,
-              tva_payee: Number(row.tva_payee) || 0,
-              regime_fiscal: row.regime_fiscal,
-            });
-          } catch (declErr) {
-            console.warn('Avertissement déclaration :', declErr.message);
-          }
+        if (contribuableId) contribuableCount++;
+        if (row.centre_gestionnaire && !centreId) {
+          errors.push(
+            `Ligne ${row.id} (${row.raison_sociale}) : centre « ${row.centre_gestionnaire} » absent de l’annuaire — contribuable créé sans rattachement.`,
+          );
         }
 
-        successCount++;
+        // 2. Déclaration : elle n'est créée que si le fichier porte un exercice
+        //    lisible et au moins un montant lisible.
+        const annee = Number(row.annee);
+        const montants = {
+          ca: nombreOuRien(row.ca),
+          benefice: nombreOuRien(row.benefice),
+          tva_collectee: nombreOuRien(row.tva_collectee),
+          tva_deductible: nombreOuRien(row.tva_deductible),
+          tva_payee: nombreOuRien(row.tva_payee),
+          tva_theorique: nombreOuRien(row.tva_theorique),
+        };
+        const montantsPresents = Object.fromEntries(
+          Object.entries(montants).filter(([, valeur]) => valeur !== null),
+        );
+
+        if (contribuableId && Object.keys(montantsPresents).length) {
+          if (!Number.isInteger(annee) || annee < 2000 || annee > 2100) {
+            errors.push(
+              `Ligne ${row.id} (${row.raison_sociale}) : déclaration non créée, l'exercice « ${row.annee} » n'est pas une année valable.`,
+            );
+          } else {
+            const manquants = Object.entries(montants)
+              .filter(([, valeur]) => valeur === null)
+              .map(([cle]) => COLONNES_DECLARATION[cle] ?? cle);
+            if (manquants.length) {
+              errors.push(
+                `Ligne ${row.id} (${row.raison_sociale}) : déclaration créée incomplète — ${montantsAbsentsDuFichier(manquants)} ; rien n'est compté à zéro au dossier.`,
+              );
+            }
+
+            try {
+              const creee = await createDeclaration({
+                id_contribuable: Number(contribuableId),
+                annee,
+                ...montantsPresents,
+                ...(row.regime_fiscal ? { regime_fiscal: row.regime_fiscal } : {}),
+              });
+              declarationCount++;
+
+              // Comme dans le mode dossier : à la création le serveur calcule
+              // toujours une TVA théorique (5 % du CA à défaut) et le statut qui en
+              // découle. Ces chiffres ne viennent d'aucune saisie de l'agent, ils
+              // sont donc retirés du dossier quand le classeur ne les portait pas.
+              const aRetirer = {};
+              if (montantsPresents.tva_theorique === undefined) {
+                aRetirer.tva_theorique = null;
+                aRetirer.statut = null;
+              }
+              if (Object.keys(aRetirer).length) {
+                const idCreee =
+                  creee?.declaration?.id_declaration ?? creee?.id_declaration;
+                if (idCreee) {
+                  await updateDeclaration(idCreee, aRetirer);
+                  errors.push(
+                    `Ligne ${row.id} (${row.raison_sociale}) : TVA théorique et statut calculés automatiquement par le serveur, le classeur ne les portait pas — retirés du dossier, à établir après contrôle.`,
+                  );
+                } else {
+                  errors.push(
+                    `Ligne ${row.id} (${row.raison_sociale}) : le serveur a calculé une TVA théorique et un statut que le classeur ne portait pas ; identifiant de la déclaration illisible, retrait impossible — à vérifier au dossier.`,
+                  );
+                }
+              }
+            } catch (declErr) {
+              errors.push(
+                `Ligne ${row.id} (${row.raison_sociale}) : contribuable créé, déclaration refusée — ${getErrorMessage(declErr)}`,
+              );
+            }
+          }
+        } else if (contribuableId) {
+          ignores++;
+        }
       } catch (err) {
         errors.push(`Ligne ${row.id} (${row.raison_sociale || row.nif}) : ${getErrorMessage(err)}`);
       }
@@ -304,21 +793,23 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
     setImporting(false);
     setErrorLog(errors);
 
-    if (errors.length === 0) {
-      setStatusMessage({
-        type: 'success',
-        text: `Félicitations ! ${successCount} contribuable(s) ont été importé(s) avec succès dans la base.`,
-      });
-      setTimeout(() => {
-        onSuccess?.();
-        onClose?.();
-      }, 1500);
-    } else {
-      setStatusMessage({
-        type: 'warning',
-        text: `${successCount} importé(s) avec succès, mais ${errors.length} erreur(s) ont été rencontrées.`,
-      });
+    const bilan = `${contribuableCount} contribuable(s) créé(s) · ${declarationCount} déclaration(s) enregistrée(s) · ${errors.length} incident(s)`;
+    const rienCree = contribuableCount === 0;
+
+    setStatusMessage({
+      type: rienCree ? 'error' : errors.length ? 'warning' : 'success',
+      text: rienCree
+        ? `Aucun contribuable n'a été créé. ${bilan}.`
+        : `${bilan}.${ignores ? ` ${ignores} ligne(s) sans montant fiscal : contribuable(s) créé(s), aucune déclaration inventée.` : ''}`,
+    });
+
+    if (!rienCree) {
       onSuccess?.();
+      if (errors.length === 0) {
+        // Le bilan reste lisible quand tout s'est bien passé : la fenêtre se
+        // referme après avoir laissé le message s'afficher.
+        setTimeout(() => onClose?.(), 2500);
+      }
     }
   };
 
@@ -342,7 +833,11 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
         tabIndex={-1}
         role="dialog"
         aria-modal="true"
-        aria-label="Import Excel des contribuables"
+        aria-label={
+          enModeFiche
+            ? 'Import Excel des déclarations du dossier contribuable'
+            : 'Import Excel des contribuables'
+        }
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header de la Modal */}
@@ -353,10 +848,25 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
             </span>
             <div>
               <h2 className="text-lg font-bold text-gray-900 m-0">
-                Importer des Contribuables (Excel / CSV)
+                {enModeFiche
+                  ? `Importer les déclarations de ${contribuable.raison_sociale || contribuable.nif}`
+                  : 'Importer des Contribuables (Excel / CSV)'}
               </h2>
               <p className="text-xs text-gray-500 m-0">
-                Intégrez rapidement vos listes d'entreprises et déclarations fiscales par lot.
+                {enModeFiche ? (
+                  <>
+                    Une ligne du classeur devient une déclaration TVA de ce dossier, reconnue à son
+                    exercice : un exercice déjà au dossier est <strong>mis à jour</strong>, un
+                    exercice nouveau est <strong>créé</strong>. La fiche elle-même reste inchangée
+                    et une colonne absente du fichier reste absente en base.
+                  </>
+                ) : (
+                  <>
+                    Intégrez rapidement vos listes d'entreprises et déclarations fiscales par lot.
+                    Une colonne absente du fichier reste absente en base : rien n'est complété
+                    d'office.
+                  </>
+                )}
               </p>
             </div>
           </div>
@@ -377,7 +887,9 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
             <div className="text-sm text-blue-900">
               <strong>Besoin du format standard ?</strong>
               <p className="text-xs text-blue-700 m-0 mt-0.5">
-                Téléchargez notre modèle Excel prérempli pour formater facilement vos données.
+                {enModeFiche
+                  ? 'Le modèle du dossier porte une ligne par exercice : Exercice, Chiffre d’Affaires, Bénéfice, TVA collectée, TVA déductible, TVA payée, TVA théorique.'
+                  : 'Téléchargez notre modèle Excel prérempli pour formater facilement vos données.'}
               </p>
             </div>
             <button
@@ -495,16 +1007,38 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
                 </h3>
               </div>
               <div className="max-h-60 overflow-x-auto overflow-y-auto border border-gray-200 rounded-xl">
-                <table className="min-w-full divide-y divide-gray-200 text-xs">
+                <table
+                  aria-label={
+                    enModeFiche
+                      ? 'Aperçu des déclarations à enregistrer pour ce dossier'
+                      : 'Aperçu des lignes à importer'
+                  }
+                  className="min-w-full divide-y divide-gray-200 text-xs"
+                >
                   <thead className="bg-gray-100 text-gray-600 sticky top-0 font-bold">
                     <tr>
                       <th className="px-3 py-2 text-left">#</th>
                       <th className="px-3 py-2 text-left">Statut</th>
-                      <th className="px-3 py-2 text-left">NIF</th>
-                      <th className="px-3 py-2 text-left">Raison Sociale</th>
-                      <th className="px-3 py-2 text-left">CA Déclaré</th>
-                      <th className="px-3 py-2 text-left">Nature d’impôt</th>
-                      <th className="px-3 py-2 text-left">Téléphone</th>
+                      {enModeFiche ? (
+                        <>
+                          <th className="px-3 py-2 text-left">Exercice</th>
+                          <th className="px-3 py-2 text-left">Chiffre d’affaires</th>
+                          <th className="px-3 py-2 text-left">Bénéfice</th>
+                          <th className="px-3 py-2 text-left">TVA collectée</th>
+                          <th className="px-3 py-2 text-left">TVA déductible</th>
+                          <th className="px-3 py-2 text-left">TVA payée</th>
+                          <th className="px-3 py-2 text-left">TVA théorique</th>
+                          <th className="px-3 py-2 text-left">Action</th>
+                        </>
+                      ) : (
+                        <>
+                          <th className="px-3 py-2 text-left">NIF</th>
+                          <th className="px-3 py-2 text-left">Raison Sociale</th>
+                          <th className="px-3 py-2 text-left">CA Déclaré</th>
+                          <th className="px-3 py-2 text-left">Nature d’impôt</th>
+                          <th className="px-3 py-2 text-left">Téléphone</th>
+                        </>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 bg-white">
@@ -516,39 +1050,106 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
                         <td className="px-3 py-2 text-gray-500">{row.id}</td>
                         <td className="px-3 py-2">
                           {row.isValid ? (
-                            <span className="inline-block px-2 py-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-full">
-                              ✓ Valide
-                            </span>
+                            row.avertissements.length ? (
+                              <span
+                                className="inline-block px-2 py-0.5 text-[10px] font-bold text-amber-800 bg-amber-100 rounded-full cursor-help"
+                                title={row.avertissements.join(' · ')}
+                              >
+                                ⚠{' '}
+                                {(row.montantsAbsents || row.avertissements).length}{' '}
+                                {row.montantsAbsents
+                                  ? 'montant(s) absent(s)'
+                                  : 'absence(s)'}
+                              </span>
+                            ) : (
+                              <span className="inline-block px-2 py-0.5 text-[10px] font-bold text-emerald-700 bg-emerald-100 rounded-full">
+                                ✓ Complète
+                              </span>
+                            )
                           ) : (
                             <span
                               className="inline-block px-2 py-0.5 text-[10px] font-bold text-red-700 bg-red-100 rounded-full"
                               title={row.errors.join(', ')}
                             >
-                              ⚠ {row.errors[0]}
+                              ⛔ {row.errors[0]}
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-2 font-mono font-bold text-gray-800">
-                          {row.nif || '-'}
-                        </td>
-                        <td className="px-3 py-2 font-semibold text-gray-900">
-                          {row.raison_sociale || '-'}
-                        </td>
-                        <td className="px-3 py-2">
-                          {row.ca ? formatAriary(row.ca) : '-'}
-                        </td>
-                        <td className="px-3 py-2">
-                          <span
-                            className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${
-                              row.regime_fiscal === 'IS'
-                                ? 'bg-amber-100 text-amber-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}
-                          >
-                            {row.regime_fiscal || 'IS'}
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-gray-600">{row.telephone || '-'}</td>
+                        {enModeFiche ? (
+                          <>
+                            <td className="px-3 py-2 font-mono font-bold text-gray-800">
+                              {row.periode || '—'}
+                            </td>
+                            <td className="px-3 py-2">
+                              <CelluleMontant valeur={row.ca} />
+                            </td>
+                            <td className="px-3 py-2">
+                              <CelluleMontant valeur={row.benefice} />
+                            </td>
+                            <td className="px-3 py-2">
+                              <CelluleMontant valeur={row.tva_collectee} />
+                            </td>
+                            <td className="px-3 py-2">
+                              <CelluleMontant valeur={row.tva_deductible} />
+                            </td>
+                            <td className="px-3 py-2">
+                              <CelluleMontant valeur={row.tva_payee} />
+                            </td>
+                            <td className="px-3 py-2">
+                              <CelluleMontant valeur={row.tva_theorique} />
+                            </td>
+                            <td className="px-3 py-2">
+                              {!row.isValid ? (
+                                <span className="text-[10px] font-semibold text-gray-400">
+                                  Non importée
+                                </span>
+                              ) : row.declarationExistante ? (
+                                <span
+                                  className="inline-block px-2 py-0.5 text-[10px] font-bold text-blue-800 bg-blue-100 rounded-full cursor-help"
+                                  title={`Exercice ${row.periode} déjà au dossier : les montants du classeur remplaceront ceux enregistrés.`}
+                                >
+                                  ↻ Mettre à jour
+                                </span>
+                              ) : (
+                                <span className="inline-block px-2 py-0.5 text-[10px] font-bold text-indigo-800 bg-indigo-100 rounded-full">
+                                  + Créer
+                                </span>
+                              )}
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-3 py-2 font-mono font-bold text-gray-800">
+                              {row.nif || '-'}
+                            </td>
+                            <td className="px-3 py-2 font-semibold text-gray-900">
+                              {row.raison_sociale || '-'}
+                            </td>
+                            <td className="px-3 py-2">
+                              {row.ca ? formatAriary(row.ca) : 'Non déclaré'}
+                            </td>
+                            <td className="px-3 py-2">
+                              {row.regime_fiscal ? (
+                                <span
+                                  className={`px-1.5 py-0.5 rounded font-bold text-[10px] ${
+                                    row.regime_fiscal === 'IS'
+                                      ? 'bg-amber-100 text-amber-800'
+                                      : 'bg-blue-100 text-blue-800'
+                                  }`}
+                                >
+                                  {row.regime_fiscal}
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-semibold text-gray-400">
+                                  Non déclarée
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3 py-2 text-gray-600">
+                              {row.telephone || <span className="text-gray-400">Non fourni</span>}
+                            </td>
+                          </>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -592,7 +1193,9 @@ export default function ExcelImportModal({ isOpen, onClose, onSuccess }) {
           >
             {importing
               ? 'Importation en cours...'
-              : `🚀 Importer les ${parsedRows.filter((r) => r.isValid).length} ligne(s) valide(s)`}
+              : enModeFiche
+                ? `💾 Enregistrer ${parsedRows.filter((r) => r.isValid).length} ligne(s) dans le dossier`
+                : `🚀 Importer les ${parsedRows.filter((r) => r.isValid).length} ligne(s) valide(s)`}
           </button>
         </div>
       </div>

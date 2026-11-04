@@ -1,6 +1,7 @@
 BEGIN;
 
--- La demande d'éclaircissements et de justifications (CPF Art. V-17) est un acte
+-- La demande d'éclaircissements et de justifications (code des procédures
+-- fiscales, art. V-02) est un acte
 -- émis envers le contribuable au même titre qu'un rappel : elle est stockée dans
 -- `relances` et son type doit être accepté par la contrainte de domaine.
 ALTER TABLE relances

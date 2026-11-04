@@ -16,20 +16,11 @@ import {
   getDeclarations,
   updateDeclaration,
 } from '@/api';
+import { statutSelonEcart } from '@/utils';
 
-/**
- * Seuils d'écart de la DGI (< 25 % conforme, ≤ 50 % alerte, au-delà critique).
- * Doit rester aligné sur `FiscalService.determinerStatut` côté backend : la
- * mise à jour d'une déclaration ne recalcule pas le statut côté serveur.
- */
-const statutSelonEcart = (tvaTheorique, tvaPayee) => {
-  const theorie = Number(tvaTheorique) || 0;
-  if (theorie <= 0) return 'conforme';
-  const pourcentage = ((theorie - (Number(tvaPayee) || 0)) / theorie) * 100;
-  if (pourcentage < 25) return 'conforme';
-  if (pourcentage <= 50) return 'alerte';
-  return 'critique';
-};
+// Les seuils d'écart de la DGI (< 25 % conforme, ≤ 50 % alerte, au-delà critique)
+// vivent dans `@/utils/fiscal.utils`, alignés sur `FiscalService.determinerStatut`
+// côté backend : la mise à jour d'une déclaration ne recalcule pas le statut.
 
 async function enregistrerDeclaration(collecte, contribuable) {
   const annee = Number(collecte.annee);

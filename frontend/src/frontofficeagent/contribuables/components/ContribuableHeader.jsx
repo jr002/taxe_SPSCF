@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 
+import { AideTerme, BoutonAide } from '@/frontofficeagent/aide';
 import ExportFicheButton from '@/frontofficeagent/contribuables/components/ExportFicheButton';
 
 const tabs = [
@@ -45,7 +46,7 @@ function getOperationalUnit(contribuable) {
   return null;
 }
 
-export default function ContribuableHeader({ activeTab, contribuable, declarationsCount, exportDisabled, exportLabel, exportTitle, fiche, id, onExport, onPartager }) {
+export default function ContribuableHeader({ activeTab, contribuable, declarationsCount, exportDisabled, exportLabel, exportTitle, fiche, id, onExport, onImporter, onPartager, onOuvrirAide }) {
   const operationalUnit = getOperationalUnit(contribuable);
 
   return <>
@@ -53,8 +54,9 @@ export default function ContribuableHeader({ activeTab, contribuable, declaratio
     <div className="page-heading declaration-page-heading">
       <p className="eyebrow">Fiche contribuable</p>
       <div className="contribuable-heading-row">
-        <h1>{contribuable.raison_sociale || 'Contribuable'}<span className="categorie-badge-inline" style={{ background: fiche.background, color: fiche.couleur }}>{fiche.label}</span></h1>
+        <h1>{contribuable.raison_sociale || 'Contribuable'}<AideTerme id="categorie"><span className="categorie-badge-inline" style={{ background: fiche.background, color: fiche.couleur }}>{fiche.label}</span></AideTerme></h1>
         <div className="contribuable-heading-actions">
+          <BoutonAide ecran={activeTab} onOuvrir={onOuvrirAide} />
           <button
             type="button"
             className="secondary"
@@ -63,6 +65,16 @@ export default function ContribuableHeader({ activeTab, contribuable, declaratio
           >
             Lien contribuable
           </button>
+          {onImporter && ['overview', 'declarations'].includes(activeTab) && (
+            <button
+              type="button"
+              className="secondary"
+              onClick={onImporter}
+              title="Alimenter les déclarations TVA de ce dossier à partir d'un fichier Excel ou CSV"
+            >
+              Importer Excel
+            </button>
+          )}
           {!['recoupements', 'droits'].includes(activeTab) && (
             <ExportFicheButton
               disabled={exportDisabled}
@@ -73,9 +85,9 @@ export default function ContribuableHeader({ activeTab, contribuable, declaratio
           )}
         </div>
       </div>
-      <p>NIF : {contribuable.nif || 'N/A'} · {declarationsCount} année(s) suivie(s)</p>
+      <p><AideTerme id="nif">NIF</AideTerme> : {contribuable.nif || 'N/A'} · {declarationsCount} année(s) suivie(s)</p>
       <div className="contribuable-operational-unit" aria-label="Centre gestionnaire du contribuable">
-        <span>Centre gestionnaire</span>
+        <AideTerme id="centre_gestionnaire">Centre gestionnaire</AideTerme>
         {operationalUnit ? (
           <strong>
             {operationalUnit.structure && <span>{operationalUnit.structure}</span>}

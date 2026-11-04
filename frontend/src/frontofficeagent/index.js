@@ -11,5 +11,6 @@ export * from '@/frontofficeagent/confrontation';
 export * from '@/frontofficeagent/contribuables';
 export * from '@/frontofficeagent/decisionnel';
 export * from '@/frontofficeagent/entreprises';
+export * from '@/frontofficeagent/file-travail';
 export * from '@/frontofficeagent/relance';
 export * from '@/frontofficeagent/suivi-fiscal';

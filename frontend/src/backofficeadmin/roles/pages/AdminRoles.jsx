@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getAgents, getCentres, getErrorMessage, updateAgentCentre, updateAgentRole } from '@/api';
 import { ModaleConfirmation, Pagination } from '@/components/common';
-import { useTablePagination } from '@/hooks';
+import { useTablePagination, useFiltresUrl } from '@/hooks';
 import AdminNav from '@/backofficeadmin/components/AdminNav';
 import {
   ROLES_AGENTS,
@@ -24,8 +24,9 @@ export default function AdminRoles({ currentUser }) {
   const [busyId, setBusyId] = useState(null);
   const [changementRole, setChangementRole] = useState(null);
   const [erreurChangementRole, setErreurChangementRole] = useState('');
-  const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState('TOUS');
+  const { lire, patch, page } = useFiltresUrl();
+  const search = lire('q', '');
+  const roleFilter = lire('role', 'TOUS');
 
   useEffect(() => {
     if (!isAdmin) return undefined;
@@ -118,12 +119,15 @@ export default function AdminRoles({ currentUser }) {
     });
   }, [agents, roleFilter, search]);
 
-  const pages = useTablePagination(filteredAgents, 10);
+  const pages = useTablePagination(filteredAgents, 10, {
+    page,
+    onPageChange: (valeur) => patch({ page: valeur <= 1 ? '' : valeur }),
+  });
 
   if (!isAdmin) {
     return (
       <section className="page">
-        <p className="error">Cette page est réservée aux administrateurs.</p>
+        <p className="error" role="alert">Cette page est réservée aux administrateurs.</p>
       </section>
     );
   }
@@ -140,7 +144,7 @@ export default function AdminRoles({ currentUser }) {
         </p>
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       {success && (
         <p className="success form-submit-message" role="status">
           {success}
@@ -171,21 +175,15 @@ export default function AdminRoles({ currentUser }) {
 
       {/* Barre de filtres et recherche */}
       <div className="datatable-toolbar contribuables-toolbar flex-wrap gap-2 mb-3">
-        <input
+        <input aria-label="Rechercher un agent"
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            pages.setCurrentPage(1);
-          }}
+          onChange={(e) => patch({ q: e.target.value, page: '' })}
           placeholder="Rechercher un agent par nom, e-mail ou centre..."
           style={{ minWidth: '280px', flex: 1 }}
         />
         <select
           value={roleFilter}
-          onChange={(e) => {
-            setRoleFilter(e.target.value);
-            pages.setCurrentPage(1);
-          }}
+          onChange={(e) => patch({ role: e.target.value === 'TOUS' ? '' : e.target.value, page: '' })}
           style={{ padding: '0.5rem 0.75rem', borderRadius: '8px' }}
         >
           <option value="TOUS">Tous les rôles</option>
@@ -199,10 +197,10 @@ export default function AdminRoles({ currentUser }) {
       </div>
 
       {loading ? (
-        <p className="status">Chargement des utilisateurs et des centres...</p>
+        <p className="status" role="status">Chargement des utilisateurs et des centres...</p>
       ) : (
         <div className="table-wrap">
-          <table>
+          <table aria-label="Agents et rôles">
             <thead>
               <tr>
                 <th>Agent / Utilisateur</th>

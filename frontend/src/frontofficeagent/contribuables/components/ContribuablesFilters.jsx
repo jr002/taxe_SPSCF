@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom';
 
+import { AideTerme } from '@/frontofficeagent/aide';
+
 const categories = [
   ['Tous', 'Tous'],
   ['Grand', 'Grand Contribuable'],
@@ -13,6 +15,7 @@ export default function ContribuablesFilters({ allCount, category, counts, filte
 
   return <>
     <div className="categorie-tabs">
+      <span className="categorie-tabs-legende"><AideTerme id="categorie">Catégories</AideTerme></span>
       {categories.map(([value, label]) => (
         <button
           key={value}
@@ -26,7 +29,7 @@ export default function ContribuablesFilters({ allCount, category, counts, filte
     </div>
 
     <div className="datatable-toolbar contribuables-toolbar flex-wrap gap-2">
-      <input value={filter} onChange={(event) => onFilterChange(event.target.value)} placeholder="Rechercher par NIF, raison sociale ou secteur..." />
+      <input aria-label="Rechercher un contribuable" value={filter} onChange={(event) => onFilterChange(event.target.value)} placeholder="Rechercher par NIF, raison sociale ou secteur..." />
       <button
         type="button"
         onClick={onClearFilters}

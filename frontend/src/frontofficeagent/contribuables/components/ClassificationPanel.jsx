@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 
+import { AideTerme } from '@/frontofficeagent/aide';
 import { formatAriary } from '@/utils';
 
 /** Codes de nature d'impôt tels que saisis au dossier, en clair. */
@@ -32,9 +33,10 @@ export default function ClassificationPanel({ fiche, idContribuable, regimeDecla
           {fiche.label}
         </span>
         <span className="classification-panel-seuil">
+          <AideTerme id="categorie">Catégorie</AideTerme>
           {annee
-            ? `Catégorie calculée sur le chiffre d’affaires ${annee} : ${formatAriary(ca)} — ${fiche.seuil}`
-            : `Aucune déclaration enregistrée : fiche affichée par défaut — ${fiche.seuil}`}
+            ? ` calculée sur le chiffre d’affaires ${annee} : ${formatAriary(ca)} — ${fiche.seuil}`
+            : ` non calculable : aucune déclaration enregistrée, fiche affichée par défaut — ${fiche.seuil}`}
         </span>
       </div>
 
@@ -57,7 +59,7 @@ export default function ClassificationPanel({ fiche, idContribuable, regimeDecla
         </h3>
         <div className="declaration-summary">
           <Fait
-            label="Nature d’impôt portée au dossier"
+            label={<AideTerme id="nature_impot">Nature d’impôt portée au dossier</AideTerme>}
             value={REGIME_LIBELLES[regimeDeclare] || 'Non renseignée'}
           />
           <Fait label="Impôt dû selon la catégorie" value={fiche.impots} />
@@ -80,7 +82,7 @@ export default function ClassificationPanel({ fiche, idContribuable, regimeDecla
       </div>
 
       <div className="classification-panel-section">
-        <h3>⏱️ Pénalités de retard de paiement</h3>
+        <h3>⏱️ <AideTerme id="penalite_retard">Pénalités de retard de paiement</AideTerme></h3>
         <ul>
           {fiche.penaliteRetard.map((penalite) => (
             <li key={penalite}>{penalite}</li>
@@ -89,7 +91,7 @@ export default function ClassificationPanel({ fiche, idContribuable, regimeDecla
       </div>
 
       <div className="classification-panel-section">
-        <h3>⚠️ Amendes administratives</h3>
+        <h3>⚠️ <AideTerme id="amende_administrative">Amendes administratives</AideTerme></h3>
         <div className="amendes-grid">
           {fiche.amendes.map((amende) => (
             <div key={amende.motif} className="amende-card">

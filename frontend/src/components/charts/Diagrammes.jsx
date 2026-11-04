@@ -250,7 +250,9 @@ export function Camembert({
           width="100%"
           height="190"
           role="img"
-          aria-label={title}
+          aria-label={`${title} : ${legende
+            .map((slice) => `${slice.label} ${formatValue(slice.valeur)} (${formatPercentage(slice.part)} %)`)
+            .join(', ')}`}
           style={{ display: 'block', margin: '0.5rem auto', maxWidth: 240 }}
         >
           {segments.map((segment) => (
@@ -310,7 +312,15 @@ export function Histogramme({
     <article className="panel">
       <h2>{title}</h2>
       <div className="chart-axis-label">{hint}</div>
-      <div className="chart-layout">
+      <div
+        className="chart-layout"
+        role="img"
+        aria-label={`${title} : ${groups
+          .map((group) => `${group.label} — ${series
+            .map((serie) => `${serie.label} ${Number(group.valeurs?.[serie.key]) || 0}`)
+            .join(', ')}`)
+          .join(' ; ')}`}
+      >
         <div className="chart-y-axis">
           {yTicks.map((tick) => (
             <span key={tick}>{formatTick(tick)}</span>
@@ -372,7 +382,10 @@ export function ContribVolumeChart({ annualData = [], maxBars = 1, currentRegime
       </div>
       <div
         className="contrib-bars"
-        aria-label={`Nombre de dossiers TVA et ${currentRegime} par année`}
+        role="img"
+        aria-label={`Nombre de dossiers TVA et ${currentRegime} par année : ${annualData
+          .map((item) => `${item.year} — TVA ${item.tva}, ${currentRegime} ${item.regimeCount}`)
+          .join(' ; ')}`}
       >
         {annualData.map((item) => (
           <div className="contrib-bar-group" key={item.year}>
@@ -416,7 +429,10 @@ export function ContribComparisonChart({ curveData = [], curveMax = 1, currentRe
       </div>
       <div
         className="gap-chart"
-        aria-label="Comparaison entre TVA effectivement payée et TVA théorique"
+        role="img"
+        aria-label={`Comparaison entre TVA effectivement payée et TVA théorique : ${curveData
+          .map((item) => `${item.year} — payée ${formatCompact(item.paid)}, théorique ${formatCompact(item.theoretical)}`)
+          .join(' ; ')}`}
       >
         <div className="gap-axis">
           <span>{formatCompact(curveMax)}</span>

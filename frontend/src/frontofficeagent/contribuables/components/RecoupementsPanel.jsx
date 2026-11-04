@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getErrorMessage, getRecoupements } from '@/api';
+import { AideTerme } from '@/frontofficeagent/aide';
 import { formatAriary } from '@/utils';
 
 const SOURCE_LABELS = {
@@ -66,43 +67,51 @@ export default function RecoupementsPanel({ id }) {
         <span>{rows.length} recoupement(s)</span>
       </div>
 
-      {loading && <p className="status">Chargement des recoupements…</p>}
+      {loading && <p className="status" role="status">Chargement des recoupements…</p>}
       {error && (
         <p className="error form-submit-message" role="alert">{error}</p>
       )}
 
       {!loading && !error && (
-        <div className="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Période</th>
-                <th>Source</th>
-                <th>Type d’opération</th>
-                <th>NIF du tiers</th>
-                <th>Montant déclaré</th>
-                <th>Montant TVA</th>
-                <th>Somme recoupée</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id_recoupement}>
-                  <td><strong>{row.periode || '—'}</strong></td>
-                  <td>{SOURCE_LABELS[row.source] || row.source || '—'}</td>
-                  <td>{OPERATION_LABELS[row.type_operation] || row.type_operation || '—'}</td>
-                  <td>{row.nif_tiers || '—'}</td>
-                  <td>{formatAriary(row.montant_declare)}</td>
-                  <td>{formatAriary(row.montant_tva)}</td>
-                  <td><strong>{formatAriary(row.somme_recoupee)}</strong></td>
+        <>
+          <p className="aide-ecran-intro">
+            <AideTerme id="recoupement">Recoupements</AideTerme> : ce que des tiers (banques,
+            fournisseurs, clients, administrations) ont déclaré à votre sujet. Ces montants ne sont
+            pas des impositions — c'est la <AideTerme id="confrontation">confrontation</AideTerme>{' '}
+            qui les compare aux déclarations.
+          </p>
+          <div className="table-wrap">
+            <table aria-label="Recoupements du contribuable">
+              <thead>
+                <tr>
+                  <th>Période</th>
+                  <th>Source</th>
+                  <th>Type d’opération</th>
+                  <th><AideTerme id="nif_tiers">NIF du tiers</AideTerme></th>
+                  <th>Montant déclaré</th>
+                  <th>Montant TVA</th>
+                  <th><AideTerme id="rapprochement">Somme recoupée</AideTerme></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {rows.length === 0 && (
-            <p className="empty">Aucun recoupement enregistré pour ce contribuable.</p>
-          )}
-        </div>
+              </thead>
+              <tbody>
+                {rows.map((row) => (
+                  <tr key={row.id_recoupement}>
+                    <td><strong>{row.periode || '—'}</strong></td>
+                    <td>{SOURCE_LABELS[row.source] || row.source || '—'}</td>
+                    <td>{OPERATION_LABELS[row.type_operation] || row.type_operation || '—'}</td>
+                    <td>{row.nif_tiers || '—'}</td>
+                    <td>{formatAriary(row.montant_declare)}</td>
+                    <td>{formatAriary(row.montant_tva)}</td>
+                    <td><strong>{formatAriary(row.somme_recoupee)}</strong></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {rows.length === 0 && (
+              <p className="empty">Aucun recoupement enregistré pour ce contribuable.</p>
+            )}
+          </div>
+        </>
       )}
     </>
   );

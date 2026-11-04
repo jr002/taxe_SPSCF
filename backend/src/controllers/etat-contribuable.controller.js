@@ -4,7 +4,11 @@ class EtatContribuableController {
   // Créer un nouvel état pour un contribuable
   static async create(req, res) {
     try {
-      const id_contribuable = req.params.id_contribuable || req.body.id_contribuable;
+      // Le contribuable visé peut venir de l'URL (`/contribuables/:id/etat`,
+      // `/etat-contribuable/contribuable/:id_contribuable`) ou du corps
+      // (`POST /etat-contribuable`). L'URL gagne : c'est elle qui a été contrôlée
+      // dans le périmètre de l'agent par `requireContribuableAccess`.
+      const id_contribuable = req.params.id || req.params.id_contribuable || req.body.id_contribuable;
       const { statut_activite, statut_conformite, motif } = req.body;
       const id_agent = req.user?.id || req.body.id_agent || null;
 

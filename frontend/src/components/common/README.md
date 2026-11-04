@@ -1,8 +1,9 @@
 # Composants communs
 
 Composants transversaux de l'interface : la navigation principale, les documents
-officiels de la procédure contradictoire (notification, demande d'éclaircissements)
-et la pagination des tableaux.
+officiels de la procédure contradictoire (notification, demande d'éclaircissements),
+la puce de référence légale qui les relie aux PDF de la DGI, et la pagination des
+tableaux.
 
 ---
 
@@ -45,7 +46,7 @@ Export par défaut `Header`. En-tête rendu par `App.jsx` pour toutes les routes
 
 * La marque renvoie vers `/admin` pour un administrateur et `/accueil` pour les rôles opérationnels.
 * **Backoffice inchangé** : les cinq entrées `ADMIN_LINKS` restent dans le `<nav>` du header. Le préfixe de route le plus long garde « Vérification NIF » actif sur `/admin/verification-nif/sql`, sans activer « Tableau de bord ».
-* **Frontoffice agent** : les liens de modules sont déplacés dans [`AgentSidebar.jsx`](AgentSidebar.jsx). Le bouton `#agent-navigation-toggle` (« Modules ») commande cette sidebar avec `aria-expanded` et `aria-controls`.
+* **Frontoffice agent** : les liens de modules sont affichés en permanence dans [`AgentSidebar.jsx`](AgentSidebar.jsx), à côté du contenu sur grand écran et au-dessus sur mobile.
 * Barre rendue **fixe** (`position: sticky; top: 0; z-index: 40` dans
   [`../../App.css`](../../App.css)) au-dessus de 1024 px ; en dessous elle passe
   en `position: relative` — elle défile avec la page, mais reste le repère du
@@ -61,7 +62,7 @@ Export par défaut `Header`. En-tête rendu par `App.jsx` pour toutes les routes
   lignes, et son panneau se déroule juste dessous. Sous 1024 px, la barre passant
   sur deux lignes, le profil est réaligné sur celle du logo (`top: 0.9rem`).
 * Les styles spécifiques à la barre agent utilisent `.agent-topbar`, sans modifier les surcharges responsive de l'administration.
-* L'étanchéité de la navigation ne remplace pas les gardes de routes et d'API : le portefeuille contribuable reste fermé à l'administrateur et « Mon équipe » reste le seul écran d'administration accessible au chef de centre.
+* L'étanchéité de la navigation ne remplace pas les gardes de routes et d'API décrites dans [`EspaceOperateurs.jsx`](EspaceOperateurs.jsx) : le portefeuille contribuable reste fermé à l'administrateur et « Mon équipe » reste le seul écran d'administration accessible au chef de centre.
 
 Props :
 
@@ -74,9 +75,7 @@ Props :
 | `onToggleTheme` | `function` | Bascule clair / sombre, déclenchée depuis le profil |
 | `onLogout` | `function` | Déconnexion, transmise au profil |
 | `user` | `object \| null` | Agent renvoyé par `GET /api/auth/me` (défaut `null`) |
-| `isAdmin` | `boolean` | Affiche les cinq liens du backoffice au lieu du bouton de sidebar |
-| `agentNavigationOpen` | `boolean` | État de la sidebar, exposé par `aria-expanded` |
-| `onToggleAgentNavigation` | `function` | Ouvre ou réduit la navigation agent |
+| `isAdmin` | `boolean` | Affiche les cinq liens du backoffice ; sans lui, la barre ne porte que le logo et le profil, la navigation de l'agent étant tenue par la sidebar |
 
 ---
 
@@ -84,18 +83,18 @@ Props :
 
 Export par défaut `AgentSidebar`, réservé au shell des rôles opérationnels dans `App.jsx`.
 
-* Six liens : `/accueil`, `/decisionnel`, `/suivi`, `/contribuables`, `/centres-fiscaux` et `/register`. Le chef de centre reçoit en plus « Mon équipe » (`/admin/utilisateurs` en mode restreint), soit sept entrées.
+* Sept liens : `/accueil`, `/file-de-travail`, `/decisionnel`, `/suivi`, `/contribuables`, `/centres-fiscaux` et `/register`. Le chef de centre reçoit en plus « Mon équipe » (`/admin/utilisateurs` en mode restreint), soit huit entrées.
 * Le lien actif est le préfixe de route le plus long : `/contribuables/72/relances` active « Contribuables » et `/admin/utilisateurs` active « Mon équipe ».
-* Au-dessus de 1024 px, `.agent-layout` aligne une sidebar de 14,5 rem et le contenu. Le bouton « Modules » peut la réduire ; elle est alors masquée et `inert`, et le contenu occupe toute la grille.
-* À 1024 px et moins, elle devient un tiroir fixe avec backdrop. À l'ouverture, le défilement du body est bloqué et le bouton de fermeture reçoit le focus ; Tab et Maj+Tab restent dans le tiroir, Échap le ferme et restitue le focus au bouton « Modules ». Un lien referme aussi le tiroir après navigation.
-* `App.jsx` possède l'état ouvert/fermé, initialise le bon mode selon le viewport et écoute le breakpoint. L'administrateur ne monte ni la sidebar ni `.agent-layout` ; le portail contribuable n'utilise pas ce shell.
+* Huit icônes distinctes, toutes en traits de `1.8` dans une boîte `24×24` : dossier à rabat pour « Dossier fiscal » (`/suivi`), lignes d'annuaire pour « Registre » (`/register`) et carte d'agent pour « Mon équipe », afin qu'aucune ne se confonde avec une autre quand le rail est replié sur ses seules icônes.
+* L'état actif ne dépend pas du libellé (masqué rail replié) : la pastille porte un anneau intérieur plein de `1.5px` — `#1769aa` en clair, `#7dd3fc` en sombre — mesuré à 5,8:1 et 9,6:1 contre le fond du rail, et 4,8:1 et 6,1:1 contre la pastille, au-dessus du seuil de 3:1 des indicateurs non textuels.
+* Au-dessus de 1024 px, `.agent-layout` affiche une sidebar compacte à icônes ; au survol ou au focus clavier, elle s'élargit et révèle les libellés.
+* À 1024 px et moins, la sidebar reste visible au-dessus du contenu avec ses icônes et libellés.
+* L'administrateur ne monte ni la sidebar ni `.agent-layout` ; le portail contribuable n'utilise pas ce shell.
 * Les styles desktop, mobile, sombres et d'impression sont regroupés en fin de [`../../App.css`](../../App.css).
 
 | Prop | Type | Rôle |
 | --- | --- | --- |
 | `isChefCentre` | `boolean` | Ajoute le lien « Mon équipe » |
-| `isOpen` | `boolean` | Contrôle la visibilité et `inert` |
-| `onClose` | `function` | Fermeture par Échap, backdrop, bouton ou navigation mobile |
 
 ---
 
@@ -212,12 +211,13 @@ temporaire, suppression, abandon d'un brouillon) et la modale de mot de passe de
 Export par défaut `NotificationModal`. Modale plein écran présentant un document fiscal officiel (en-tête République de Madagascar / DGI, décompte du redressement, cadre légal, signatures) et permettant son impression via `window.print()`.
 
 * Renvoie `null` si `!isOpen` ou si `declaration` est absente.
-* `type` vaut `'primitive'` (défaut) ou `'definitive'` : le titre, la référence légale (CPF art. V-19 / CGI 2026) et le bloc de délais changent en conséquence.
-* Montants : `principal` (repli sur `declaration.montant_redressement`), `amende` (repli sur 40 % du principal), `penalite` (défaut `0`), `total` (repli sur la somme des trois), `montant_impute` et `montant_net_a_payer` lus sur la déclaration. Les lignes d'imputation et de net à payer ne sont affichées que pour une notification définitive.
-* Dates formatées en `fr-FR` : date d'émission issue de `date_notification_primitive` ou `date_notification_definitive` (repli sur la date du jour) et date limite issue de `date_limite_reponse` (repli sur aujourd'hui + 30 jours).
+* `type` vaut `'primitive'` (défaut) ou `'definitive'` : le titre, la référence légale (code des procédures fiscales, art. V-03 et V-04 pour la primitive, art. V-07 pour la définitive) et le bloc de délais changent en conséquence. Les puces de référence sont des [`RefLegal.jsx`](RefLegal.jsx) posées dans `.modal-tag-group`.
+* Montants : le décompte n'imprime que ce qui est **enregistré au dossier** — `montant_redressement` (principal), `credit_impot`, `montant_impute`, `montant_net_a_payer`. La base ne contient aucune colonne d'amende, de pénalité ni d'intérêt : la ligne « Amendes, pénalités et intérêts de retard » porte donc « Non liquidé au dossier » et le total est libellé « TOTAL ENREGISTRÉ AU DOSSIER ». Les lignes d'imputation et de net à payer ne s'affichent que pour une notification définitive.
+* `simulation` (défaut `false`) et `estimations` (`{ amende, penalites, total }`) : réservées au module de collecte, dont les chiffres sont calculés hors dossier. Elles ajoutent le bandeau `.notification-simulation` (« document de travail, non enregistré »), basculent les libellés en « estimé par le simulateur » et marquent chaque montant de son origine. Un acte réellement émis n'utilise pas ces props.
+* Dates : `date_notification_primitive`, `date_notification_definitive` et `date_limite_reponse` sont lues telles quelles ; une date absente s'écrit « non enregistrée au dossier » — la date du jour n'est jamais substituée (`dateOuNull`).
 * Boutons « Imprimer / Exporter PDF » et « Fermer » ; la barre d'outils porte la classe `no-print`, prévue pour être masquée à l'impression par [`../../App.css`](../../App.css).
 * Accessibilité clavier : le conteneur `.notification-modal-card` porte `role="dialog"`, `aria-modal="true"`, un `aria-label` selon le type et `tabIndex={-1}` ; il est focalisé à l'ouverture et Échap appelle `onClose` (voir [`../../hooks/useModalA11y.js`](../../hooks/useModalA11y.js)).
-* Les montants sont formatés par `formatAriary` importé depuis [`../../utils/formatters.js`](../../utils/formatters.js).
+* Les montants sont formatés par `formatAriary` et l'absence par `MONTANT_ABSENT` / `montantOuNull`, les dates par `dateOuNull` — tous importés depuis [`../../utils/formatters.js`](../../utils/formatters.js).
 * Remarque : `printRef` est déclaré (`useRef`) et attaché au bloc `.notification-sheet`, mais n'est jamais lu.
 
 Props :
@@ -228,7 +228,8 @@ Props :
 | `onClose` | `function` | Fermeture (clic sur l'arrière-plan, bouton ou touche Échap) |
 | `type` | `'primitive' \| 'definitive'` | Nature de la notification (défaut `'primitive'`) |
 | `declaration` | `object` | Déclaration / dossier concerné (obligatoire) |
-| `redressementDetails` | `object` | Surcharge des montants `principal`, `amende`, `penalite`, `total` (défaut `{}`) |
+| `simulation` | `boolean` | Le document est une simulation du module de collecte, pas un acte enregistré (défaut `false`) |
+| `estimations` | `object \| null` | `{ amende, penalites, total }` calculés hors dossier, affichés comme estimations |
 
 Utilisé par `src/frontofficeagent/suivi-fiscal/pages/DeclarationDetail.jsx` et `src/frontofficeagent/collecte/components/TheoreticalForm.jsx`.
 
@@ -237,21 +238,34 @@ Utilisé par `src/frontofficeagent/suivi-fiscal/pages/DeclarationDetail.jsx` et 
 Export par défaut `DemandeEclaircissementModal`. Modale reprenant la mise en page
 de [`NotificationModal.jsx`](NotificationModal.jsx) (mêmes classes
 `.notification-sheet`, `.sheet-header`, `.legal-notice`, `.no-print`) pour le
-document « Demande d'Éclaircissements et de Justifications » prévu par l'art.
-V-17 du Code des Procédures Fiscales — le premier acte contradictoire, qui
-précède la notification primitive.
+document « Demande d'Éclaircissements et de Justifications » de la Section II du
+Code des procédures fiscales (art. V-02, p. 87) — le premier acte contradictoire,
+qui précède la proposition de rectification et la notification primitive.
 
 * Renvoie `null` si `!isOpen` ou si `declaration` est absente.
-* Trois sections : « CONTEXTE » (TVA payée et théorique de la déclaration, via
-  `formatAriary`), « POINTS APPELANT VOS ÉCLAIRCISSEMENTS » (le texte libre de
+* Trois sections : « CONTEXTE » (TVA payée et théorique telles qu'enregistrées ; une phrase explicative prend le relais si l'un des deux termes manque), « POINTS APPELANT VOS ÉCLAIRCISSEMENTS » (le texte libre de
   `questions`, affiché en `pre-line`, avec un message de repli s'il est vide) et
   « PROCÉDURE ET DÉLAI DE RÉPONSE ».
 * Le délai n'est pas saisi : `delaiJours` vaut 30 par défaut et la date limite
-  est calculée à partir de `dateEmission`. Sans date d'émission — donc avant
-  l'envoi de la demande — l'en-tête et la date limite affichent `—`.
+  est calculée à partir de `dateEmission` — le document le dit (« date calculée à
+  partir de la date d'émission enregistrée »). Sans date d'émission, la ligne
+  s'écrit « non calculable — aucune date d'émission n'est enregistrée au dossier » ;
+  la date du jour n'est jamais substituée.
+* Aucune référence d'office n'est inventée : l'en-tête cite
+  `Contribuable n° … · Déclaration n° … · Exercice …`, un champ vide porte
+  « Non renseigné au dossier » (`ouAbsent`) et le texte énonce qu'aucun droit,
+  amende, pénalité ou intérêt n'est arrêté à ce stade. Le pied de page reprend
+  téléphone et courriel du centre gestionnaire lorsqu'ils sont enregistrés.
 * Le document est relisible après émission : la fiche `/suivi/:id` le recharge
   depuis la table `relances` (`type_relance = 'demande_eclaircissement'`), où
   `observations` porte les points demandés et `date_emission` la date du document.
+* Deux puces [`RefLegal.jsx`](RefLegal.jsx) dans `.modal-tag-group` : la référence
+  de l'acte (`REFERENCES.eclaircissements`, `detail` — l'article V-02 fixe un
+  **délai franc de 15 jours**, l'acte en accorde 30, et la remarque est imprimée
+  dans la section « PROCÉDURE ET DÉLAI DE RÉPONSE ») et la sanction d'une absence
+  de réponse (`REFERENCES.sanction_eclaircissements`, art. V-38 : imposition
+  d'office). La phrase qui menaçait de « fixer d'office les bases par notification
+  primitive » a été retirée : aucun article ne le dit.
 
 Props :
 
@@ -265,3 +279,84 @@ Props :
 | `delaiJours` | `number` | Délai de réponse, en jours (défaut `30`) |
 
 Utilisé par `src/frontofficeagent/suivi-fiscal/pages/DeclarationDetail.jsx`.
+
+---
+
+## [`RefLegal.jsx`](RefLegal.jsx)
+
+Export par défaut `RefLegal`, aussi sorti par le barrel [`index.js`](index.js).
+La puce de référence légale : un seul composant, une seule forme, pour tous les
+renvois aux textes officiels du portail, des actes imprimables et des écrans
+d'instruction.
+
+* Sa `source` est une entrée du registre neutre
+  [`../../data/textesFiscaux.data.js`](../../data/textesFiscaux.data.js)
+  (`REFERENCES.eclaircissements`, `REFERENCES.amende_40`, etc.), résolue par
+  `referenceLegale()`. **Aucun écran n'écrit un article en dur** : un numéro ou
+  une page qui change se corrige dans le registre, jamais dans les composants.
+* `source` absent, ou `texte` / `article` manquant → le composant rend `null`.
+  Une règle que l'application s'invente (tolérance de rapprochement, jours francs
+  des relances, seuil d'écart de 50 %) n'affiche donc aucune puce vide : c'est le
+  texte de l'écran qui doit le dire.
+* Le lien ouvre le **PDF de l'éditeur** (`portal.impots.mg` pour les codes
+  consolidés 2025, `mef.gov.mg` pour la loi de finances 2026) dans un onglet
+  séparé, `target="_blank"` avec `rel="noopener noreferrer"` — les fichiers
+  pèsent plusieurs mégaoctets et le dossier en cours ne doit pas être perdu.
+  Il s'ouvre sur `referenceLegale().urlAncre`, c'est-à-dire la page **du fichier**
+  où se lit le feuillet cité : `page` du registre est le numéro imprimé sur le
+  feuillet, et chaque document porte son `decalagePage` (1 pour les deux codes,
+  2 pour la loi de finances) qui convertit l'un en l'autre. Sans `page`, l'URL
+  reste celle du document entier.
+* Trois états rendus par le registre :
+  * conforme → puce neutre, libellé `Code des procédures fiscales art. V-02 — p. 87` ;
+  * `conforme: 'partiel'` → la valeur affichée ne se lit pas dans l'article. Le
+    lien est **gardé** (c'est en ouvrant l'article que le lecteur constate
+    l'écart), la puce prend `.ref-legale-prudent` et, avec `detail`, la phrase
+    `ecart` s'affiche en `.ref-legale-ecart` ;
+  * sans source → rien (point 2 ci-dessus).
+* `<span className="sr-only">Ouvrir le texte officiel — </span>` précède le
+  libellé, et la flèche `↗` (`.ref-legale-ouvert`) est `aria-hidden` et masquée à
+  l'impression : l'article et sa page restent imprimés, seule l'invitation à
+  ouvrir le PDF disparaît.
+* Le `title` du lien porte le document et l'éditeur ; `referenceLegale()` expose
+  aussi `citation` (le texte de l'article, repris mot pour mot dans le registre)
+  pour les écrans qui l'affichent.
+
+Props :
+
+| Prop | Type | Rôle |
+| --- | --- | --- |
+| `source` | `object \| null` | Entrée du registre `REFERENCES` (déjà résolue, pas une clé) |
+| `compact` | `boolean` | Défaut `false`. `true` = libellé sans la page (`Code des impôts art. 20.01.54`), pour les barres d'actes et les cellules étroites |
+| `detail` | `boolean` | Défaut `false`. Affiche la phrase `ecart` sous le lien, pour une référence non conforme |
+| `className` | `string` | Classe de mise en place ajoutée au conteneur (ex. `modal-tag-ref`) |
+
+Utilisé par `accountcontribuable/components/RegleFiscale.jsx`,
+`components/common/NotificationModal.jsx` et `DemandeEclaircissementModal.jsx`,
+et par les écrans `frontofficeagent/suivi-fiscal/` (timeline et formulaires
+d'acte) et `frontofficeagent/collecte/components/TheoreticalForm.jsx`.
+
+---
+
+## [`EspaceOperateurs.jsx`](EspaceOperateurs.jsx)
+
+Export par défaut `EspaceOperateurs`. Garde d'affichage qui ferme le portefeuille
+contribuable (`/contribuables` et ses dix sous-routes) au rôle `admin` : elle rend
+un simple `<section className="page">` « Contribuables non accessible » avec un
+`Link className="primary"` vers `/admin` à la place de l'enfant, sinon elle rend
+`children`.
+
+| Prop | Type | Rôle |
+| --- | --- | --- |
+| `currentUser` | `object \| null` | Agent connecté fourni par `App.jsx` ; seul `role === 'admin'` est écarté |
+| `children` | `node` | L'écran du portefeuille, rendu pour tous les autres rôles |
+
+* Placée dans [`../../App.jsx`](../../App.jsx) autour des onze routes
+  `/contribuables…`, donc efficace même quand l'URL est tapée à la main.
+* Volontairement **côté interface et non côté API** :
+  `GET /api/contribuables` est aussi lu par l'administrateur pour son outil de
+  vérification NIF (`AdminVerificationNIF.jsx` charge 100 lignes,
+  `/admin/verification-nif/sql` fait des `SELECT` sur `contribuables`), et un
+  `403` le casserait. Le périmètre réel reste décidé par `data-scope` serveur.
+* Aucun rôle opérationnel n'est exclu, et les autres URL fiscales (`/suivi`,
+  `/relance`, `/decisionnel`, `/centres-fiscaux`…) ne passent pas par ce garde.

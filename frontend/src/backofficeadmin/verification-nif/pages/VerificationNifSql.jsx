@@ -3,6 +3,7 @@ import ErreursVerification from '@/backofficeadmin/verification-nif/components/E
 import HistoriqueVerification from '@/backofficeadmin/verification-nif/components/HistoriqueVerification.jsx';
 import VerificationNifLayout from '@/backofficeadmin/verification-nif/components/VerificationNifLayout.jsx';
 import {
+  STATUT_REFERENTIEL,
   executerSelectListe,
   extraireNifDepuisRequete,
   loadHistorique,
@@ -17,10 +18,12 @@ import { getErrorMessage } from '@/api';
 const EST_SELECT = /^\s*select\b/i;
 
 /**
- * Page dédiée du type 1 : vérification d'un NIF sur la base SQL, avec repli sur
- * le référentiel local. La saisie est une zone multigne — un NIF seul, une
- * requête ciblant un NIF ou un `SELECT` qui liste des contribuables (rendu en
- * petit tableau). Chaque échec est consigné dans un journal dédié.
+ * Page dédiée du type 1 : vérification d'un NIF auprès de la base contribuable
+ * (par son API), avec repli sur le référentiel local. La saisie est une zone
+ * multigne — un NIF seul, une requête ciblant un NIF ou un `SELECT` qui liste des
+ * contribuables (rendu en petit tableau). Le repli local est signalé comme tel :
+ * il ne confirme pas l'existence du NIF. Chaque échec est consigné dans un journal
+ * dédié.
  */
 export default function VerificationNifSql({ currentUser }) {
   const [saisie, setSaisie] = useState('');
@@ -90,7 +93,7 @@ export default function VerificationNifSql({ currentUser }) {
       );
     } catch (requestError) {
       const message = getErrorMessage(requestError);
-      journaliser('Appel à la base SQL', message);
+      journaliser('Base contribuable injoignable', message);
       consigner(nif ? `NIF ${nif}` : requete.slice(0, 24), message, false);
     } finally {
       setLoading(false);
@@ -102,7 +105,7 @@ export default function VerificationNifSql({ currentUser }) {
       currentUser={currentUser}
       eyebrow="Backoffice Administration · Vérification NIF"
       titre="1 · Vérification par Requête SQL"
-      description="Interrogez directement la base de données PostgreSQL pour authentifier un NIF contribuable, avec repli sur le référentiel local."
+      description="Interrogez la base contribuable — via son API, pas une session PostgreSQL directe — pour vérifier qu'un NIF y existe. Sans réponse de la base, le repli sur le référentiel local est signalé comme une simple présence déclarée."
     >
       <div className="panel" style={{ borderTop: '4px solid #2563eb' }}>
         <form className="verif-saisie" onSubmit={handleVerifier}>
@@ -117,7 +120,7 @@ export default function VerificationNifSql({ currentUser }) {
               rows={7}
               spellCheck={false}
               aria-label="Requête SQL ou NIF à vérifier"
-              placeholder={"SELECT raison_sociale, centre_fiscal_ref\nFROM contribuables\nWHERE nif = '1000000001'\n  AND statut = 'actif';"}
+              placeholder={"SELECT raison_sociale, centre_fiscal_ref\nFROM contribuables\nWHERE nif = '1234567890'\n  AND statut = 'actif';"}
             />
           </label>
 
@@ -154,7 +157,11 @@ export default function VerificationNifSql({ currentUser }) {
           <div className={`verif-resultat${resultat.trouve ? '' : ' verif-resultat-introuvable'}`}>
             {resultat.trouve ? (
               <>
-                <h3>✅ NIF CERTIFIÉ ET AUTHENTIFIÉ</h3>
+                <h3>
+                  {resultat.statut === STATUT_REFERENTIEL.base
+                    ? '✅ NIF PRÉSENT DANS LA BASE CONTRIBUABLE'
+                    : '⚠️ NIF TROUVÉ DANS LE RÉFÉRENTIEL LOCAL — non confirmé par la base'}
+                </h3>
                 <p>
                   <strong>Raison sociale :</strong> {resultat.raison_sociale}
                 </p>
@@ -163,6 +170,9 @@ export default function VerificationNifSql({ currentUser }) {
                 </p>
                 <p>
                   <strong>Régime :</strong> {resultat.regime} · <em>Source : {resultat.source}</em>
+                </p>
+                <p>
+                  <strong>Statut :</strong> {resultat.statut}
                 </p>
               </>
             ) : (
@@ -178,7 +188,7 @@ export default function VerificationNifSql({ currentUser }) {
           <div className="verif-liste">
             <div className="verif-liste-head">
               <h3>📋 Résultat de la requête</h3>
-              <p className="status">
+              <p className="status" role="status">
                 {liste.lignes.length} ligne(s) sur {liste.total} · LIMIT {liste.limite}
                 {liste.recherche ? ` · filtre « ${liste.recherche} »` : ''}
               </p>
@@ -186,7 +196,7 @@ export default function VerificationNifSql({ currentUser }) {
 
             {liste.lignes.length ? (
               <div className="table-wrap">
-                <table>
+                <table aria-label="Résultat de la requête">
                   <thead>
                     <tr>
                       {liste.colonnes.map((colonne) => (
@@ -208,7 +218,7 @@ export default function VerificationNifSql({ currentUser }) {
                 </table>
               </div>
             ) : (
-              <p className="status">Aucun contribuable ne correspond à cette requête.</p>
+              <p className="status" role="status">Aucun contribuable ne correspond à cette requête.</p>
             )}
           </div>
         )}

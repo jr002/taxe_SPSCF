@@ -212,7 +212,7 @@ class DeclarationController {
     }
   }
 
-  // Imputer le crédit d'impôt (Articles 01.01.15 et 01.02.06 CGI 2026)
+  // Imputer le crédit d'impôt (code des impôts, art. 01.01.15 IR et 01.02.06 IS)
   static async imputerCreditImpot(req, res) {
     try {
       const { id } = req.params;

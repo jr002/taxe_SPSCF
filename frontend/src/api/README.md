@@ -125,7 +125,7 @@ Les statistiques par statut (`GET /droits-communication/stats/statuts`) sont exp
 * `getEtatsContribuable(params = {})` — `GET /etat-contribuable`.
 * `getHistoriqueEtatContribuable(idContribuable)` — `GET /contribuables/:idContribuable/etat`.
 * `getDernierEtatContribuable(idContribuable)` — `GET /etat-contribuable/contribuable/:idContribuable/latest`.
-* `createEtatContribuable(idContribuable, payload)` — `POST /contribuables/:idContribuable/etat`.
+* `createEtatContribuable(idContribuable, payload)` — `POST /contribuables/:idContribuable/etat`. `payload` doit porter `statut_activite` **et** `statut_conformite` (l'API répond `400` sinon ; elle n'enregistre plus « Actif / En règle » par défaut). Aucun écran n'appelle cette fonction à ce jour : le suivi d'état reste écrit par la base.
 * `getEtatStats()` — `GET /etat-contribuable/stats`.
 
 ### Relances
@@ -142,7 +142,7 @@ Les statistiques par statut (`GET /droits-communication/stats/statuts`) sont exp
 * `effectuerControle(idDeclaration, payload = {})` — `POST /controles/:idDeclaration/effectuer`.
 * `getControlesDeclaration(idDeclaration)` — `GET /controles/:idDeclaration/historique`.
 
-### Procédure contradictoire et redressements (CGI 2026)
+### Procédure contradictoire et redressements (code des procédures fiscales, art. V-02 à V-07)
 
 * `emettreNotificationPrimitive(idDeclaration, payload = {})` — `POST /declarations/:idDeclaration/notification-primitive`.
 * `emettreNotificationDefinitive(idDeclaration, payload = {})` — `POST /declarations/:idDeclaration/notification-definitive`.

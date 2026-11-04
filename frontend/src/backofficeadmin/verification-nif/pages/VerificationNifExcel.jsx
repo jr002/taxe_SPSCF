@@ -67,7 +67,7 @@ export default function VerificationNifExcel({ currentUser }) {
       currentUser={currentUser}
       eyebrow="Backoffice Administration · Vérification NIF"
       titre="2 · Liaison via Fichier Excel"
-      description="Importez un fichier Excel de contribuables certifiés (.xlsx, .xls, .csv) pour enrichir le référentiel de vérification."
+      description="Importez un fichier Excel de NIFs (.xlsx, .xls, .csv) pour enrichir le référentiel de vérification. Les lignes portent le statut « Déclaré par le fichier » : le classeur atteste ce que son auteur y a écrit, pas l'existence d'un contribuable."
     >
       <div className="panel" style={{ borderTop: '4px solid #10b981' }}>
         <div className="verif-gabarit">
@@ -89,7 +89,7 @@ export default function VerificationNifExcel({ currentUser }) {
           <input type="file" accept=".xlsx, .xls, .csv" onChange={handleFileUpload} style={{ display: 'none' }} />
         </label>
 
-        <p className="status" style={{ marginTop: '0.9rem', fontSize: '0.85rem' }}>
+        <p className="status" role="status" style={{ marginTop: '0.9rem', fontSize: '0.85rem' }}>
           Colonnes reconnues : <strong>NIF</strong> (ou nif / Numero), <strong>RaisonSociale</strong> (ou Nom /
           raison_sociale), <strong>Centre</strong>. Référentiel actuel : {referentiel.length} entrées.
         </p>

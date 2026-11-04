@@ -9,7 +9,7 @@ import {
   createRelance,
   getErrorMessage,
 } from '@/api';
-import { formatAriary, toNumber } from '@/utils';
+import { formatAriary, ouAbsent, toNumber } from '@/utils';
 import { NotificationModal, DemandeEclaircissementModal } from '@/components/common';
 import DeclarationSummaryCards from '@/frontofficeagent/suivi-fiscal/components/DeclarationSummaryCards';
 import ProcedureContradictoireTimeline from '@/frontofficeagent/suivi-fiscal/components/ProcedureContradictoireTimeline';
@@ -48,13 +48,15 @@ const formatPct = (value) =>
 
 /**
  * Page de consultation et de gestion détaillée d'une déclaration fiscale
- * Intègre la procédure contradictoire de redressement (CGI LFI 2026 / CPF V-19) :
- * - Notification Primitive (délai de réponse 30 jours)
+ * Intègre la procédure contradictoire de redressement (code des procédures
+ * fiscales, art. V-02 à V-07 ; imputation du crédit : code des impôts,
+ * art. 01.01.15 IR et 01.02.06 IS) :
+ * - Notification Primitive (délai de réponse 30 jours, art. V-04)
  * - Statut PRIMITIVE_ENVOYÉE
- * - Notification Définitive (validation agent)
+ * - Notification Définitive (validation agent, art. V-07)
  * - Statut DÉFINITIVE_ENVOYÉE
  * - Déblocage de l'imputation du crédit d'impôt (Art. 01.01.15 IR & 01.02.06 IS)
- * - Demande d'Éclaircissements et de Justifications (CPF V-17), stockée dans `relances`
+ * - Demande d'Éclaircissements et de Justifications (art. V-02), stockée dans `relances`
  */
 export default function DeclarationDetail() {
   const { id } = useParams();
@@ -149,8 +151,21 @@ export default function DeclarationDetail() {
     };
   }, [id, idContribuable]);
 
+  // Les actions de procédure renvoient la ligne mise à jour, sans les informations
+  // du contribuable (NIF, raison sociale, centre gestionnaire) portées par la fiche.
+  // On relit la déclaration complète pour qu'un courrier imprimé n'affiche que des
+  // données réellement enregistrées.
+  const rafraichirDeclaration = async () => {
+    try {
+      const result = await getDeclarationById(id);
+      setDeclaration(result);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError));
+    }
+  };
+
   if (loading && !declaration) {
-    return <p className="page status">Chargement des données de la déclaration...</p>;
+    return <p className="page status" role="status">Chargement des données de la déclaration...</p>;
   }
 
   if (error && !declaration) {
@@ -169,10 +184,14 @@ export default function DeclarationDetail() {
   const tvaTheorique = toNumber(declaration.tva_theorique);
   const ecart = tvaTheorique - tvaPayee;
 
-  // Calculs financiers associés au redressement
-  const principalRedressement = Number(declaration.montant_redressement) || Math.max(0, ecart);
-  const amendeFiscale = principalRedressement * 0.4;
-  const totalDetteInitiale = principalRedressement + amendeFiscale;
+  // Estimation affichée à l'écran, jamais imprimée : le principal proposé est le
+  // plus souvent le montant déjà enregistré au dossier, à défaut l'écart calculé.
+  // L'amende de 40 % n'existe dans aucune colonne — elle n'est qu'une indication
+  // de ce que l'administration pourra liquider, et le courrier l'affiche « Non
+  // liquidé au dossier ».
+  const principalEnregistre = Number(declaration.montant_redressement) > 0;
+  const principalPropose = Number(declaration.montant_redressement) || Math.max(0, ecart);
+  const estimationAmende = principalPropose * 0.4;
 
   const statut = String(declaration.statut || '').toUpperCase();
   const isPrimitiveEnvoyee = statut === 'PRIMITIVE_ENVOYÉE';
@@ -217,14 +236,14 @@ export default function DeclarationDetail() {
     setError('');
 
     try {
-      const res = await emettreNotificationPrimitive(id, {
+      await emettreNotificationPrimitive(id, {
         date_emission: new Date(),
         prorogation_jours: Number(prorogationJours) || 0,
-        montant_redressement: principalRedressement,
+        montant_redressement: principalPropose,
         credit_impot: Number(creditDisponible) || 0,
         observations_agent: observations,
       });
-      setDeclaration(res);
+      await rafraichirDeclaration();
       setActionSuccess('Notification Primitive émise avec succès. Délai légal de réponse fixé à 30 jours.');
       setShowPrimitiveForm(false);
     } catch (err) {
@@ -242,13 +261,13 @@ export default function DeclarationDetail() {
     setError('');
 
     try {
-      const res = await emettreNotificationDefinitive(id, {
+      await emettreNotificationDefinitive(id, {
         date_emission: new Date(),
-        montant_valide: principalRedressement,
+        montant_valide: principalPropose,
         credit_impot: Number(creditDisponible) || Number(declaration.credit_impot) || 0,
         observations_agent: observations,
       });
-      setDeclaration(res);
+      await rafraichirDeclaration();
       setActionSuccess('Notification Définitive validée et émise. Le bouton d’imputation du crédit d’impôt est désormais débloqué.');
       setShowDefinitiveForm(false);
     } catch (err) {
@@ -264,7 +283,7 @@ export default function DeclarationDetail() {
 
     const creditNum = toNumber(creditDisponible) || toNumber(declaration.credit_impot);
     const montantNum = toNumber(montantAImputer) || creditNum;
-    const imputableMax = Math.max(0, Math.min(creditNum, principalRedressement));
+    const imputableMax = Math.max(0, Math.min(creditNum, principalPropose));
 
     if (montantNum <= 0 || montantNum > imputableMax) {
       setError(
@@ -279,12 +298,12 @@ export default function DeclarationDetail() {
     setError('');
 
     try {
-      const res = await imputerCreditImpot(id, {
+      await imputerCreditImpot(id, {
         credit_impot: creditNum,
         montant_a_imputer: montantNum,
         observations_agent: observations,
       });
-      setDeclaration(res);
+      await rafraichirDeclaration();
       setActionSuccess("Crédit d'impôt imputé avec succès sur la notification définitive.");
       setShowImputationForm(false);
     } catch (err) {
@@ -294,7 +313,7 @@ export default function DeclarationDetail() {
     }
   };
 
-  // Action : Émettre une Demande d'Éclaircissements et de Justifications (CPF V-17)
+  // Action : Émettre une Demande d'Éclaircissements et de Justifications (CPF art. V-02)
   const handleEmettreEclaircissement = async (e) => {
     e.preventDefault();
     setActionLoading(true);
@@ -346,19 +365,19 @@ export default function DeclarationDetail() {
           <span className={`badge ${statutInfo.className}`}>{statutInfo.label}</span>
         </div>
         <p>
-          NIF : <strong>{declaration.nif || 'N/A'}</strong> · Exercice fiscal :{' '}
-          <strong>{declaration.annee}</strong> · Secteur : {declaration.secteur_activite || 'Général'} ·
+          NIF : <strong>{ouAbsent(declaration.nif)}</strong> · Exercice fiscal :{' '}
+          <strong>{declaration.annee}</strong> · Secteur : {ouAbsent(declaration.secteur_activite)} ·
           Déclaration n° <strong>{declaration.id_declaration}</strong>
         </p>
       </div>
 
       {actionSuccess && (
-        <div className="form-submit-message success" style={{ marginBottom: '1.25rem' }}>
+        <div className="form-submit-message success" role="status" style={{ marginBottom: '1.25rem' }}>
           ✓ {actionSuccess}
         </div>
       )}
       {error && (
-        <div className="form-submit-message error" style={{ marginBottom: '1.25rem' }}>
+        <div className="form-submit-message error" role="alert" style={{ marginBottom: '1.25rem' }}>
           ⚠️ {error}
         </div>
       )}
@@ -375,7 +394,7 @@ export default function DeclarationDetail() {
         <strong>Lecture rapide.</strong> {lecture}
       </p>
 
-      {/* Procédure contradictoire & redressements (CGI LFI 2026) */}
+      {/* Procédure contradictoire & redressements (code des procédures fiscales) */}
       <div className="procedure-card" style={{ marginTop: '2rem' }}>
         <ProcedureContradictoireTimeline
           declaration={declaration}
@@ -386,14 +405,14 @@ export default function DeclarationDetail() {
           dateEclaircissement={eclaircissementRelance?.date_emission}
           questionsEclaircissement={eclaircissementRelance?.observations}
           joursRestants={joursRestants}
-          principalRedressement={principalRedressement}
-          amendeFiscale={amendeFiscale}
+          principalRedressement={principalPropose}
+          principalEnregistre={principalEnregistre}
+          amendeFiscale={estimationAmende}
           onOpenModal={handleOpenModal}
         />
 
         <ProcedureActionForms
-          principalRedressement={principalRedressement}
-          totalDetteInitiale={totalDetteInitiale}
+          principalRedressement={principalPropose}
           isPrimitiveEnvoyee={isPrimitiveEnvoyee}
           isDefinitiveEnvoyee={isDefinitiveEnvoyee}
           isEclaircissementEmis={isEclaircissementEmis}
@@ -429,11 +448,6 @@ export default function DeclarationDetail() {
         onClose={() => setModalOpen(false)}
         type={modalType}
         declaration={declaration}
-        redressementDetails={{
-          principal: principalRedressement,
-          amende: amendeFiscale,
-          total: totalDetteInitiale,
-        }}
       />
 
       <DemandeEclaircissementModal

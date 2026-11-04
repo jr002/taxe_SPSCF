@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 
 import { ExcelImportModal } from '@/components/forms';
+import { AideLectureModal, BoutonAide } from '@/frontofficeagent/aide';
 import ContribuablesFilters from '@/frontofficeagent/contribuables/components/ContribuablesFilters';
 import ContribuablesStatistiques from '@/frontofficeagent/contribuables/components/ContribuablesStatistiques';
 import ContribuablesTable from '@/frontofficeagent/contribuables/components/ContribuablesTable';
@@ -17,6 +18,7 @@ const vues = [
 export default function Contribuables() {
   const navigate = useNavigate();
   const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
+  const [aideOuverte, setAideOuverte] = useState(false);
   const list = useContribuablesList();
   const [searchParams] = useSearchParams();
   const isStatistique = searchParams.get('vue') === 'statistique';
@@ -69,20 +71,31 @@ export default function Contribuables() {
           Retrouvez chaque contribuable et consultez ses déclarations et paiements
           cumulés.
         </p>
+        <div className="page-heading-aide">
+          <BoutonAide ecran="registre" onOuvrir={() => setAideOuverte(true)} />
+        </div>
       </div>
 
       <nav className="contribuable-tabs" aria-label="Vues du registre des contribuables">
-        {vues.map(([key, label, suffix]) => (
-          <Link className={isStatistique === (key === 'statistique') ? 'active' : ''} key={key} to={`/contribuables${suffix}`}>
-            {label}
-          </Link>
-        ))}
+        {vues.map(([key, label, suffix]) => {
+          const actif = isStatistique === (key === 'statistique');
+          return (
+            <Link
+              key={key}
+              to={`/contribuables${suffix}`}
+              className={actif ? 'active' : ''}
+              aria-current={actif ? 'page' : undefined}
+            >
+              {label}
+            </Link>
+          );
+        })}
       </nav>
 
-      {list.error && <p className="error">{list.error}</p>}
+      {list.error && <p className="error" role="alert">{list.error}</p>}
 
       {list.loading ? (
-        <p className="status">Chargement des contribuables...</p>
+        <p className="status" role="status">Chargement des contribuables...</p>
       ) : isStatistique ? (
         <ContribuablesStatistiques contribuables={list.allContribuables} />
       ) : (
@@ -125,6 +138,12 @@ export default function Contribuables() {
         isOpen={isExcelModalOpen}
         onClose={() => setIsExcelModalOpen(false)}
         onSuccess={list.loadData}
+      />
+
+      <AideLectureModal
+        ouvert={aideOuverte}
+        ecran="registre"
+        onFermer={() => setAideOuverte(false)}
       />
     </section>
   );

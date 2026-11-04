@@ -251,7 +251,7 @@ export default function FormInformation() {
             name="nif"
             value={formData.nif}
             onChange={handleInputChange}
-            placeholder="Ex: 1000000001"
+            placeholder="Ex: 1234567890"
             className={`w-full px-4 py-2.5 border-2 rounded-lg text-sm transition-all duration-200 
               ${
                 errors.nif

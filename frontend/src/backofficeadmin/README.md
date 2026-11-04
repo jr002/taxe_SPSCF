@@ -162,7 +162,7 @@ n'affiche donc aucune barre.
   compte. Le `code` machine évite de comparer des textes ; `COMPTE_BLOQUE` et les
   autres échecs (`401`, `429`) restent signalés en ligne ;
 - appelle la propriété `onAuthenticated` fournie par `App.jsx`, puis redirige
-  vers `/acceuil`, ou vers `/admin` lorsque l'agent connecté est administrateur
+  vers `/accueil`, ou vers `/admin` lorsque l'agent connecté est administrateur
   (voir ci-dessous) ;
 - propose un bouton « Masquer / Afficher » (`aria-pressed`) qui bascule le champ
   mot de passe entre `type="password"` et `type="text"`, sans quitter le focus ;
@@ -221,13 +221,13 @@ La page d'arrivée est calculée par `getLandingPath`, exportée par
 par `Signin.jsx` et par la route `/` de `App.jsx` :
 
 ```js
-export const getLandingPath = (user) => (user?.role === 'admin' ? '/admin' : '/acceuil');
+export const getLandingPath = (user) => (user?.role === 'admin' ? '/admin' : '/accueil');
 ```
 
 - **rôle `admin`** → `/admin`, le backoffice ;
-- **tout autre rôle** → `/acceuil`, le tableau de bord agent.
+- **tout autre rôle** → `/accueil`, le tableau de bord agent.
 
-Les deux appels sont obligatoires : si `/` redirigeait tout seul vers `/acceuil`
+Les deux appels sont obligatoires : si `/` redirigeait tout seul vers `/accueil`
 pendant que `Signin.jsx` navigue vers `/admin`, la redirection de `/` écrasait la
 destination et un administrateur débarquait sur l'espace agent avant d'atteindre
 son backoffice. Le chemin d'arrivée vient d'un seul helper, donc les deux
@@ -244,6 +244,33 @@ côté API).
 > Aucun compte n'est administrateur par défaut : le premier doit être créé avec
 > `npm run agent:create` dans `backend/` (ou promu depuis la base), après quoi
 > les rôles se gèrent directement depuis `/admin`.
+
+### Le registre contribuable n'est pas un écran d'administration
+
+Deux confusions fréquentes, levées côté produit :
+
+- `/admin/utilisateurs` liste les **comptes agents** (`agents`), pas les
+  contribuables. Aucun filtre « rôle » ni « contribuable » n'existe sur cet
+  écran : c'est voulu, la table `contribuables` n'est pas un annuaire de
+  comptes.
+- Les contribuables ne se consultent donc nulle part dans le backoffice admin,
+  et l'administrateur ne doit pas y accéder. Les onze routes `/contribuables…`
+  de `App.jsx` sont enveloppées dans
+  [`components/common/EspaceOperateurs.jsx`](../components/common/EspaceOperateurs.jsx) :
+  dès que `currentUser.role === 'admin'`, un écran « Contribuables non
+  accessible » s'affiche à la place de la page, avec un lien de retour vers
+  `/admin`. L'admin qui tape `/contribuables/72` est donc arrêté, alors qu'avant
+  ce garde la page s'affichait (le menu ne la proposait plus, mais l'URL
+  fonctionnait).
+
+Le garde est **volontairement placé dans le navigateur et non dans l'API** :
+`GET /api/contribuables` sert aussi à l'admin pour son propre outil de
+vérification NIF (`AdminVerificationNIF.jsx` charge 100 contribuables pour son
+référentiel, et `/admin/verification-nif/sql` exécute des `SELECT` sur
+`contribuables`). Un `403` serveur casserait ces deux écrans. Seule l'entrée
+`admin` est exclue : les rôles opérationnels (`agent`, `controleur`,
+`chef_centre`, `inspecteur`) conservent l'accès, avec leur périmètre toujours
+filtré par `data-scope` côté serveur.
 
 ## `auth/pages/Signup.jsx` — demande de création de compte
 
@@ -500,7 +527,7 @@ Centre fiscal d'affectation / Périmètre de consultation ».
 > à ses subordonnés (`controleur`, `agent`) — voir « Mode restreint » plus haut.
 > Les autres routes de `/api/agents/*` répondent `403` à tout autre rôle. Un agent
 > ordinaire ne voit que les modules métier dans le `Header` et atterrit sur
-> `/acceuil`. Le périmètre de consultation, lui, est
+> `/accueil`. Le périmètre de consultation, lui, est
 > réellement appliqué côté serveur : `admin` et `inspecteur` voient tous les
 > centres — mais l'`inspecteur` en consultation seule, ses `POST`, `PUT`, `PATCH`
 > et `DELETE` sur les routes métier répondent `403` —, `chef_centre` /
@@ -599,8 +626,11 @@ d'événements — `react-hooks/set-state-in-effect` interdit de le faire dans u
 `useEffect`.
 
 Le référentiel de la page de synthèse est enrichi au montage par
-`getContribuables({ limit: 100 })` (statut `Certifié (Base SQL)`, source
-`PostgreSQL / contribuables`). L'ancien bouton JSON faisait
+`getContribuables({ limit: 100 })` (statut `Présent dans la base`, source
+`Base contribuable (API /contribuables)`). Les autres voies d'arrivée déclarent
+leur origine sans se certifier : `Déclaré par le fichier` pour un Excel ou le
+gabarit JSON, `Déclaré par l’API JSON` pour une API enregistrée. Seule la base
+peut dire qu'un NIF existe (`estNifConfirme`). L'ancien bouton JSON faisait
 `fetch('/unitefiscal.json')` : le catalogue vit à la racine du dépôt, pas dans
 `frontend/public/`, la requête renvoyait donc `index.html` et levait
 « Unexpected token '<' ». L'import en module corrige le problème ; l'ancienne

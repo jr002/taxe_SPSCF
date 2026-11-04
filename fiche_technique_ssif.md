@@ -136,7 +136,7 @@ spscf/                          ← Racine du monorepo (pnpm workspaces)
 | **Pays** | République de Madagascar |
 | **Institution** | Direction Générale des Impôts (DGI) — Ministère des Finances |
 | **Domaine fiscal** | TVA (Taxe sur la Valeur Ajoutée) |
-| **Cadre légal** | Code Général des Impôts (CGI) — Loi de Finances 2026 |
+| **Cadre légal** | Code des impôts et Code des procédures fiscales — éditions consolidées 2025 (DGI), telles que modifiées par la loi n° 2025-021 du 20 décembre 2025 portant loi de finances pour l’année 2026. Aucun article n’est cité sans avoir été relu dans le PDF de l’éditeur ; les renvois affichés par l’application ouvrent ce PDF à la page physique où se lit l’article, tandis que la puce conserve son folio imprimé (registre `frontend/src/data/textesFiscaux.data.js`) |
 | **Couverture territoriale** | Nationale (DGE, SRE, Centres Fiscaux par Direction Régionale des Impôts) |
 
 ---

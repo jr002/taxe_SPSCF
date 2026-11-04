@@ -2,13 +2,26 @@ import { useState } from 'react';
 import { IdentityFields, AmountField, ControlResult } from '@/components/forms';
 import { formatAriary, toNumber } from '@/utils';
 import { NotificationModal } from '@/components/common';
+import RefLegal from '@/components/common/RefLegal';
+import { REFERENCES } from '@/data/textesFiscaux.data';
 
 /**
  * Module B : Formulaire de calcul et simulation de la TVA Théorique et des redressements
- * Règles DGI Madagascar :
- * - IS : 5% du Chiffre d'Affaires
- * - IR (optionnel sous 400M Ar) : MAX(320 000 + 20% CA, 20% Bénéfice)
- * - Taux d'écart > 50% => Redressement (Principal + 40% Amende + Pénalités de retard)
+ *
+ * Ce que calcule le simulateur, et d'où vient chaque taux :
+ * - IS : 5 % du chiffre d'affaires — le taux de l'impôt synthétique est bien de
+ *   5 % de la base imposable (code des impôts, art. 01.02.05), mais l'assiette
+ *   utilisée ici est le chiffre d'affaires saisi, pas la base déclarée ;
+ * - IR (optionnel sous 400 M Ar) : max(320 000 + 20 % CA, 20 % bénéfice) — aucune
+ *   de ces deux formules ne se lit dans un article ;
+ * - écart retenu au-delà de 50 % — seuil de déclenchement du simulateur ;
+ * - amende de 40 % du principal — code des impôts, art. 20.01.54 ;
+ * - pénalités mensuelles (1 %, 2 % puis 1 %, 3 % puis 1 % selon le chiffre
+ *   d'affaires) — code des impôts, art. 20.01.53.
+ *
+ * Les puces posées sous le résultat renvoient au PDF de l'éditeur à la page
+ * imprimée de l'article ; une puce en avertissement signale que l'article ne dit
+ * pas le chiffre affiché.
  */
 export default function TheoreticalForm({ surCollecte, enCours }) {
   const [modalOpen, setModalOpen] = useState(false);
@@ -237,9 +250,15 @@ export default function TheoreticalForm({ surCollecte, enCours }) {
               ]
             : []),
         ]}
-      />
+      >
+        {/* Ce que le simulateur doit au texte — et ce qu’il n’y lit pas. */}
+        <RefLegal source={REFERENCES.tva_theorique} detail />
+        <RefLegal source={REFERENCES.seuil_redressement} detail />
+        <RefLegal source={REFERENCES.amende_40} />
+        <RefLegal source={REFERENCES.penalites_retard} />
+      </ControlResult>
 
-      {/* 📜 Procédure Contradictoire & Notifications (CGI LFI 2026) */}
+      {/* 📜 Procédure Contradictoire & Notifications (CPF art. V-03 à V-07) */}
       {redressementApplicable && (
         <div
           className="procedure-card"
@@ -255,13 +274,14 @@ export default function TheoreticalForm({ surCollecte, enCours }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
             <div>
               <span className="procedure-tag" style={{ display: 'inline-block', padding: '0.2rem 0.55rem', borderRadius: '6px', backgroundColor: '#e0f2fe', color: '#0369a1', fontSize: '0.75rem', fontWeight: 800 }}>
-                CGI LFI 2026 · Cadre Légal Contradictoire
+                Code des procédures fiscales · Cadre légal contradictoire
               </span>
               <h3 style={{ margin: '0.35rem 0 0', color: '#0f172a', fontSize: '1.1rem' }}>
                 Notifications Primitives & Définitives de Redressement
               </h3>
               <p style={{ margin: '0.25rem 0 0', color: '#64748b', fontSize: '0.82rem' }}>
-                Conformément aux Articles V-19 et suiv. du CPF et aux Articles 01.01.15 (IR) et 01.02.06 (IS) du CGI.
+                Articles V-03 à V-07 du code des procédures fiscales pour la rectification contradictoire, et
+                articles 01.01.15 (IR) et 01.02.06 (IS) du code des impôts pour l’imputation du crédit d’impôt.
               </p>
             </div>
 
@@ -284,7 +304,7 @@ export default function TheoreticalForm({ surCollecte, enCours }) {
                   fontSize: '0.82rem',
                 }}
               >
-                📄 Aperçu Notification Primitive (30j)
+                📄 Simulation de notification primitive
               </button>
 
               <button
@@ -312,7 +332,7 @@ export default function TheoreticalForm({ surCollecte, enCours }) {
 
           {/* Matrice comparative fonctionnelle */}
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse', textAlign: 'left' }}>
+            <table aria-label="Comparatif notification primitive et définitive" style={{ width: '100%', fontSize: '0.8rem', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
                 <tr style={{ backgroundColor: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>
                   <th style={{ padding: '0.65rem' }}>Caractéristique</th>
@@ -323,19 +343,19 @@ export default function TheoreticalForm({ surCollecte, enCours }) {
               <tbody>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '0.65rem', fontWeight: 700 }}>Statut juridique</td>
-                  <td style={{ padding: '0.65rem' }}>Proposition temporaire de rectification de base imposable (CPF V-19)</td>
-                  <td style={{ padding: '0.65rem' }}>Acte exécutoire et définitif fixant la dette fiscale</td>
+                  <td style={{ padding: '0.65rem' }}>Proposition temporaire de rectification de base imposable (art. V-03 et V-04)</td>
+                  <td style={{ padding: '0.65rem' }}>Acte exécutoire et définitif fixant la dette fiscale (art. V-07)</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '0.65rem', fontWeight: 700 }}>Délai de contestation</td>
-                  <td style={{ padding: '0.65rem' }}>Ouvre un délai légal de <strong>30 jours</strong> (prorogation DGI possible)</td>
+                  <td style={{ padding: '0.65rem' }}>Ouvre un délai légal de <strong>30 jours</strong> à compter de la réception (art. V-04), prorogeable de quinze jours au plus</td>
                   <td style={{ padding: '0.65rem' }}>Clôture la phase contradictoire. Voie aux recours de droit commun.</td>
                 </tr>
                 <tr style={{ borderBottom: '1px solid #f1f5f9' }}>
                   <td style={{ padding: '0.65rem', fontWeight: 700 }}>Compensation de crédits</td>
                   <td style={{ padding: '0.65rem', color: '#b91c1c' }}>❌ Non applicable à ce stade (droits non arrêtés)</td>
                   <td style={{ padding: '0.65rem', color: '#15803d', fontWeight: 700 }}>
-                    🔓 Permet l'imputation légale directe des crédits d'impôts (Art. 01.01.15 & 01.02.06)
+                    🔓 Permet l’imputation du crédit d’impôt sur les droits de même nature (art. 01.01.15 IR &amp; 01.02.06 IS)
                   </td>
                 </tr>
                 <tr>
@@ -353,30 +373,31 @@ export default function TheoreticalForm({ surCollecte, enCours }) {
         </div>
       )}
 
-      {/* Modal d'affichage et d'impression du document officiel */}
+      {/* Modal d'affichage et d'impression de la SIMULATION du document officiel.
+          Rien ici n'est enregistré : le nom, le secteur et l'exercice reportés sont
+          ceux que l'agent a saisies, et les montants sont des estimations du
+          simulateur. `simulation` affiche le bandeau qui le dit. */}
       <NotificationModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         type={modalType}
+        simulation
         declaration={{
-          annee: Number(saisie.anneeFiscale) || new Date().getFullYear(),
-          id_declaration: 'SIM-' + (saisie.nif || '001'),
-          nif: saisie.nif || 'Non renseigné',
-          raison_sociale: saisie.raisonSociale || saisie.nomSociete || 'Entreprise Assujettie',
-          secteur_activite: saisie.adresse || 'Activités commerciales & services',
+          annee: saisie.anneeFiscale || null,
+          nif: saisie.nif || null,
+          raison_sociale: saisie.raisonSociale || saisie.nomSociete || null,
+          // Le module de collecte ne demande pas de secteur d'activité : rien n'est
+          // déduit de l'adresse et aucune catégorie par défaut n'est imprimée.
+          secteur_activite: null,
           tva_payee: tvaPayee,
           tva_theorique: tvaTheorique,
           montant_redressement: principal,
-          montant_impute: 0,
-          montant_net_a_payer: totalAvecPenalite,
-          observations_agent: `Simulation contradictoire de redressement pour l'exercice ${saisie.anneeFiscale}. Régime : ${regimeFiscal}. Retard : ${moisRetard} mois.`,
+          credit_impot: null,
+          montant_impute: null,
+          montant_net_a_payer: null,
+          observations_agent: `Simulation établie par le module de collecte : régime ${regimeFiscal}, écart de ${formatAriary(ecart)}, ${moisRetard} mois de retard indiqués par l'agent.`,
         }}
-        redressementDetails={{
-          principal,
-          amende,
-          penalite: montantPenalite,
-          total: totalAvecPenalite,
-        }}
+        estimations={{ amende, penalites: montantPenalite, total: totalAvecPenalite }}
       />
     </div>
   );

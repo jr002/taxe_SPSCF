@@ -4,7 +4,7 @@
  * agent. Utilisé par `App.jsx` (route `/`) et par l'écran de connexion pour que
  * les deux redirections ne se contredisent jamais.
  */
-export const getLandingPath = (user) => (user?.role === 'admin' ? '/admin' : '/acceuil');
+export const getLandingPath = (user) => (user?.role === 'admin' ? '/admin' : '/accueil');
 
 /**
  * Initiales affichées par la pastille de profil : première lettre du prénom et

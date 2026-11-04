@@ -14,7 +14,7 @@ export default function TableauDecisionnel() {
   const curves = useMemo(() => buildCurves(years, declarations), [years, declarations]);
 
   if (loading) {
-    return <p className="page status">Chargement du tableau décisionnel...</p>;
+    return <p className="page status" role="status">Chargement du tableau décisionnel...</p>;
   }
 
   if (error) {

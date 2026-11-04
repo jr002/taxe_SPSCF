@@ -1,6 +1,7 @@
   import { useEffect, useMemo, useState } from 'react';
   import { Link, useNavigate, useParams } from 'react-router-dom';
   import { getContribuables, getErrorMessage } from '@/api';
+  import { useFiltresUrl } from '@/hooks';
   import { getOperationalUnits } from '@/frontofficeagent/centres/utils/uniteFiscale.utils';
 
 const TYPE_LABELS = {
@@ -27,8 +28,8 @@ export default function UniteFiscaleDetail() {
     : null;
   const centreFiscalRef = unite ? `${type}:${unite.nom}` : '';
   const [contribuablesResult, setContribuablesResult] = useState(null);
-  const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
+  const { lire, patch, page } = useFiltresUrl();
+  const search = lire('q', '');
 
   useEffect(() => {
     if (!centreFiscalRef) return undefined;
@@ -91,9 +92,10 @@ export default function UniteFiscaleDetail() {
   }, [contribuables, search]);
 
   const pageCount = Math.max(1, Math.ceil(filteredContribuables.length / PAGE_SIZE));
+  const visiblePage = Math.min(page, pageCount);
   const visibleContribuables = filteredContribuables.slice(
-    (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE,
+    (visiblePage - 1) * PAGE_SIZE,
+    visiblePage * PAGE_SIZE,
   );
 
   if (!TYPE_LABELS[type] || !unite) {
@@ -166,10 +168,7 @@ export default function UniteFiscaleDetail() {
         <div className="datatable-toolbar register-toolbar">
           <input
             value={search}
-            onChange={(event) => {
-              setSearch(event.target.value);
-              setPage(1);
-            }}
+            onChange={(event) => patch({ q: event.target.value, page: '' })}
             placeholder="Rechercher par raison sociale, NIF ou secteur..."
             aria-label="Rechercher un contribuable rattaché"
           />
@@ -178,11 +177,11 @@ export default function UniteFiscaleDetail() {
         {contribuablesError && <p className="error" role="alert">{contribuablesError}</p>}
 
         {loadingContribuables ? (
-          <p className="status">Chargement des contribuables rattachés...</p>
+          <p className="status" role="status">Chargement des contribuables rattachés...</p>
         ) : (
           <>
             <div className="table-wrap">
-              <table className="register-table unite-fiscale-contribuables-table">
+              <table aria-label="Contribuables de l'unité fiscale" className="register-table unite-fiscale-contribuables-table">
                 <thead>
                   <tr>
                     <th>Raison sociale</th>
@@ -226,19 +225,19 @@ export default function UniteFiscaleDetail() {
 
             {filteredContribuables.length > 0 && (
               <div className="datatable-pagination">
-                <span>Page {page} sur {pageCount}</span>
+                <span>Page {visiblePage} sur {pageCount}</span>
                 <div>
                   <button
                     type="button"
-                    onClick={() => setPage((current) => Math.max(1, current - 1))}
-                    disabled={page === 1}
+                    onClick={() => patch({ page: visiblePage - 1 <= 1 ? '' : visiblePage - 1 })}
+                    disabled={visiblePage === 1}
                   >
                     ← Précédent
                   </button>
                   <button
                     type="button"
-                    onClick={() => setPage((current) => Math.min(pageCount, current + 1))}
-                    disabled={page === pageCount}
+                    onClick={() => patch({ page: visiblePage + 1 })}
+                    disabled={visiblePage === pageCount}
                   >
                     Suivant →
                   </button>

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getErrorMessage, getHistoriqueAgents } from '@/api';
 import { Pagination } from '@/components/common';
-import { useTablePagination } from '@/hooks';
+import { useTablePagination, useFiltresUrl } from '@/hooks';
 
 const TYPES_ACTION = [
   { id: 'TOUS', label: 'Toutes les actions' },
@@ -56,8 +56,9 @@ export default function HistoriqueUtilisateurs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [typeFilter, setTypeFilter] = useState('TOUS');
-  const [search, setSearch] = useState('');
+  const { lire, patch, page } = useFiltresUrl();
+  const typeFilter = lire('type', 'TOUS');
+  const search = lire('q', '');
 
   const loadData = async (isManual = false) => {
     if (isManual) setLoading(true);
@@ -113,7 +114,10 @@ export default function HistoriqueUtilisateurs() {
     });
   }, [logs, typeFilter, search]);
 
-  const pages = useTablePagination(filteredLogs, 10);
+  const pages = useTablePagination(filteredLogs, 10, {
+    page,
+    onPageChange: (valeur) => patch({ page: valeur <= 1 ? '' : valeur }),
+  });
 
   return (
     <div className="historique-utilisateurs-container">
@@ -128,7 +132,7 @@ export default function HistoriqueUtilisateurs() {
           type="button"
           onClick={() => {
             loadData();
-            pages.setCurrentPage(1);
+            patch({ page: '' });
           }}
           disabled={loading}
           className="admin-secondary-button"
@@ -146,10 +150,8 @@ export default function HistoriqueUtilisateurs() {
               key={t.id}
               type="button"
               className={`categorie-tab${typeFilter === t.id ? ' active' : ''}`}
-              onClick={() => {
-                setTypeFilter(t.id);
-                pages.setCurrentPage(1);
-              }}
+              aria-current={typeFilter === t.id ? 'true' : undefined}
+              onClick={() => patch({ type: t.id === 'TOUS' ? '' : t.id, page: '' })}
             >
               {t.label} ({count})
             </button>
@@ -158,25 +160,22 @@ export default function HistoriqueUtilisateurs() {
       </div>
 
       <div className="datatable-toolbar contribuables-toolbar flex-wrap gap-2" style={{ marginBottom: '1rem' }}>
-        <input
+        <input aria-label="Rechercher dans le journal"
           value={search}
-          onChange={(e) => {
-            setSearch(e.target.value);
-            pages.setCurrentPage(1);
-          }}
+          onChange={(e) => patch({ q: e.target.value, page: '' })}
           placeholder="Rechercher par auteur, utilisateur ciblé, e-mail, motif..."
           style={{ minWidth: '320px', flex: 1 }}
         />
         <span>{filteredLogs.length} entrée(s) trouvée(s)</span>
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
 
       {loading ? (
-        <p className="status">Chargement du journal d'audit...</p>
+        <p className="status" role="status">Chargement du journal d'audit...</p>
       ) : (
         <div className="table-wrap">
-          <table>
+          <table aria-label="Journal des actions">
             <thead>
               <tr>
                 <th style={{ width: '170px' }}>Date & Heure</th>

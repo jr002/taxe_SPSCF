@@ -29,13 +29,16 @@ contribuables/
     ├── exportFicheContribuable.js
     ├── statistiques.utils.js
     └── amoutsArrondi.jsx
+
+# Les survols et la modale « Aide à la lecture » utilisés ici viennent du
+# domaine voisin ../aide/ (registre `aideAgent.data.js` propre à l'espace agent).
 ```
 
 ## Contribuables.jsx — deux vues
 
 La page `/contribuables` présente un sélecteur de vue (`nav.contribuable-tabs`) entre :
 
-- **Registre** (défaut) : filtres par catégorie, recherche textuelle, tableau paginé, export Excel des résultats filtrés et import Excel/CSV via `ExcelImportModal`. Les colonnes de l'export sont, dans l'ordre : NIF, Secteur d'activité, Adresse, Téléphone, E-mail, Centre gestionnaire, Nature d'impôt ;
+- **Registre** (défaut) : filtres par catégorie, recherche textuelle, tableau paginé, export Excel des résultats filtrés et import Excel/CSV de **contribuables** via `ExcelImportModal` (mode registre, voir plus bas le mode dossier de la fiche). Les colonnes de l'export sont, dans l'ordre : NIF, Secteur d'activité, Adresse, Téléphone, E-mail, Centre gestionnaire, Nature d'impôt ; une légende « Catégories » survolable ferme la barre d'onglets, et les en-têtes « Dernière année », « Années suivies » et « TVA payée cumulée » s'expliquent au survol ;
 - **Statistique** : vue globale et agrégée du portefeuille, sans tableau ni pagination.
 
 La vue est portée par l'URL (`/contribuables?vue=statistique`, lu avec `useSearchParams`), donc elle est partageable et le bouton « Retour » du navigateur fonctionne. Les deux vues consomment la même source de données (`useContribuablesList`, limite 10 000) ; aucun appel API supplémentaire n'est nécessaire puisque `GET /api/contribuables` inclut déjà les `declarations` de chaque contribuable.
@@ -90,6 +93,16 @@ Contenu des onglets :
 
 Les relances sont persistées en base par `POST /api/relances` (`createRelance`) et relues par `GET /api/contribuables/:id/relances` (`getRelancesByContribuable`) : la liste est déjà filtrée sur le centre de l'agent par le middleware `data-scope`, le panneau n'a donc plus besoin de clé NIF. L'émission ouvre la lettre imprimable **seulement après** le retour 201 de l'API, et « Marquer comme Régularisé » fait un `PUT /api/relances/:id` (`statut: 'regularisee'`, `date_regularisation`) sur la relance la plus récente encore `emise`. Les erreurs de ces deux appels s'affichent dans un `.form-submit-message` (`role="alert"`), la confirmation dans un `.form-submit-message.success` (`role="status"`). Aucun historique ne passe plus par `localStorage`.
 
+### Aide à la lecture (`../aide/`)
+
+Chaque écran de la fiche s'explique lui-même, sans que l'agent ait à quitter la page :
+
+- Le bouton `? Aide` de `ContribuableHeader` ouvre [`AideLectureModal`](../aide/components/AideLectureModal.jsx) avec `ecran={activeTab}`. Les clés du registre (`overview`, `classification`, `declarations`, `recoupements`, `droits`, `relances`) étant celles des onglets, aucune correspondance n'est à maintenir ; la modale liste les rubriques de l'onglet puis « Les mots de cet écran », un glossaire **déduit** des termes cités par ces rubriques.
+- Les termes sont survolables via [`AideTerme`](../aide/components/AideTerme.jsx) : badge de catégorie et ligne NIF / centre gestionnaire de l'en-tête, indicateur « TVA payée cumulée », en-têtes de colonnes de l'historique des déclarations (propriété `header` de `DataTable`, qui prime sur `label`), seuils et chefs de l'onglet Nature d'impôt, colonnes des panneaux Recoupements et Droits de communication, colonnes des panneaux Recoupements et Droits de communication, colonnes et encadré « Montant dû estimé » du panneau Relances.
+- Trois panneaux ouvrent leur propos par une phrase `.aide-ecran-intro` qui dit ce que la liste montre avant la première ligne (Recoupements, Droits de communication, historique des déclarations).
+- **Un `AideTerme` rend un `<button>`** : il n'est donc jamais posé dans un bouton existant. Les boutons d'action de relance (rappel, mise en demeure, régularisation) ne portent pas de survol ; leurs délais sont rappelés dans le détail de l'action et expliqués dans la modale.
+- La page `/contribuables/:id/confrontation` est câblée de la même façon (`BoutonAide` + `AideLectureModal ecran="confrontation"`, survols des colonnes Type, CA déclaré, Recoupé (TTC), Écart et Statut de la table des rapprochements).
+
 ### Export Excel des données listées
 
 `ContribuableHeader` affiche un bouton « 📥 Exporter … » sur les onglets Synthèse, Nature d'impôt, Déclarations et Relances (masqué sur Recoupements et Droits de communication). Le classeur `.xlsx` contient une feuille `Identification` (raison sociale, NIF, secteur, adresse, contacts, centre gestionnaire, nature d'impôt, catégorie, années suivies, TVA payée cumulée) puis la feuille de l'onglet actif :
@@ -102,6 +115,23 @@ Les relances sont persistées en base par `POST /api/relances` (`createRelance`)
 | Relances | `Relances` | Date, type, montant, statut (relances en base du contribuable, libellés de `frontofficeagent/relance/utils/relance.utils.js`) |
 
 Le bouton est désactivé quand l'onglet n'a aucune ligne exportable (`countExportRows`). Le fichier est nommé `contribuable-<NIF>-<onglet>-<AAAA-MM-JJ>.xlsx` et les montants sont écrits en valeurs numériques au format Excel `#,##0 "Ar"`.
+
+### Import Excel des déclarations du dossier
+
+Sur les onglets **Synthèse** et **Déclarations**, `ContribuableHeader` affiche un
+bouton `secondary` « Importer Excel » (prop `onImporter`). Il ouvre le même
+`ExcelImportModal` que le registre, mais avec la prop `contribuable` : la modale
+bascule alors en **mode dossier** et alimente la table `declarations`, jamais la
+fiche. Le détail de la lecture, du mappage et des garde-fous est dans
+[`../../components/forms/README.md`](../../components/forms/README.md) ; ce que la
+fiche en attend :
+
+- **Colonnes** : une ligne = un exercice, avec NIF, Exercice (`2024` ou `2024-03`), Chiffre d'affaires, Bénéfice, TVA collectée, TVA déductible, TVA payée, TVA théorique. Ce sont les colonnes réellement enregistrables ; les autres sont ignorées, et le modèle téléchargeable (`Modele_Import_Declarations_DGI.xlsx`) porte le NIF du dossier prérempli.
+- **Rapprochement par exercice** : avant la première écriture, les déclarations TVA déjà au dossier sont relues (`GET /api/declarations?search=<NIF>`) et l'aperçu annonce pour chaque ligne « mise à jour » ou « création ». Si cette lecture échoue, l'import s'arrête : la modale refuse d'écrire sans savoir ce qu'elle écrase.
+- **Un exercice par ligne** : la base impose l'unicité `id_contribuable + periode + type_declaration` ; deux lignes du même classeur portant le même exercice voient la seconde refusée (« Non importée »), et un NIF étranger au dossier est refusé ligne par ligne.
+- **Rien n'est suppléé** : une case vide reste vide. Une mise à jour est partielle (`PUT /api/declarations/:id` avec les seuls montants lisibles), la valeur enregistrée survit ; une création garde le montant non renseigné. Le bilan final énumère, exercice par exercice, ce qui n'a pas été apporté par le classeur.
+- **Le statut n'est pas deviné** : `PUT` ne recalcule pas le statut côté serveur et `POST` en calcule un (TVA théorique = CA × 5 % par défaut). Le statut n'est donc écrit que si la TVA théorique **et** la TVA payée sont lisibles, avec les seuils partagés de [`../../utils/fiscal.utils.js`](../../utils/fiscal.utils.js) ; quand le classeur n'apportait pas la TVA théorique, la déclaration créée est immédiatement remise à `tva_theorique: null, statut: null`, et l'incident le dit (« à établir après contrôle »).
+- **Écran** : les montants absents s'affichent « Absente du fichier », le badge d'une ligne résume le nombre d'absences, et `onSuccess` rend le bilan (`N créée(s) · M mise(s) à jour · K incident(s)`) que `ContribuableDetail` affiche dans un `.form-submit-message.success` puis recharge la fiche depuis la base (`rechargerFiche`) — l'agent voit les valeurs stockées, pas l'ancien état en mémoire.
 
 ### Lien de consultation du portail contribuable
 
@@ -169,7 +199,7 @@ Exporte `AmountFormatter({ amount })`, qui affiche un montant arrondi et abrég�
 - `../../frontofficeagent/contribuables/utils/classificationCgi.utils` : `getCaReference`, `getCategorie` (liste des contribuables), `getCategorieFromCa` et `getFicheCategorie` (fiche de la fiche contribuable) ;
 - `../../frontofficeagent/decisionnel/utils/decisionnel.utils` : `getRegime` ;
 - `../../utils/formatters` : `formatAriary`, `formatNumber`, `toNumber` ;
-- `../../components/forms/ExcelImportModal` : import Excel/CSV ;
+- `../../components/forms/ExcelImportModal` : import Excel/CSV — mode registre (liste) et mode dossier (fiche contribuable) ;
 - `../relance/components/RappelOrdreModal` : aperçu des documents de relance ;
 - `../../components/charts/Diagrammes` : `ContribVolumeChart`, `ContribComparisonChart`, `Camembert`, `Histogramme` ;
 - `xlsx` (SheetJS) : génération des classeurs Excel exportés.

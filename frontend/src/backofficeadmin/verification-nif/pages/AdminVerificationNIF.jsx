@@ -2,9 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getContribuables } from '@/api';
 import { Pagination } from '@/components/common';
-import { useTablePagination } from '@/hooks';
+import { useTablePagination, useFiltresUrl } from '@/hooks';
 import AdminNav from '@/backofficeadmin/components/AdminNav';
 import {
+  estNifConfirme,
   formatDateHeure,
   loadHistorique,
   loadReferentiel,
@@ -20,7 +21,7 @@ const MODULES = [
     couleur: '#2563eb',
     titre: '🔍 1. Vérification par Requête SQL',
     description:
-      'Interrogez directement la base de données PostgreSQL pour authentifier un NIF contribuable, avec repli sur le référentiel local.',
+      "Interrogez la base contribuable par son API pour authentifier un NIF, ou écrivez un SELECT de liste. Sans réponse de la base, le référentiel local sert de repli et le signale.",
   },
   {
     id: 'excel',
@@ -28,14 +29,15 @@ const MODULES = [
     couleur: '#10b981',
     titre: '📊 2. Liaison via Fichier Excel (.xlsx)',
     description:
-      'Importez un fichier Excel de contribuables certifiés pour enrichir le référentiel de vérification.',
+      'Enrichissez le référentiel avec un fichier Excel de NIFs. Les lignes portent le statut « Déclaré par le fichier » : un fichier ne certifie rien, il affirme ce que son auteur y a écrit.',
   },
   {
     id: 'json',
     to: '/admin/verification-nif/json',
     couleur: '#8b5cf6',
     titre: '🌐 3. Synchronisation Base JSON',
-    description: 'Liez les NIFs au fichier de référentiel des unités fiscales et centres (unitefiscal.json).',
+    description:
+      'Liez le référentiel à un fichier JSON déposé dans le dossier public ou à une API distante. Le catalogue des unités fiscales (unitefiscal.json) ne contient aucun NIF de contribuable.',
   },
 ];
 
@@ -45,11 +47,26 @@ const chargerHistorique = () =>
     return accumulateur;
   }, {});
 
+/**
+ * Ce que la base contribuable a répondu au dernier essai. Le référentiel affiché
+ * est un cache du navigateur : sans lecture réussie, aucune de ses lignes n'a été
+ * confirmée, et il faut le dire plutôt que de rendre un `✓ Certifié` muet.
+ */
+const ETAT_BASE = {
+  inconnu: 'inconnu',
+  connectee: 'connectee',
+  vide: 'vide',
+  injouable: 'injouable',
+};
+
 export default function AdminVerificationNIF({ currentUser }) {
   const isAdmin = currentUser?.role === 'admin';
 
+  const { lire, patch, page } = useFiltresUrl();
   const [referentiel, setReferentiel] = useState(() => loadReferentiel());
-  const [filtreTableau, setFiltreTableau] = useState('');
+  const [etatBase, setEtatBase] = useState(ETAT_BASE.inconnu);
+  const [lectureBaseLe, setLectureBaseLe] = useState(null);
+  const filtreTableau = lire('q', '');
   // Relu à chaque montage : revenir d'une page dédiée affiche ses nouvelles opérations.
   const [historique] = useState(chargerHistorique);
 
@@ -59,12 +76,17 @@ export default function AdminVerificationNIF({ currentUser }) {
     // Le référentiel s'enrichit des contribuables réellement présents en base.
     getContribuables({ limit: 100 })
       .then((data) => {
-        const entrees = nifsDepuisContribuables(data);
         if (!isMounted) return;
+        const entrees = nifsDepuisContribuables(data);
         setReferentiel(entrees.length ? mergeReferentiel(entrees) : loadReferentiel());
+        setEtatBase(entrees.length ? ETAT_BASE.connectee : ETAT_BASE.vide);
+        setLectureBaseLe(new Date());
       })
       .catch(() => {
-        if (isMounted) setReferentiel(loadReferentiel());
+        if (!isMounted) return;
+        setReferentiel(loadReferentiel());
+        setEtatBase(ETAT_BASE.injouable);
+        setLectureBaseLe(null);
       });
 
     return () => {
@@ -82,12 +104,17 @@ export default function AdminVerificationNIF({ currentUser }) {
     });
   }, [referentiel, filtreTableau]);
 
-  const pages = useTablePagination(nifsFiltres, 10);
+  const pages = useTablePagination(nifsFiltres, 10, {
+    page,
+    onPageChange: (valeur) => patch({ page: valeur <= 1 ? '' : valeur }),
+  });
+
+  const confirmes = referentiel.filter(estNifConfirme).length;
 
   if (!isAdmin) {
     return (
       <section className="page">
-        <p className="error">Cette page est réservée aux administrateurs.</p>
+        <p className="error" role="alert">Cette page est réservée aux administrateurs.</p>
       </section>
     );
   }
@@ -105,33 +132,24 @@ export default function AdminVerificationNIF({ currentUser }) {
         </p>
       </div>
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))',
-          gap: '1.25rem',
-          marginBottom: '2rem',
-        }}
-      >
+      <div className="verif-modules">
         {MODULES.map((module) => {
           const derniere = historique[module.id]?.[0];
 
           return (
-            <div key={module.id} className="panel" style={{ borderTop: `4px solid ${module.couleur}` }}>
-              <h2 style={{ fontSize: '1.05rem', margin: '0 0 0.5rem' }}>{module.titre}</h2>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-muted, #666)', margin: '0 0 1rem' }}>
-                {module.description}
-              </p>
-              <p className="status" style={{ fontSize: '0.8rem', margin: '0 0 0.9rem' }}>
+            <div
+              key={module.id}
+              className="panel verif-module"
+              style={{ '--verif-accent': module.couleur }}
+            >
+              <h2>{module.titre}</h2>
+              <p>{module.description}</p>
+              <p className="status" role="status">
                 {derniere
                   ? `Dernière opération : ${derniere.label} · ${formatDateHeure(derniere.date)}`
                   : 'Aucune opération enregistrée sur ce navigateur.'}
               </p>
-              <Link
-                to={module.to}
-                className="admin-secondary-button"
-                style={{ display: 'block', textAlign: 'center', padding: '0.6rem 0.85rem', fontWeight: 600 }}
-              >
+              <Link to={module.to} className="admin-secondary-button">
                 Ouvrir cette vérification →
               </Link>
             </div>
@@ -140,29 +158,41 @@ export default function AdminVerificationNIF({ currentUser }) {
       </div>
 
       <div className="panel">
-        <h2 style={{ margin: '0 0 1rem', fontSize: '1.15rem' }}>
-          Base de Données du Référentiel NIF Certifié
-        </h2>
+        <h2>Référentiel NIF</h2>
+
+        {/* Le référentiel est un cache du navigateur : ce qu'il dit de chaque NIF
+            dépend entièrement de la dernière lecture de la base contribuable. */}
+        {etatBase === ETAT_BASE.connectee ? (
+          <p className="status" role="status">
+            {confirmes} NIF confirmé(s) par la base contribuable · dernière lecture{' '}
+            {formatDateHeure(lectureBaseLe)}. Les autres lignes viennent d’un fichier ou d’une API
+            déclarée ici : elles sont déclarées, pas certifiées.
+          </p>
+        ) : etatBase === ETAT_BASE.injouable ? (
+          <p className="error" role="alert">
+            Base contribuable injoignable : rien de ce tableau n’a été confirmé par la base. Seules
+            les sources liées sur ce navigateur (fichier Excel, API JSON) peuvent s’afficher ici.
+          </p>
+        ) : etatBase === ETAT_BASE.vide ? (
+          <p className="error" role="alert">
+            La base contribuable ne renvoie encore aucun NIF et aucune source n’a été liée sur ce
+            navigateur : le référentiel est vide.
+          </p>
+        ) : null}
 
         <div className="datatable-toolbar">
           <input
             value={filtreTableau}
-            onChange={(event) => {
-              setFiltreTableau(event.target.value);
-              pages.setCurrentPage(1);
-            }}
+            onChange={(event) => patch({ q: event.target.value, page: '' })}
             placeholder="Rechercher un NIF : numéro, raison sociale, centre ou source..."
             aria-label="Rechercher dans le référentiel NIF"
           />
           <span>
-            {nifsFiltres.length} NIF sur {referentiel.length}
+            {nifsFiltres.length} NIF sur {referentiel.length} · {confirmes} confirmé(s)
           </span>
           <button
             type="button"
-            onClick={() => {
-              setFiltreTableau('');
-              pages.setCurrentPage(1);
-            }}
+            onClick={() => patch({ q: '', page: '' })}
             disabled={!filtreTableau}
           >
             ✕ Effacer la recherche
@@ -170,7 +200,7 @@ export default function AdminVerificationNIF({ currentUser }) {
         </div>
 
         <div className="table-wrap">
-          <table>
+          <table aria-label="Vérifications de NIF enregistrées">
             <thead>
               <tr>
                 <th style={{ width: '150px' }}>Numéro NIF</th>
@@ -184,7 +214,7 @@ export default function AdminVerificationNIF({ currentUser }) {
               {pages.pageItems.map((item, idx) => (
                 <tr key={`${item.nif}-${idx}`} className="admin-row">
                   <td>
-                    <code style={{ fontWeight: 700, fontSize: '0.9rem', color: '#1e3a8a' }}>{item.nif}</code>
+                    <code className="verif-nif">{item.nif}</code>
                   </td>
                   <td>
                     <strong>{item.raison_sociale}</strong>
@@ -193,18 +223,24 @@ export default function AdminVerificationNIF({ currentUser }) {
                     <span className="badge conforme">{item.centre}</span>
                   </td>
                   <td>
-                    <span style={{ color: '#059669', fontWeight: 600, fontSize: '0.85rem' }}>✓ Certifié</span>
+                    {estNifConfirme(item) ? (
+                      <span className="verif-certifie">✓ {item.statut}</span>
+                    ) : (
+                      <span className="badge surveillance">{item.statut || 'Statut inconnu'}</span>
+                    )}
                   </td>
                   <td>
-                    <small style={{ color: 'var(--text-muted, #666)' }}>{item.source}</small>
+                    <small>{item.source}</small>
                   </td>
                 </tr>
               ))}
 
               {!nifsFiltres.length && (
                 <tr>
-                  <td colSpan="5" className="empty" style={{ textAlign: 'center', padding: '2rem' }}>
-                    Aucun NIF ne correspond à cette recherche dans le référentiel.
+                  <td colSpan="5" className="empty">
+                    {referentiel.length
+                      ? 'Aucun NIF ne correspond à cette recherche dans le référentiel.'
+                      : 'Référentiel vide : aucune ligne confirmée par la base et aucune source liée sur ce navigateur.'}
                   </td>
                 </tr>
               )}

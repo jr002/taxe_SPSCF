@@ -7,12 +7,10 @@ import {
   ouvrirAccesContribuable,
 } from '@/api';
 import logoDgi from '@/assets/logodgi.jpg';
+import AideContribuable from '@/accountcontribuable/components/AideContribuable';
+import RegleFiscale from '@/accountcontribuable/components/RegleFiscale';
 import SituationFiscale from '@/accountcontribuable/components/SituationFiscale';
-
-const formatDate = (value) => {
-  if (!value) return '—';
-  return new Date(value).toLocaleDateString('fr-FR', { dateStyle: 'long' });
-};
+import { formatDateLongue } from '@/accountcontribuable/utils/portail.utils';
 
 /** Sous ce seuil, le compteur de tentatives restantes devient utile au contribuable. */
 const SEUIL_ALERTE_TENTATIVES = 3;
@@ -35,6 +33,10 @@ function ContenuEspace({ token, isDarkMode, onToggleTheme }) {
   const [erreurVerification, setErreurVerification] = useState('');
   const [alerteTentatives, setAlerteTentatives] = useState('');
   const [dossier, setDossier] = useState(null);
+  // Deux vues dans le même écran public : le dossier, puis l'aide et les repères
+  // légaux. `aideSection` mémorise l'ancre demandée par un lien « comprendre ».
+  const [vue, setVue] = useState('dossier');
+  const [aideSection, setAideSection] = useState('');
 
   useEffect(() => {
     let actif = true;
@@ -64,6 +66,7 @@ function ContenuEspace({ token, isDarkMode, onToggleTheme }) {
     try {
       const resultat = await ouvrirAccesContribuable(token, { nif, email });
       setDossier(resultat);
+      setVue('dossier');
       setNif('');
       setEmail('');
     } catch (error) {
@@ -76,9 +79,20 @@ function ContenuEspace({ token, isDarkMode, onToggleTheme }) {
     }
   };
 
+  const ouvrirAide = (section) => {
+    setAideSection(section || '');
+    setVue('aide');
+    window.scrollTo({ top: 0 });
+  };
+
+  const retourDossier = () => {
+    setVue('dossier');
+    window.scrollTo({ top: 0 });
+  };
+
   return (
     <div className="portail">
-      <div className={`portail-shell${dossier ? '' : ' portail-shell-etroit'}`}>
+      <div className={`portail-shell${dossier || vue === 'aide' ? '' : ' portail-shell-etroit'}`}>
         <header className="portail-brand">
           <img src={logoDgi} alt="Direction Générale des Impôts" />
           <div>
@@ -96,14 +110,22 @@ function ContenuEspace({ token, isDarkMode, onToggleTheme }) {
           </button>
         </header>
 
-        {dossier ? (
+        {vue === 'aide' ? (
+          <AideContribuable
+            section={aideSection}
+            expiration={lien?.date_expiration}
+            libelleRetour={dossier ? 'Retour à mon dossier' : 'Retour à la connexion'}
+            onRetour={retourDossier}
+          />
+        ) : dossier ? (
           <SituationFiscale
             dossier={dossier}
             expiration={lien?.date_expiration}
             onFermer={() => setDossier(null)}
+            onOuvrirAide={ouvrirAide}
           />
         ) : chargement ? (
-          <p className="status">Vérification du lien d'accès…</p>
+          <p className="status" role="status">Vérification du lien d'accès…</p>
         ) : erreurLien ? (
           <section className="panel portail-verification">
             <p className="eyebrow">Espace contribuable</p>
@@ -113,6 +135,9 @@ function ContenuEspace({ token, isDarkMode, onToggleTheme }) {
               Pour des raisons de sécurité, un lien expire automatiquement et peut être
               remplacé par votre centre fiscal. Aucune donnée n'est affichée sans lien valide.
             </p>
+            <button type="button" className="portail-aide-lien" onClick={() => ouvrirAide('')}>
+              Aide &amp; repères légaux
+            </button>
           </section>
         ) : (
           <section className="panel portail-verification">
@@ -161,9 +186,27 @@ function ContenuEspace({ token, isDarkMode, onToggleTheme }) {
             </form>
 
             <p className="portail-note">
-              Lien valable jusqu'au {formatDate(lien?.date_expiration)}. Ne le partagez pas :
-              après confirmation du NIF et de l'e-mail, il donne accès à vos données fiscales.
+              <RegleFiscale id="expiration_lien" onOuvrirAide={ouvrirAide} compact>
+                Lien valable jusqu’au {formatDateLongue(lien?.date_expiration)}
+              </RegleFiscale>
+              {'. Ne le partagez pas : après confirmation du NIF et de l’e-mail, il donne accès à vos '}
+              données fiscales.
+              {' '}
+              <RegleFiscale id="tentative_lien" onOuvrirAide={ouvrirAide} compact>
+                Huit tentatives sont admises par lien
+              </RegleFiscale>
+              {', et une ouverture réussie remet le compteur à zéro.'}
             </p>
+
+            <div className="portail-verification-aide">
+              <p>
+                Avant d’ouvrir votre dossier, vous pouvez lire l’aide : comment se lisent un écart,
+                une notification, une relance, et quels délais et textes s’appliquent.
+              </p>
+              <button type="button" className="secondary" onClick={() => ouvrirAide('')}>
+                Aide &amp; repères légaux
+              </button>
+            </div>
           </section>
         )}
       </div>

@@ -13,7 +13,7 @@ import {
   updateAgentStatut,
 } from '@/api';
 import { ModaleConfirmation, Pagination } from '@/components/common';
-import { useTablePagination } from '@/hooks';
+import { useTablePagination, useFiltresUrl } from '@/hooks';
 import { initialsOf } from '@/utils';
 import AdminNav from '@/backofficeadmin/components/AdminNav';
 import {
@@ -90,8 +90,9 @@ export default function AdminUtilisateurs({ currentUser }) {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [busyId, setBusyId] = useState(null);
-  const [filter, setFilter] = useState('');
-  const [statutFilter, setStatutFilter] = useState(location.state?.statut || 'Tous');
+  const { lire, patch, page } = useFiltresUrl();
+  const filter = lire('q', '');
+  const statutFilter = lire('statut', location.state?.statut || 'Tous');
   const [profileId, setProfileId] = useState(null);
   const [brouillons, setBrouillons] = useState({});
   const [modale, setModale] = useState(null);
@@ -173,7 +174,10 @@ export default function AdminUtilisateurs({ currentUser }) {
     });
   }, [agents, filter, statutFilter]);
 
-  const pages = useTablePagination(visibleAgents, 10);
+  const pages = useTablePagination(visibleAgents, 10, {
+    page,
+    onPageChange: (valeur) => patch({ page: valeur <= 1 ? '' : valeur }),
+  });
 
   const isSelf = (agent) => String(agent.id_agent) === String(currentUserId);
 
@@ -458,7 +462,7 @@ export default function AdminUtilisateurs({ currentUser }) {
           <p className="eyebrow">Administration</p>
           <h1>Utilisateurs</h1>
         </div>
-        <p className="error">
+        <p className="error" role="alert">
           Cette page est réservée aux administrateurs et aux chefs de centre.
           Connectez-vous avec l'un de ces comptes pour gérer les utilisateurs.
         </p>
@@ -600,10 +604,8 @@ export default function AdminUtilisateurs({ currentUser }) {
             key={value}
             type="button"
             className={`categorie-tab${statutFilter === value ? ' active' : ''}`}
-            onClick={() => {
-              setStatutFilter(value);
-              pages.setCurrentPage(1);
-            }}
+            aria-current={statutFilter === value ? 'true' : undefined}
+            onClick={() => patch({ statut: value === 'Tous' ? '' : value, page: '' })}
           >
             {value === 'Tous' ? `Tous (${agents.length})` : `${label} (${counts[value] || 0})`}
           </button>
@@ -611,12 +613,9 @@ export default function AdminUtilisateurs({ currentUser }) {
       </div>
 
       <div className="datatable-toolbar contribuables-toolbar flex-wrap gap-2">
-        <input
+        <input aria-label="Rechercher un compte utilisateur"
           value={filter}
-          onChange={(event) => {
-            setFilter(event.target.value);
-            pages.setCurrentPage(1);
-          }}
+          onChange={(event) => patch({ q: event.target.value, page: '' })}
           placeholder="Rechercher par nom, prénom, e-mail ou rôle..."
         />
         <span>{visibleAgents.length} utilisateur(s)</span>
@@ -625,7 +624,7 @@ export default function AdminUtilisateurs({ currentUser }) {
         </button>
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
       {success && (
         <p className="success form-submit-message" role="status">
           {success}
@@ -633,10 +632,10 @@ export default function AdminUtilisateurs({ currentUser }) {
       )}
 
       {loading ? (
-        <p className="status">Chargement des utilisateurs...</p>
+        <p className="status" role="status">Chargement des utilisateurs...</p>
       ) : (
         <div className="table-wrap">
-          <table>
+          <table aria-label="Comptes utilisateurs">
             <thead>
               <tr>
                 <th>Utilisateur</th>

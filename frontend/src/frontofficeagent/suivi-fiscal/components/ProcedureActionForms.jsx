@@ -1,15 +1,21 @@
 import { formatAriary, toNumber } from '@/utils';
+import RefLegal from '@/components/common/RefLegal';
+import { REFERENCES } from '@/data/textesFiscaux.data';
 
 /**
  * Boutons d'actions et formulaires pliables pour la procédure contradictoire :
- * 1. Demande d'Éclaircissements et de Justifications (CPF V-17, étape facultative)
- * 2. Émission Notification Primitive (délai 30j)
- * 3. Validation & Émission Notification Définitive
- * 4. Imputation du Crédit d'Impôt
+ * 1. Demande d'Éclaircissements et de Justifications (code des procédures
+ *    fiscales, art. V-02 — étape facultative)
+ * 2. Émission Notification Primitive (délai 30 j, art. V-04)
+ * 3. Validation & Émission Notification Définitive (art. V-07)
+ * 4. Imputation du Crédit d'Impôt (code des impôts, art. 01.01.15 et 01.02.06)
+ *
+ * Les articles sont ceux de l'édition consolidée 2025 du Code des procédures
+ * fiscales relue le 1er novembre 2026. Les puces posées sous chaque formulaire
+ * ouvrent le PDF de l'éditeur à la page imprimée de l'article.
  */
 export default function ProcedureActionForms({
   principalRedressement,
-  totalDetteInitiale,
   isPrimitiveEnvoyee,
   isDefinitiveEnvoyee,
   actionLoading,
@@ -48,7 +54,7 @@ export default function ProcedureActionForms({
   const canImputation = isDefinitiveEnvoyee;
 
   // Actions classées dans l'ordre légal de la procédure contradictoire : l'étape
-  // facultative d'éclaircissements (CPF V-17) est proposée avant le choix
+  // facultative d'éclaircissements (CPF art. V-02) est proposée avant le choix
   // primitive / définitive.
   const actions = [
     canEclaircissement && {
@@ -84,8 +90,8 @@ export default function ProcedureActionForms({
 
   const prochaineEtape = {
     eclaircissement: isPrimitiveEnvoyee
-      ? 'La notification primitive court : une demande d’éclaircissements (CPF V-17) reste possible avant de fixer la dette.'
-      : 'Le contrôle a relevé un écart : demandez d’abord les éclaircissements du contribuable (CPF V-17), puis engagez la notification primitive.',
+      ? 'La notification primitive court : une demande d’éclaircissements (art. V-02) reste possible avant de fixer la dette.'
+      : 'Le contrôle a relevé un écart : demandez d’abord les éclaircissements du contribuable (art. V-02), puis engagez la notification primitive.',
     primitive: isEclaircissementEmis
       ? 'Les éclaircissements sont demandés : la notification primitive ouvre 30 jours de réponse au contribuable.'
       : 'La procédure n’est pas encore engagée : une notification primitive ouvre 30 jours de réponse au contribuable.',
@@ -157,11 +163,16 @@ export default function ProcedureActionForms({
           onSubmit={onEmettreEclaircissement}
           className="procedure-form procedure-form-eclaircissement"
         >
-          <h3>Demande d'Éclaircissements et de Justifications (CPF Art. V-17)</h3>
+          <h3>Demande d'Éclaircissements et de Justifications (art. V-02)</h3>
           <p>
             Invite le contribuable à fournir les éclaircissements ou justifications sur les éléments du calcul
-            non contrôlés. L'administration dispose de 30 jours après sa réponse pour notifier le redressement.
+            non contrôlés. L’acte ne liquide aucun droit : à défaut de réponse, ou si la réponse parvient hors
+            délai, l’article V-38 expose le contribuable à une imposition d’office.
           </p>
+          <div className="procedure-tags">
+            <RefLegal source={REFERENCES.eclaircissements} detail />
+            <RefLegal source={REFERENCES.sanction_eclaircissements} compact />
+          </div>
 
           <label className="field" style={{ marginBottom: '1rem' }}>
             <span>Points appelant vos éclaircissements</span>
@@ -190,9 +201,13 @@ export default function ProcedureActionForms({
         <form onSubmit={onEmettrePrimitive} className="procedure-form">
           <h3>Émission de la Notification Primitive (Proposition temporaire)</h3>
           <p>
-            Ouvre un délai légal de réponse de 30 jours à compter de l'envoi. Stocke la date d'émission et
-            bascule le statut à <strong>'PRIMITIVE_ENVOYÉE'</strong>.
+            Ouvre un délai légal de réponse de 30 jours à compter de la réception de l’acte. Stocke la date
+            d'émission et bascule le statut à <strong>'PRIMITIVE_ENVOYÉE'</strong>.
           </p>
+          <div className="procedure-tags">
+            <RefLegal source={REFERENCES.proposition_rectification} compact />
+            <RefLegal source={REFERENCES.notification_primitive} compact />
+          </div>
 
           <div className="procedure-form-grid">
             <label className="field">
@@ -210,6 +225,10 @@ export default function ProcedureActionForms({
                 onChange={(e) => setProrogationJours(e.target.value)}
                 placeholder="0 (par défaut)"
               />
+              <span className="procedure-note">
+                Les articles VI-04 et VI-05 bornent le nouveau délai accordé à quinze jours : une prorogation
+                saisie au-delà est une décision du service, pas une application du texte.
+              </span>
             </label>
 
             <label className="field">
@@ -257,6 +276,9 @@ export default function ProcedureActionForms({
             statut à <strong>'DÉFINITIVE_ENVOYÉE'</strong> et{' '}
             <strong>débloque l'imputation du crédit d'impôt</strong>.
           </p>
+          <div className="procedure-tags">
+            <RefLegal source={REFERENCES.notification_definitive} detail />
+          </div>
 
           <div className="procedure-form-grid procedure-form-grid-2">
             <label className="field">
@@ -300,16 +322,20 @@ export default function ProcedureActionForms({
       {/* ── Formulaire 4 : Imputation du Crédit d'Impôt ── */}
       {showImputationForm && isDefinitiveEnvoyee && (
         <form onSubmit={onImputerCredit} className="procedure-form procedure-form-imputation">
-          <h3>Imputation légale directe du Crédit d'Impôt (Art. 01.01.15 &amp; 01.02.06 CGI 2026)</h3>
+          <h3>Imputation du Crédit d'Impôt (code des impôts, art. 01.01.15 et 01.02.06)</h3>
           <p>
-            L'excédent de versements ou d'acomptes provisionnels antérieurs peut être imputé de plein droit sur
-            le redressement issu de la notification définitive.
+            Le trop-perçu ouvre droit à un crédit d’impôt, imputable sur les règlements ultérieurs de droits de
+            même nature et sur une notification définitive de redressement. L’imputation ne dépasse pas le
+            principal enregistré au dossier.
           </p>
+          <div className="procedure-tags">
+            <RefLegal source={REFERENCES.imputation_credit} compact detail />
+          </div>
 
           <div className="procedure-form-grid">
             <label className="field">
-              <span>Dette totale exécutoire (Ar)</span>
-              <input type="text" value={formatAriary(totalDetteInitiale)} disabled readOnly />
+              <span>Principal enregistré au dossier (Ar)</span>
+              <input type="text" value={formatAriary(principalRedressement)} disabled readOnly />
             </label>
 
             <label className="field">

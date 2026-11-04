@@ -57,3 +57,72 @@ export const formatAxisValue = (value) => {
  * @returns {number}
  */
 export const toNumber = (val) => Number(val) || 0;
+
+/**
+ * Rend lisible une période fiscale `AAAA-MM` (ex: "Septembre 2026").
+ * Une valeur qui n'est pas une période est renvoyée telle quelle.
+ * @param {string} value
+ * @returns {string}
+ */
+export const formatPeriode = (value) => {
+  const [annee, mois] = String(value || '').split('-').map(Number);
+  if (!annee || !mois) return value || '—';
+  const libelle = new Date(Date.UTC(annee, mois - 1, 1)).toLocaleDateString('fr-FR', {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  return libelle.charAt(0).toUpperCase() + libelle.slice(1);
+};
+
+/**
+ * Le mois seul d'une période `AAAA-MM` (ex: "Septembre").
+ * @param {string} value
+ * @returns {string}
+ */
+export const formatMois = (value) => formatPeriode(value).replace(/\s+\d{4}$/, '');
+
+/**
+ * Ce qu'on écrit quand une information n'existe pas au dossier. Une donnée absente
+ * ne se remplace pas par une valeur plausible : elle s'annonce. Utilisé par les
+ * écrans, les imports et les courriers imprimables, pour que « on ne sait pas » se
+ * lise partout de la même façon.
+ */
+export const VALEUR_ABSENTE = 'Non renseigné au dossier';
+
+/** Idem pour un montant : l'absence d'une ligne en base n'est pas un calcul. */
+export const MONTANT_ABSENT = 'Non liquidé au dossier';
+
+/**
+ * Renvoie la valeur, ou la mention d'absence si elle est vide.
+ * @param {any} value
+ * @param {string} [absence]
+ */
+export const ouAbsent = (value, absence = VALEUR_ABSENTE) => {
+  const texte = value === null || value === undefined ? '' : String(value).trim();
+  return texte || absence;
+};
+
+/**
+ * montant ou `null` — `formatAriary(null)` rend « 0 Ar », ce qui ferait passer
+ * l'absence d'une colonne en base pour un montant liquidé à zéro.
+ * @param {any} value
+ * @returns {number|null}
+ */
+export const montantOuNull = (value) => {
+  if (value === null || value === undefined || String(value).trim() === '') return null;
+  const nombre = Number(value);
+  return Number.isFinite(nombre) ? nombre : null;
+};
+
+/**
+ * Une date enregistrée au dossier, en français ; `null` si la colonne est vide.
+ * Une date absente ne se remplace jamais par la date du jour.
+ * @param {any} value
+ * @returns {string|null}
+ */
+export const dateOuNull = (value) => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toLocaleDateString('fr-FR');
+};

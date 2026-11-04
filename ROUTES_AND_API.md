@@ -37,8 +37,8 @@ est affiché. Ensuite :
 
 | Route URL | Composant page | Accès | Rôle |
 | :--- | :--- | :--- | :--- |
-| `/` | `backofficeadmin/auth/pages/Signin.jsx` | public | Écran de connexion ; si la session est déjà valide, redirection vers `/admin` pour un administrateur et `/acceuil` pour les autres rôles (`getLandingPath` de `frontend/src/utils/session.utils.js`, partagé par `App.jsx` et `Signin.jsx`) |
-| `/espace-contribuable/:token` | `accountcontribuable/pages/EspaceContribuable.jsx` | public — garde par jeton + NIF/e-mail | **Portail contribuable en lecture seule** : `GET /api/acces-contribuable/:token` pour l'état du lien, formulaire NIF + e-mail, puis `POST /api/acces-contribuable/:token/ouvrir` et la page « Ma situation fiscale » (tableau de bord des taxes, histogramme par exercice, conseils et pénalités, notifications et relances, historique TVA, droits de communication, recoupements, rapprochement / confrontation). Bouton « Imprimer / enregistrer en PDF » par `window.print()`, aucune dépendance ajoutée. Le détail est dans [`frontend/src/accountcontribuable/README.md`](frontend/src/accountcontribuable/README.md) |
+| `/` | `backofficeadmin/auth/pages/Signin.jsx` | public | Écran de connexion ; si la session est déjà valide, redirection vers `/admin` pour un administrateur et `/accueil` pour les autres rôles (`getLandingPath` de `frontend/src/utils/session.utils.js`, partagé par `App.jsx` et `Signin.jsx`) |
+| `/espace-contribuable/:token` | `accountcontribuable/pages/EspaceContribuable.jsx` | public — garde par jeton + NIF/e-mail | **Portail contribuable en lecture seule**, à deux vues : `GET /api/acces-contribuable/:token` pour l'état du lien, formulaire NIF + e-mail, puis `POST /api/acces-contribuable/:token/ouvrir` et la page « Ma situation fiscale » (tableau de bord des taxes, histogramme par exercice, conseils et pénalités, notifications et relances, historique TVA, droits de communication, recoupements, rapprochement / confrontation en synthèse + ligne prioritaire + lignes à expliquer, listes repliées au-delà de 10 lignes) ; la seconde vue, « Aide & repères légaux », est un composant local (`components/AideContribuable.jsx`, neuf rubriques ancres, glossaire des statuts, délais et seuils sourcés dans le code) appelé sans endpoint et accessible même sans lien valide. Bouton « Imprimer / enregistrer en PDF » par `window.print()`, aucune dépendance ajoutée. Le détail est dans [`frontend/src/accountcontribuable/README.md`](frontend/src/accountcontribuable/README.md) |
 | `/signin` | — | public | Redirection immédiate vers `/` |
 | `/signup` | `backofficeadmin/auth/pages/Signup.jsx` | public | Demande de création d'un compte agent (nom, prénom, e-mail, mot de passe et confirmation) ; enregistre la demande sans connecter l'utilisateur puis **redirige vers `/attente-activation`** avec l'identité saisie |
 | `/attente-activation` | `backofficeadmin/auth/pages/AttenteActivation.jsx` | public | Écran de statut « en attente d'activation » : atteint après une inscription ou après une connexion refusée pour `statut = en_attente` (`403` + `code: COMPTE_EN_ATTENTE`) ; reprend la mise en page de `/` et `/signup` et offre le bouton « ← Retour à la connexion », un lien « Mot de passe oublié ? » vers `/mot-de-passe-oublie` et un lien « Créer un autre compte » vers `/signup` |
@@ -51,7 +51,8 @@ est affiché. Ensuite :
 | `/admin/verification-nif/excel` | `backofficeadmin/verification-nif/pages/VerificationNifExcel.jsx` | protégé — administrateurs | Liaison du référentiel depuis un fichier `.xlsx` / `.xls` / `.csv` lu côté navigateur, avec modèle vierge `modele de verificationnif.xls` téléchargeable et les 3 dernières importations |
 | `/admin/verification-nif/json` | `backofficeadmin/verification-nif/pages/VerificationNifJson.jsx` | protégé — administrateurs | Synchronisation avec le catalogue `unitefiscal.json` (import module, pas `fetch`), modèle `modele de verificationnif.json` téléchargeable et API JSON enregistrables — fichiers de `frontend/public/referentiel-nif/` ou serveurs distants — avec les 3 dernières synchronisations |
 | `/admin/historique` | `backofficeadmin/historique/pages/AdminHistorique.jsx` | protégé — administrateurs | Journal des opérations d'administration (`GET /api/agents/historique`) |
-| `/acceuil` | `frontofficeagent/accueil/pages/Accueil.jsx` | protégé | Tableau de bord d'accueil et indicateurs de synthèse |
+| `/accueil` | `frontofficeagent/accueil/pages/Accueil.jsx` | protégé | Poste de travail de l'agent : bandeau d'identité (logo DGI, « République de Madagascar · DGI », périmètre et date), indicateurs du périmètre, priorités de la file de travail et cinq actes les plus urgents |
+| `/acceuil` | — | protégé | Redirection `Navigate` vers `/accueil` (ancienne coquille, conservée pour les liens déjà partagés) |
 | `/collecte` | `frontofficeagent/collecte/pages/Collecte.jsx` | protégé | Simulateur de collecte TVA ; l'onglet actif est porté par `currentModule` (`sales`, `theoretical`, `reconciliation`, `declaration`) |
 | `/entreprises/nouveau` | `frontofficeagent/entreprises/pages/PhaseClassement.jsx` | protégé | Étape 1 de l'immatriculation : choix de la structure compétente |
 | `/entreprises/nouveau/form` | `frontofficeagent/entreprises/pages/FormInformation.jsx` | protégé | Étape 2 de l'immatriculation : formulaire de création d'un contribuable (`?structure=…`) |
@@ -61,7 +62,7 @@ est affiché. Ensuite :
 | `/centres/:id` | `frontofficeagent/centres/pages/CentreDetail.jsx` | protégé | Fiche d'un centre et de ses contribuables |
 | `/centres-fiscaux/:type/:index` | `frontofficeagent/centres/pages/UniteFiscaleDetail.jsx` | protégé | Fiche d'une unité fiscale (centre fiscal, SRE ou DGE) |
 | `/suivi` | `frontofficeagent/suivi-fiscal/pages/SuiviFiscal.jsx` | protégé | Suivi et recherche des déclarations ; badge de contrôle **Rien à signaler** (vert, écart ≤ 25 %), **Risque moyen** (orange, écart ≤ 50 %) ou **À risque** (rouge) |
-| `/suivi/:id` | `frontofficeagent/suivi-fiscal/pages/DeclarationDetail.jsx` | protégé | Fiche détaillée d'une déclaration et actes de procédure contradictoire : notification primitive, notification définitive, demande d'éclaircissements (CPF V-17, persistée dans `relances`), imputation du crédit d'impôt |
+| `/suivi/:id` | `frontofficeagent/suivi-fiscal/pages/DeclarationDetail.jsx` | protégé | Fiche détaillée d'une déclaration et actes de procédure contradictoire : notification primitive, notification définitive, demande d'éclaircissements (code des procédures fiscales, art. V-02, persistée dans `relances`), imputation du crédit d'impôt (code des impôts, art. 01.01.15 et 01.02.06) |
 | `/contribuables` | `frontofficeagent/contribuables/pages/Contribuables.jsx` | protégé | Registre des contribuables (vue liste) |
 | `/contribuables?vue=statistique` | `frontofficeagent/contribuables/pages/Contribuables.jsx` | protégé | Même page, vue **Statistique** : KPI, camemberts et histogrammes VSP / CSP et IS / IR / TVA (la vue est portée par l'query string, aucun état local) |
 | `/contribuables/:id` | `frontofficeagent/contribuables/pages/ContribuableDetail.jsx` | protégé | Fiche détaillée d'un contribuable, onglet Synthèse. Son en-tête porte le bouton `secondary` « Lien contribuable », qui ouvre [`frontend/src/frontofficeagent/contribuables/components/LienAccesModal.jsx`](frontend/src/frontofficeagent/contribuables/components/LienAccesModal.jsx) : durée 7 / 14 / 30 jours, `POST /api/contribuables/:id/acces-contribuable`, URL complète prête à transmettre, e-mail masqué, échéance, copie avec repli par sélection quand `navigator.clipboard` est refusé, et avertissement que la réémission révoque le lien précédent |
@@ -79,11 +80,16 @@ est affiché. Ensuite :
 
 Les pages du domaine contribuable sont réexportées depuis
 [`frontend/src/frontofficeagent/index.js`](frontend/src/frontofficeagent/index.js).
+Toutes les lignes `/contribuables…` du tableau portent « protégé » pour la session
+mais sont de plus réservées aux rôles opérationnels : l'administrateur y reçoit
+l'écran `EspaceOperateurs` (voir les remarques ci-dessous).
 
 Remarques :
 
-- l'orthographe `/acceuil` (au lieu de `/accueil`) est celle du code et doit
-  être conservée dans les liens ;
+- l'accueil agent est routé **`/accueil`** ; `/acceuil` (l'ancienne coquille)
+  n'existe plus que comme redirection `Navigate` vers `/accueil`, pour ne casser
+  aucun lien déjà partagé. Les liens du code utilisent `/accueil`
+  (`NAVIGATION_LINKS` du `Header`, `homePath`, `getLandingPath`) ;
 - les pages sont réexportées par le barrel
   [`frontend/src/frontofficeagent/index.js`](frontend/src/frontofficeagent/index.js) ;
 - l'ancien doublon `backofficeadmin/auth/login.jsx`, importé par aucune route, a
@@ -106,7 +112,9 @@ Remarques :
   `/mot-de-passe-oublie`, qui appelle `POST /api/auth/reset-request` ;
 - « protégé » signifie que l'accès direct à l'URL sans session valide redirige
   vers `/` ; les pages protégées elles-mêmes ne vérifient pas les rôles, sauf
-  `/admin`, qui n'est proposée qu'aux administrateurs. La restriction de périmètre
+  `/admin`, qui n'est proposée qu'aux administrateurs, et `/contribuables…`,
+  refusées à l'administrateur par `EspaceOperateurs` (voir le dernier point de ces
+  remarques). La restriction de périmètre
   ne se joue donc pas dans le navigateur : le serveur filtre les listes selon le
   centre de l'agent et refuse (`403`) tout accès hors périmètre (voir
   « Périmètre de données appliqué par l'API » en section 2) ; un agent
@@ -114,7 +122,7 @@ Remarques :
   refus ;
 - **redirection des administrateurs** : après une connexion réussie, un agent
   dont le rôle est `admin` est envoyé directement sur `/admin`, les autres rôles
-  arrivent sur `/acceuil`. Le calcul est centralisé dans `getLandingPath`
+  arrivent sur `/accueil`. Le calcul est centralisé dans `getLandingPath`
   ([`frontend/src/utils/session.utils.js`](frontend/src/utils/session.utils.js)),
   consommé à la fois par
   [`frontend/src/backofficeadmin/auth/pages/Signin.jsx`](frontend/src/backofficeadmin/auth/pages/Signin.jsx)
@@ -127,9 +135,23 @@ Remarques :
   (`/admin`), « Utilisateurs », « Rôles », « Vérification NIF » et
   « Historique & Audit » — et son logo renvoie vers `/admin` (`ADMIN_LINKS`) ;
   la navigation fiscale (`NAVIGATION_LINKS`) est réservée aux autres rôles. Les
-  URL fiscales restent techniquement accessibles à un admin (aucun blocage de
-  route), mais elles ne lui sont plus proposées, et aucune entrée du menu admin
-  ne portant leur chemin, elles ne sont même plus surlignées.
+  URL de l'espace opérateur ne lui sont plus proposées, et aucune entrée du menu
+  admin ne portant leur chemin, elles ne sont même plus surlignées ;
+- **le registre contribuable est fermé à l'administrateur** : les onze routes
+  `/contribuables…` de `App.jsx` sont enveloppées dans
+  [`frontend/src/components/common/EspaceOperateurs.jsx`](frontend/src/components/common/EspaceOperateurs.jsx),
+  qui affiche un écran « Contribuables non accessible » et un lien de retour vers
+  `/admin` dès que `currentUser.role === 'admin'`. Un administrateur administre
+  les comptes, les rôles et la vérification des NIF ; il ne consulte pas les
+  dossiers fiscaux. Le garde se place côté route et non côté API parce que
+  `GET /api/contribuables` est aussi lu par l'admin pour son propre outil de
+  vérification NIF (`AdminVerificationNIF.jsx` construit son référentiel avec
+  `getContribuables({ limit: 100 })`, et `/admin/verification-nif/sql` exécute des
+  `SELECT` sur `contribuables`) : un `403` serveur casserait cet écran. Les autres
+  URL fiscales (`/suivi`, `/relance`, `/decisionnel`, `/centres-fiscaux`…)
+  restent techniquement atteignables par un admin ; seule la consultation des
+  contribuables est fermée. Le périmètre de données continue d'être appliqué par
+  le serveur (`data-scope`), le garde n'étant qu'une règle de produit.
 
 ---
 
@@ -354,9 +376,9 @@ La suppression d'un agent ne supprime ni ses contrôles, ni ses relances, ni ses
 
 | Méthode | Endpoint | Corps / paramètres | Codes |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/api/contribuables` | query `page` (défaut 1), `limit` (défaut 20), `search` (NIF, raison sociale ou secteur), `centre_fiscal_ref` (référence JSON `type:nom`) | `200` — `{ data: { data: [...], pagination: { page, limit, total, pages } } }` incluant `dernier_etat`, `statut_activite`, `statut_conformite` |
+| `GET` | `/api/contribuables` | query `page` (défaut 1), `limit` (défaut 20), `search` (NIF, raison sociale ou secteur), `centre_fiscal_ref` (référence JSON `type:nom`) | `200` — `{ data: { data: [...], pagination: { page, limit, total, pages } } }` incluant `dernier_etat`, `statut_activite`, `statut_conformite`. Sans état enregistré, les deux statuts valent `null` (et non « Actif » / « En règle ») |
 | `GET` | `/api/contribuables/:id` | `id` = `id_contribuable` | `200` — contribuable, ses `declarations`, la relation `centres`, `dernier_etat` et historique `etat_contribuable`, `nb_declarations` et `ca_moyen` ; `404` si introuvable |
-| `POST` | `/api/contribuables` | `nif` (obligatoire, au moins 10 chiffres, numérique), `raison_sociale` (obligatoire, 2 caractères minimum), `secteur_activite` (obligatoire), `adresse` (obligatoire), `telephone` (obligatoire, format `[0-9+\-\s]{8,}`), `email` (optionnel, e-mail valide), `regime_fiscal` (optionnel, `IS` ou `IR`), `id_centre` (optionnel, entier ≥ 1), `centre_fiscal_ref` (optionnel, référence JSON `type:nom` valide) | `201` ; `400` si la validation échoue, si le NIF existe déjà, ou si `id_centre` ou `centre_fiscal_ref` est invalide ; `500` sinon |
+| `POST` | `/api/contribuables` | `nif` (obligatoire, au moins 10 chiffres, numérique), `raison_sociale` (obligatoire, 2 caractères minimum), `secteur_activite` (obligatoire), `adresse` (optionnel — nullable en base, aucune valeur n'est suppléée), `telephone` (optionnel, format `[0-9+\-\s]{8,}` s'il est fourni), `email` (optionnel, e-mail valide), `regime_fiscal` (optionnel, `IS` ou `IR` — jamais déduit du CA), `id_centre` (optionnel, entier ≥ 1), `centre_fiscal_ref` (optionnel, référence JSON `type:nom` valide) | `201` ; `400` si la validation échoue, si le NIF existe déjà, ou si `id_centre` ou `centre_fiscal_ref` est invalide ; `500` sinon |
 | `PUT` | `/api/contribuables/:id` | champs modifiables : `raison_sociale`, `secteur_activite`, `adresse`, `telephone`, `email`, `regime_fiscal`, `id_centre`, `centre_fiscal_ref` | `200` ; `404` si introuvable ; `400` si `id_centre` ou `centre_fiscal_ref` est invalide |
 
 Le rattachement fiscal est tenu cohérent par le modèle
@@ -372,8 +394,8 @@ imposé à un agent centré par `forceCentreOnWrite`. L'existant a été rattrap
 le script additif
 [`backend/migrations/009-centre-fiscal-ref.sql`](backend/migrations/009-centre-fiscal-ref.sql),
 qui aligne aussi sur le référentiel l'orthographe de quatre `nom_centre`.
-| `GET` | `/api/contribuables/:id/etat` | `id` = `id_contribuable` | `200` — historique des statuts d'activité et de conformité |
-| `POST` | `/api/contribuables/:id/etat` | `{ statut_activite, statut_conformite, motif }` | `201` — nouvel enregistrement d'état pour le contribuable |
+| `GET` | `/api/contribuables/:id/etat` | `id` = `id_contribuable` | `200` — historique des statuts d'activité et de conformité, vide si aucun état n'a jamais été enregistré |
+| `POST` | `/api/contribuables/:id/etat` | `statut_activite` **et** `statut_conformite` obligatoires (mêmes listes que `/api/etat-contribuable`), `motif` optionnel. Le contribuable est celui de l'URL ; `id_contribuable` dans le corps n'est lu que si l'URL n'en porte pas | `201` — nouvel enregistrement d'état pour le contribuable ; `400` si un statut manque ou sort des listes (un seul message par champ) |
 | `GET` | `/api/contribuables/:id/rapprochements` | `id` = `id_contribuable` | `200` — liste des rapprochements du contribuable |
 | `GET` | `/api/contribuables/:id/relances` | `id` = `id_contribuable` | `200` — liste des relances du contribuable |
 | `POST` | `/api/contribuables/:id/acces-contribuable` | route agent : `duree_jours` (optionnel, entier de 1 à 30, défaut 7) | `201` — `{ token, chemin: '/espace-contribuable/<jeton>', date_expiration, duree_jours, email_masque }`, le jeton brut n'étant renvoyé qu'ici ; `400` si la durée est hors borne ou si le contribuable n'a pas d'e-mail enregistré ; `404` si introuvable ; `403` si hors périmètre. Émettre ce lien révoque les liens actifs précédents du même dossier et écrit une ligne d'audit `ACCES_CONTRIBUABLE` (sans jeton) |
@@ -390,8 +412,9 @@ garde est le jeton de l'URL et la correspondance NIF / e-mail.
 | `POST` | `/api/acces-contribuable/:token/ouvrir` | `{ nif, email }` (tous deux obligatoires, 100 et 255 caractères maximum) | `200` — dossier complet du contribuable ; `400` — champ manquant ou trop long ; `403` — couple NIF / e-mail ne correspondant pas au dossier (`nb_echecs` incrémenté, `tentatives_restantes` renvoyé) ; `404` — lien invalide ; `429` au-delà de 8 tentatives par lien + IP ou 20 par IP. Une réponse `200` réinitialise les compteurs |
 
 Le dossier renvoyé (`data`) porte `contribuable` (identité, centre, `regime_fiscal`),
-`situation` (dernier `etat_contribuable`, défauts `Actif` / `En règle` si aucune
-ligne), `declarations`, `droits_communication`, `recoupements`, `rapprochements`
+`situation` (dernier `etat_contribuable`, **`null` si aucune ligne n'est enregistrée**
+— plus aucune substitution `Actif` / `En règle`, qui aurait présenté un dossier
+jamais examiné comme conforme), `declarations`, `droits_communication`, `recoupements`, `rapprochements`
 (et `relances`), sélectionnés par projection dans
 [`backend/src/models/acces-contribuable.model.js`](backend/src/models/acces-contribuable.model.js).
 En sont **exclus** : `observations_agent`, `score`, `motif` et `id_agent` des
@@ -407,6 +430,15 @@ Côté jeton : 32 octets aléatoires en base64url, seul son SHA-256 est stocké
 `date_expiration`, `date_revocation`, `date_dernier_acces`, `nb_acces` et
 `nb_echecs` jalonnent le lien. Une réémission révoque dans la même transaction
 tous les liens actifs du même dossier.
+
+Rendu des règles dans le portail (frontend seul, sans endpoint dédié) : chaque
+règle énoncée — amende de 40 %, jours francs, seuil de redressement, tolérance de
+rapprochement… — est inscrite dans
+[`frontend/src/accountcontribuable/data/regles.data.js`](frontend/src/accountcontribuable/data/regles.data.js),
+et `RegleFiscale` y attache l'explication au survol (`Infobulle`, qui s'ouvre
+aussi au focus clavier et au tap) et le renvoi vers la rubrique d'aide
+correspondante (`LienAide`). À l'impression, survols et renvois sont masqués : la
+forme longue de chaque règle vit dans l'aide, elle imprimable.
 
 ### Module Déclarations (`/api/declarations`)
 
@@ -484,15 +516,16 @@ sans quoi le chemin serait absorbé par le paramètre `id`.
 | `GET` | `/api/etat-contribuable/contribuable/:id_contribuable` | `id_contribuable` | `200` — historique des états du contribuable |
 | `GET` | `/api/etat-contribuable/contribuable/:id_contribuable/latest` | `id_contribuable` | `200` — dernier état en vigueur |
 | `GET` | `/api/etat-contribuable/:id` | `id` = `id_etat` | `200` ; `404` si introuvable |
-| `POST` | `/api/etat-contribuable` | `{ id_contribuable, statut_activite, statut_conformite, motif }` — `statut_activite` parmi `Actif`, `En sommeil`, `En cessation`, `Radié` ; `statut_conformite` parmi `En règle`, `Défaillant`, `Sous contrôle`, `Bloqué` | `201` — état enregistré ; `400` si un statut sort de ces listes |
-| `PUT` | `/api/etat-contribuable/:id` | `{ statut_activite, statut_conformite, motif }`, mêmes listes | `200` ; `400` si un statut est invalide ; `404` si introuvable |
+| `POST` | `/api/etat-contribuable` | `{ id_contribuable, statut_activite, statut_conformite, motif }` — `statut_activite` **et** `statut_conformite` obligatoires, parmi `Actif`, `En sommeil`, `En cessation`, `Radié` et `En règle`, `Défaillant`, `Sous contrôle`, `Bloqué` | `201` — état enregistré ; `400` si un statut manque ou sort de ces listes. Le modèle ne remplit plus `Actif` / `En règle` à la place d'un agent qui n'a rien saisi |
+| `PUT` | `/api/etat-contribuable/:id` | `{ statut_activite, statut_conformite, motif }`, mêmes listes, les deux statuts restant exigés | `200` ; `400` si un statut manque ou est invalide ; `404` si introuvable |
 | `DELETE` | `/api/etat-contribuable/:id` | `id` = `id_etat` | `200` ; `404` si introuvable |
 
 ### Module Relances (`/api/relances`)
 
 `type_relance` accepte `rappel1`, `rappel2`, `mise_en_demeure` et
 `demande_eclaircissement`. Ce quatrième type — la demande d'éclaircissements et
-de justifications du CPF Art. V-17 — a été ajouté par le script additif
+de justifications du code des procédures fiscales (art. V-02, p. 87) — a été
+ajouté par le script additif
 [`backend/migrations/007-demande-eclaircissement.sql`](backend/migrations/007-demande-eclaircissement.sql)
 (nouvelle contrainte `relances_type_relance_check`) ; il n'a ajouté aucune
 colonne, la demande réutilisant `observations` pour les points posés et

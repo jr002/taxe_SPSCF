@@ -1,18 +1,16 @@
 {
-  "description": "Modèle vierge de référentiel NIF : remplacez l'entrée d'exemple par vos contribuables certifiés, puis déclarez ce fichier comme API JSON depuis la page « 3 · Synchronisation Base JSON » du back-office.",
+  "description": "Modèle vierge de référentiel NIF : l'entrée ci-dessous est un exemple neutre, sans contribuable fictif ni réel, à remplacer par vos propres contribuables. Déclarez ensuite ce fichier comme API JSON depuis la page « 3 · Synchronisation Base JSON » du back-office. Le statut est attribué par l'application selon la voie d'arrivée (« Déclaré par l’API JSON ») : un fichier ne peut pas se certifier lui-même.",
   "colonnes": [
     "NIF",
     "RaisonSociale",
     "Centre",
-    "statut (facultatif)",
     "source (facultatif)"
   ],
   "referentiel": [
     {
-      "NIF": "3000000004",
+      "NIF": "1234567890",
       "RaisonSociale": "RAISON SOCIALE DU CONTRIBUTABLE",
       "Centre": "SRE 1 Analamanga",
-      "statut": "Certifié",
       "source": "modele-de-verificationnif.json"
     }
   ]

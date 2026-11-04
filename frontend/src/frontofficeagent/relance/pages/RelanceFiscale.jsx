@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { DossierFiscalNavigation } from '@/components/common';
-import { getDeclarations, getContribuables, getErrorMessage, getRelances } from '@/api';
+import { BulkActionsBar, DossierFiscalNavigation, ModaleConfirmation } from '@/components/common';
+import { useSelectionLot } from '@/hooks';
+import { getDeclarations, getContribuables, getErrorMessage, getRelances, updateRelance } from '@/api';
 import { toNumber, readSearchParam, updateSearchParams } from '@/utils';
 import { formatDateRelance, relanceStatut, relanceType } from '@/frontofficeagent/relance/utils/relance.utils';
 import RelanceKPICards from '@/frontofficeagent/relance/components/RelanceKPICards';
@@ -23,10 +24,10 @@ function calcJoursRetard(declaration) {
  * Retourne la sévérité du retard et le label badge correspondant.
  */
 function getSeverite(jours) {
-  if (jours <= 0) return { label: 'Conforme', cls: 'sev-conforme' };
-  if (jours < 15) return { label: `${jours}j`, cls: 'sev-faible' };
-  if (jours < 30) return { label: `${jours}j`, cls: 'sev-moyen' };
-  return { label: `${jours}j`, cls: 'sev-critique' };
+  if (jours <= 0) return { label: 'Conforme', cls: 'sev-conforme', description: 'Aucun retard' };
+  if (jours < 15) return { label: `${jours}j`, cls: 'sev-faible', description: `Retard faible de ${jours} jours` };
+  if (jours < 30) return { label: `${jours}j`, cls: 'sev-moyen', description: `Retard moyen de ${jours} jours` };
+  return { label: `${jours}j`, cls: 'sev-critique', description: `Retard critique de ${jours} jours` };
 }
 
 /**
@@ -79,7 +80,14 @@ export default function RelanceFiscale() {
   const [relances, setRelances] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reloadToken, setReloadToken] = useState(0);
   const pageSize = 15;
+  const { selection, basculer, basculerPage, remplacer, vider } = useSelectionLot();
+  const [lotStatut, setLotStatut] = useState(null);
+  const [lotObservation, setLotObservation] = useState('');
+  const [lotEnCours, setLotEnCours] = useState(false);
+  const [lotErreur, setLotErreur] = useState('');
+  const [lotMessage, setLotMessage] = useState('');
 
   const [searchParams, setSearchParams] = useSearchParams();
   const requestedTab = readSearchParam(searchParams, 'onglet', DEFAULT_TAB);
@@ -118,7 +126,7 @@ export default function RelanceFiscale() {
     };
     void load();
     return () => { isMounted = false; };
-  }, []);
+  }, [reloadToken]);
 
   // ─── Liste des dossiers en retard de paiement ─────────────────────────────
   const dossiersRetard = useMemo(() => {
@@ -216,16 +224,54 @@ export default function RelanceFiscale() {
   const safePage = Math.min(requestedPage, totalPages);
   const paginated = filteredData.slice((safePage - 1) * pageSize, safePage * pageSize);
 
-  const changeTab = (tabId) =>
+  const changeTab = (tabId) => {
+    vider();
     patchParams({
       onglet: tabId === DEFAULT_TAB ? '' : tabId,
       // La sévérité n'a de sens que sur les retards de paiement.
       severite: tabId === 'retards' ? severiteFilter : '',
       page: '',
     });
+  };
 
   const clearFilters = () => patchParams({ q: '', severite: '', page: '' });
   const goToPage = (value) => patchParams({ page: value <= 1 ? '' : value });
+
+  const idsRelancesPage = activeTab === 'historique' ? paginated.map((relance) => relance.id_relance) : [];
+  const selectionPage = idsRelancesPage.filter((id) => selection.has(id));
+  const toutSelectionne = idsRelancesPage.length > 0 && selectionPage.length === idsRelancesPage.length;
+  const partiellementSelectionne = selectionPage.length > 0 && !toutSelectionne;
+
+  const ouvrirLot = (statut) => {
+    setLotStatut(statut);
+    setLotObservation('');
+    setLotErreur('');
+    setLotMessage('');
+  };
+
+  const confirmerLot = async () => {
+    if (!lotStatut) return;
+    const cible = paginated.filter((relance) => selection.has(relance.id_relance));
+    setLotEnCours(true);
+    setLotErreur('');
+    const resultats = await Promise.allSettled(
+      cible.map((relance) => updateRelance(relance.id_relance, {
+        statut: lotStatut,
+        ...(lotStatut === 'regularisee' ? { date_regularisation: new Date().toISOString() } : {}),
+        ...(lotObservation.trim() ? { observations: lotObservation.trim() } : {}),
+      }))
+    );
+    const echecs = cible.filter((relance, index) => resultats[index].status === 'rejected');
+    const reussis = cible.length - echecs.length;
+
+    setLotEnCours(false);
+    setLotStatut(null);
+    remplacer(echecs.map((relance) => relance.id_relance));
+    setLotMessage(
+      `${reussis} relance(s) mises à jour${echecs.length > 0 ? `, ${echecs.length} en échec — la sélection des échecs est conservée` : ''}.`
+    );
+    setReloadToken((jeton) => jeton + 1);
+  };
 
   // ─── Navigation vers la fiche contribuable ────────────────────────────────
   const goToDossier = (row) => {
@@ -275,7 +321,7 @@ export default function RelanceFiscale() {
 
       {/* Barre de filtres */}
       <div className="register-toolbar relance-toolbar">
-        <input
+        <input aria-label="Rechercher un contribuable"
           id="relance-search"
           type="search"
           placeholder="Rechercher (NIF, raison sociale, secteur…)"
@@ -318,7 +364,31 @@ export default function RelanceFiscale() {
       )}
 
       {!loading && !error && activeTab === 'historique' && (
-        <HistoriqueList rows={paginated} onVoirDossier={goToDossier} />
+        <>
+          <BulkActionsBar
+            count={selectionPage.length}
+            onClear={vider}
+            actions={[
+              { label: 'Marquer régularisée(s)', onClick: () => ouvrirLot('regularisee'), disabled: lotEnCours },
+              {
+                label: 'Annuler la sélection',
+                className: 'table-action bulk-danger',
+                onClick: () => ouvrirLot('annulee'),
+                disabled: lotEnCours,
+              },
+            ]}
+          />
+          {lotMessage && <p className="form-submit-message success" role="status">{lotMessage}</p>}
+          <HistoriqueList
+            rows={paginated}
+            onVoirDossier={goToDossier}
+            selection={selection}
+            onBasculer={basculer}
+            onBasculerPage={() => basculerPage(idsRelancesPage)}
+            toutSelectionne={toutSelectionne}
+            partiellementSelectionne={partiellementSelectionne}
+          />
+        </>
       )}
 
       {/* Pagination */}
@@ -347,6 +417,24 @@ export default function RelanceFiscale() {
           </div>
         </div>
       )}
+
+      <ModaleConfirmation
+        ouvert={Boolean(lotStatut)}
+        etiquette="Action en lot"
+        titre={lotStatut === 'annulee' ? 'Annuler les relances sélectionnées' : 'Marquer les relances comme régularisées'}
+        intro={lotStatut ? `${selectionPage.length} relance(s) seront marquées « ${relanceStatut(lotStatut).label} ».` : ''}
+        variante={lotStatut === 'annulee' ? 'danger' : 'normale'}
+        texteValider={lotStatut === 'annulee' ? 'Annuler la sélection' : 'Marquer régularisées'}
+        enCours={lotEnCours}
+        messageErreur={lotErreur}
+        onValider={confirmerLot}
+        onFermer={() => setLotStatut(null)}
+      >
+        <label className="field">
+          Observation (facultative)
+          <textarea rows="3" value={lotObservation} onChange={(event) => setLotObservation(event.target.value)} />
+        </label>
+      </ModaleConfirmation>
     </div>
   );
 }
@@ -367,7 +455,7 @@ function RetardsList({ rows, onVoirDossier }) {
 
   return (
     <div className="table-scroll">
-      <table className="register-table relance-table">
+      <table aria-label="Retards de déclaration" className="register-table relance-table">
         <thead>
           <tr>
             <th>NIF</th>
@@ -381,7 +469,7 @@ function RetardsList({ rows, onVoirDossier }) {
         </thead>
         <tbody>
           {rows.map((row) => {
-            const { label, cls } = getSeverite(row.jours);
+            const { label, cls, description } = getSeverite(row.jours);
             return (
               <tr
                 key={`${row.id_declaration}-${row.annee}`}
@@ -401,7 +489,10 @@ function RetardsList({ rows, onVoirDossier }) {
                   </span>
                 </td>
                 <td>
-                  <span className={`relance-severite-badge ${cls}`}>{label}</span>
+                  <span className={`relance-severite-badge ${cls}`} title={description}>
+                    {label}
+                    <span className="sr-only"> — {description}</span>
+                  </span>
                 </td>
                 <td className="relance-montant">{fmt(row.montantDu)} Ar</td>
                 <td>
@@ -439,7 +530,7 @@ function NonEnRegleList({ rows, onVoirDossier }) {
 
   return (
     <div className="table-scroll">
-      <table className="register-table relance-table">
+      <table aria-label="Déclarations non en règle" className="register-table relance-table">
         <thead>
           <tr>
             <th>NIF</th>
@@ -488,7 +579,15 @@ function NonEnRegleList({ rows, onVoirDossier }) {
 }
 
 // ─── Sous-composant : historique ─────────────────────────────────────────
-function HistoriqueList({ rows, onVoirDossier }) {
+function HistoriqueList({
+  rows,
+  onVoirDossier,
+  selection,
+  onBasculer,
+  onBasculerPage,
+  toutSelectionne,
+  partiellementSelectionne,
+}) {
   const fmt = (v) =>
     new Intl.NumberFormat('fr-FR', { maximumFractionDigits: 0 }).format(Number(v) || 0);
 
@@ -504,9 +603,18 @@ function HistoriqueList({ rows, onVoirDossier }) {
 
   return (
     <div className="table-scroll">
-      <table className="register-table relance-table">
+      <table aria-label="Historique des relances" className="register-table relance-table">
         <thead>
           <tr>
+            <th className="bulk-check">
+              <input
+                type="checkbox"
+                aria-label="Sélectionner toutes les relances de la page"
+                checked={toutSelectionne}
+                ref={(node) => { if (node) node.indeterminate = partiellementSelectionne; }}
+                onChange={onBasculerPage}
+              />
+            </th>
             <th>Date</th>
             <th>NIF</th>
             <th>Raison Sociale</th>
@@ -528,6 +636,14 @@ function HistoriqueList({ rows, onVoirDossier }) {
                 onClick={() => onVoirDossier(relance)}
                 title="Cliquer pour voir la fiche du contribuable"
               >
+                <td className="bulk-check" onClick={(event) => event.stopPropagation()}>
+                  <input
+                    type="checkbox"
+                    aria-label={`Sélectionner la relance du ${formatDateRelance(relance.date_emission)}`}
+                    checked={selection.has(relance.id_relance)}
+                    onChange={() => onBasculer(relance.id_relance)}
+                  />
+                </td>
                 <td>{formatDateRelance(relance.date_emission)}</td>
                 <td><code className="relance-nif">{contribuable.nif || '—'}</code></td>
                 <td><strong>{contribuable.raison_sociale || '—'}</strong></td>

@@ -88,7 +88,7 @@ export default function AdminDashboard({ currentUser }) {
           <p className="eyebrow">Administration</p>
           <h1>Tableau de bord</h1>
         </div>
-        <p className="error">
+        <p className="error" role="alert">
           Cet espace est réservé aux administrateurs. Connectez-vous avec un compte
           administrateur pour consulter le tableau de bord des utilisateurs.
         </p>
@@ -108,10 +108,10 @@ export default function AdminDashboard({ currentUser }) {
         </p>
       </div>
 
-      {error && <p className="error">{error}</p>}
+      {error && <p className="error" role="alert">{error}</p>}
 
       {loading ? (
-        <p className="status">Chargement du tableau de bord...</p>
+        <p className="status" role="status">Chargement du tableau de bord...</p>
       ) : (
         <>
           <div className="kpis">
@@ -155,7 +155,7 @@ export default function AdminDashboard({ currentUser }) {
 
               {derniersComptes.length ? (
                 <div className="table-wrap">
-                  <table>
+                  <table aria-label="Derniers comptes créés">
                     <thead>
                       <tr>
                         <th>Utilisateur</th>
@@ -196,7 +196,7 @@ export default function AdminDashboard({ currentUser }) {
                   </table>
                 </div>
               ) : (
-                <p className="status">Aucun compte enregistré pour le moment.</p>
+                <p className="status" role="status">Aucun compte enregistré pour le moment.</p>
               )}
               <Pagination
                 currentPage={comptes.currentPage}

@@ -1,4 +1,4 @@
--- Migration 002: Ajout des colonnes de gestion de la procédure contradictoire (CGI LFI 2026)
+-- Migration 002: Ajout des colonnes de gestion de la procédure contradictoire (code des procédures fiscales, art. V-03 à V-07)
 BEGIN;
 
 -- Élargir le champ statut si nécessaire

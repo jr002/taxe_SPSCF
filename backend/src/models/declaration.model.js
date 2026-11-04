@@ -26,12 +26,14 @@ class DeclarationModel {
         annee: parsedAnnee,
         type_declaration: type_declaration || 'TVA',
         periode: periode || null,
-        ca: ca !== undefined ? ca : 0,
-        benefice: benefice !== undefined ? benefice : 0,
-        tva_collectee: tva_collectee !== undefined ? tva_collectee : 0,
-        tva_deductible: tva_deductible !== undefined ? tva_deductible : 0,
-        tva_payee: tva_payee !== undefined ? tva_payee : 0,
-        tva_theorique: tva_theorique !== undefined ? tva_theorique : 0,
+        // Un montant non fourni n'est pas un montant à zéro : il reste NULL en
+        // base, et les écrans l'affichent comme « non renseigné au dossier ».
+        ca: ca ?? null,
+        benefice: benefice ?? null,
+        tva_collectee: tva_collectee ?? null,
+        tva_deductible: tva_deductible ?? null,
+        tva_payee: tva_payee ?? null,
+        tva_theorique: tva_theorique ?? null,
         statut: statut || 'conforme',
         observations_agent: observations_agent || null,
         date_creation: new Date(),
@@ -52,6 +54,16 @@ class DeclarationModel {
             nif: true,
             raison_sociale: true,
             secteur_activite: true,
+            // Coordonnées réelles du centre gestionnaire : les courriers imprimables
+            // n'affichent que ces valeurs, jamais un numéro inventé.
+            id_centre: true,
+            centres: {
+              select: {
+                nom_centre: true,
+                telephone_centre: true,
+                email_centre: true,
+              },
+            },
           },
         },
         rapprochements: true,
@@ -66,6 +78,9 @@ class DeclarationModel {
       nif: contribuables?.nif || null,
       raison_sociale: contribuables?.raison_sociale || null,
       secteur_activite: contribuables?.secteur_activite || null,
+      centre_nom: contribuables?.centres?.nom_centre || null,
+      centre_telephone: contribuables?.centres?.telephone_centre || null,
+      centre_email: contribuables?.centres?.email_centre || null,
     };
   }
 
@@ -184,7 +199,7 @@ class DeclarationModel {
     }
   }
 
-  // Émettre la Notification Primitive (Proposition - CPF V-19)
+  // Émettre la Notification Primitive (Proposition — CPF art. V-03 et V-04)
   static async emettreNotificationPrimitive(id, options = {}) {
     const numericId = parseInt(id, 10);
     if (isNaN(numericId)) return null;
@@ -228,7 +243,8 @@ class DeclarationModel {
     });
   }
 
-  // Émettre la Notification Définitive (Décision finale - CGI 2026 Art. 01.01.15 & 01.02.06)
+  // Émettre la Notification Définitive (Décision finale — CPF art. V-07 ;
+  // imputation du crédit : code des impôts art. 01.01.15 et 01.02.06)
   static async emettreNotificationDefinitive(id, options = {}) {
     const numericId = parseInt(id, 10);
     if (isNaN(numericId)) return null;
@@ -269,7 +285,7 @@ class DeclarationModel {
 
     if (declaration.statut !== 'DÉFINITIVE_ENVOYÉE') {
       throw new Error(
-        "L'imputation du crédit d'impôt n'est autorisée qu'après l'émission de la Notification Définitive (statut DÉFINITIVE_ENVOYÉE) selon les articles 01.01.15 et 01.02.06 du CGI."
+        "L'imputation du crédit d'impôt n'est autorisée qu'après l'émission de la Notification Définitive (statut DÉFINITIVE_ENVOYÉE). Ce verrouillage est une règle de l'application ; le crédit imputable sur les règlements ultérieurs de droits de même nature vient des articles 01.01.15 (IR) et 01.02.06 (IS) du code des impôts."
       );
     }
 

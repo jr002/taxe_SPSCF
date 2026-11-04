@@ -40,10 +40,16 @@ const contribuableValidators = [
   body('secteur_activite')
     .notEmpty().withMessage('Le secteur d\'activité est obligatoire')
     .isLength({ max: 100 }).withMessage('Le secteur d\'activité ne doit pas dépasser 100 caractères'),
+  // `adresse` et `telephone` sont nullables en base : ils ne sont plus exigés à
+  // la création, faute de quoi un import Excel sans ces colonnes pousserait le
+  // client à inventer une adresse et un numéro de téléphone. Leur format reste
+  // contrôlé dès qu'ils sont fournis. Le formulaire de création manuelle, lui,
+  // continue de les réclamer côté interface.
   body('adresse')
-    .notEmpty().withMessage('L\'adresse est obligatoire'),
+    .optional({ values: 'falsy' })
+    .isString().withMessage('Adresse invalide'),
   body('telephone')
-    .notEmpty().withMessage('Le téléphone est obligatoire')
+    .optional({ values: 'falsy' })
     .matches(/^[0-9+\-\s]{8,}$/).withMessage('Format de téléphone invalide')
     .isLength({ max: 20 }).withMessage('Le téléphone ne doit pas dépasser 20 caractères'),
   body('email')
@@ -371,11 +377,18 @@ const etatContribuableValidators = [
   body('id_contribuable')
     .optional()
     .isInt().withMessage('ID contribuable invalide'),
+  // Les deux statuts sont l'objet même de l'enregistrement : facultatifs, ils
+  // laissaient le modèle écrire sa valeur par défaut — c'est-à-dire déclarer
+  // « Actif » et « En règle » un dossier que personne n'avait examiné. Le
+  // `.bail()` garde un seul message par champ : « obligatoire », ou « invalide »,
+  // jamais les deux en même temps.
   body('statut_activite')
-    .optional({ values: 'falsy' })
+    .notEmpty().withMessage(`Le statut d'activité est obligatoire. Valeurs acceptées : ${STATUTS_ACTIVITE.join(', ')}.`)
+    .bail()
     .isIn(STATUTS_ACTIVITE).withMessage(`Statut d'activité invalide. Valeurs acceptées : ${STATUTS_ACTIVITE.join(', ')}.`),
   body('statut_conformite')
-    .optional({ values: 'falsy' })
+    .notEmpty().withMessage(`Le statut de conformité est obligatoire. Valeurs acceptées : ${STATUTS_CONFORMITE.join(', ')}.`)
+    .bail()
     .isIn(STATUTS_CONFORMITE).withMessage(`Statut de conformité invalide. Valeurs acceptées : ${STATUTS_CONFORMITE.join(', ')}.`),
   body('motif')
     .optional({ values: 'falsy' })

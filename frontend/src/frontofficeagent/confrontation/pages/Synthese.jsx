@@ -20,8 +20,8 @@ export default function Synthese({
   onGoToLaunch,
   onShowList,
 }) {
-  if (loading) return <p className="status">Chargement…</p>;
-  if (error) return <p className="empty error">{error}</p>;
+  if (loading) return <p className="status" role="status">Chargement…</p>;
+  if (error) return <p className="empty error" role="alert">{error}</p>;
 
   const { annees: periodesAnnee, mois: periodesMois } = buildPeriodOptions(apercu);
   const actifs = stats?.actifs || 0;

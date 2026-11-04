@@ -19,7 +19,7 @@ export default function IdentityFields({ donneesIdentification, surChangement })
             name="nif"
             value={donneesIdentification.nif || ''}
             onChange={surChangement}
-            placeholder="Ex: 1000000001"
+            placeholder="Ex: 1234567890"
             maxLength={20}
             required
           />

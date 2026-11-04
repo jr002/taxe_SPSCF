@@ -15,9 +15,10 @@ Il n'y a ni icône SVG, ni illustration, ni police locale dans ce dossier.
 
 ## Utilisation dans le code
 
-Le logo est importé par six modules, tous avec le même chemin d'alias :
+Le logo est importé par sept modules, tous avec le même chemin d'alias :
 
 * [`../components/common/Header.jsx`](../components/common/Header.jsx)
+* [`../frontofficeagent/accueil/pages/Accueil.jsx`](../frontofficeagent/accueil/pages/Accueil.jsx)
 * [`../backofficeadmin/auth/pages/Signin.jsx`](../backofficeadmin/auth/pages/Signin.jsx)
 * [`../backofficeadmin/auth/pages/Signup.jsx`](../backofficeadmin/auth/pages/Signup.jsx)
 * [`../backofficeadmin/auth/pages/AttenteActivation.jsx`](../backofficeadmin/auth/pages/AttenteActivation.jsx)
@@ -43,6 +44,6 @@ export default function LogoComponent() {
 ## Distinction avec `public/`
 
 * `src/assets/` : fichiers importés par le code, donc référencés par un chemin résolu par le bundler (`import ... from '...'`). C'est le cas de `logodgi.jpg`.
-* `public/` : fichiers servis tels quels à la racine du serveur web et référencés par une URL absolue. Les seuls fichiers présents sont `/imgministeradgi.jpg` et `/imgrepublique.jpg`, utilisés dans `src/frontofficeagent/accueil/pages/Accueil.jsx`.
+* `public/` : fichiers servis tels quels à la racine du serveur web et référencés par une URL absolue. `/favicon.jpg` sert d'icône d'onglet, et `referentiel-nif/` contient les catalogues JSON lus par la vérification NIF. Les deux visuels `/imgministeradgi.jpg` et `/imgrepublique.jpg` sont encore servis mais **plus importés par aucun écran** : l'ancien « accueil vitrine » de `src/frontofficeagent/accueil/pages/Accueil.jsx` les affichait dans son héro ; le poste de travail actuel montre le logo DGI de `src/assets/`, le même que l'en-tête et la connexion.
 
-Remarque : `frontend/index.html` déclare `<link rel="icon" href="/favicon.svg" />`, mais aucun `favicon.svg` n'existe dans `public/`.
+Remarque : `frontend/index.html` déclare `<link rel="icon" type="image/jpeg" href="/favicon.jpg" />` ; ce fichier existe bien dans `public/` (une version antérieure pointait sur un `favicon.svg` qui n'a jamais existé).

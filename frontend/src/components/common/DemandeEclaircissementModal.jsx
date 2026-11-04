@@ -1,11 +1,33 @@
-import { formatAriary } from '@/utils';
+import { dateOuNull, formatAriary, montantOuNull, ouAbsent, VALEUR_ABSENTE } from '@/utils';
 import { useModalA11y } from '@/hooks';
+import RefLegal from '@/components/common/RefLegal';
+import { REFERENCES } from '@/data/textesFiscaux.data';
 
 /**
  * Modal d'affichage et d'impression de la Demande d'Éclaircissements et de
- * Justifications (Code des Procédures Fiscales, Art. V-17) : premier acte
- * contradictoire, en amont de la Notification Primitive.
+ * Justifications : premier acte contradictoire, en amont de la Notification
+ * Primitive. Il s'agit de l'article V-02 du Code des procédures fiscales, sous la
+ * Section II « Demande d'éclaircissements et de justifications » (p. 87 de
+ * l'édition consolidée 2025). La mention « art. V-17 » portée ici jusqu'en 2026 ne
+ * désigne pas cet acte : V-17 (p. 90) étend la procédure de rectification
+ * contradictoire des articles V-03 à V-07 à la vérification sur place.
+ *
+ * Deux valeurs de l'acte ne se lisent pas telles quelles dans le texte :
+ *
+ * - le délai. L'article V-02 assigne « un délai franc de 15 jours » ; l'acte en
+ *   accorde 30, ce qui est plus favorable, et ce sont les 30 jours calculés sur la
+ *   date d'émission enregistrée. Le document le dit au lieu de laisser croire que
+ *   les 30 jours viennent de l'article ;
+ * - la suite d'un silence. Ce n'est pas V-02 mais l'article V-38 (p. 93) qui taxe
+ *   d'office le contribuable resté sans réponse, ou ayant répondu hors délai.
+ *
+ * Comme pour les notifications, le document ne porte que des valeurs enregistrées
+ * au dossier. Une TVA absente n'y devient pas « 0 Ar », une date d'émission
+ * absente n'est pas la date du jour, et le délai de réponse est annoncé comme
+ * calculé — la colonne n'existe pas pour une demande d'éclaircissements.
  */
+const ACTES = [REFERENCES.eclaircissements, REFERENCES.sanction_eclaircissements];
+
 export default function DemandeEclaircissementModal({
   isOpen,
   onClose,
@@ -18,10 +40,19 @@ export default function DemandeEclaircissementModal({
 
   if (!isOpen || !declaration) return null;
 
-  const emissionDate = dateEmission ? new Date(dateEmission) : null;
-  const limite = emissionDate
-    ? new Date(emissionDate.getTime() + delaiJours * 24 * 60 * 60 * 1000)
-    : null;
+  const emissionDate = dateOuNull(dateEmission);
+  // Le délai de réponse à une demande d'éclaircissements n'est stocké dans aucune
+  // colonne : il se déduit de la date d'émission enregistrée et des 30 jours
+  // accordés par l'acte (l'article V-02 en fixe 15, voir la remarque en tête du
+  // fichier). Sans date d'émission, il n'est pas calculable.
+  const emissionBrute = dateEmission ? new Date(dateEmission) : null;
+  const limite =
+    emissionBrute && !Number.isNaN(emissionBrute.getTime())
+      ? new Date(emissionBrute.getTime() + delaiJours * 24 * 60 * 60 * 1000)
+      : null;
+  const tvaPayee = montantOuNull(declaration.tva_payee);
+  const tvaTheorique = montantOuNull(declaration.tva_theorique);
+  const contacts = [declaration.centre_telephone, declaration.centre_email].filter(Boolean);
 
   return (
     <div className="notification-modal-overlay" onClick={onClose}>
@@ -36,7 +67,14 @@ export default function DemandeEclaircissementModal({
       >
         {/* Barre d'outils du document */}
         <div className="notification-modal-actions no-print">
-          <span className="modal-tag">Demande d'Éclaircissements et de Justifications (CPF V-17)</span>
+          <div className="modal-tag-group">
+            <span className="modal-tag">
+              Demande d’Éclaircissements et de Justifications (code des procédures fiscales, art. V-02)
+            </span>
+            {ACTES.map((source) => (
+              <RefLegal key={`${source.texte}-${source.article}`} source={source} className="modal-tag-ref" />
+            ))}
+          </div>
           <div className="action-buttons">
             <button type="button" className="print-btn" onClick={() => window.print()}>
               🖨️ Imprimer / Exporter PDF
@@ -61,13 +99,15 @@ export default function DemandeEclaircissementModal({
             <div className="header-right">
               <p>
                 <strong>Antananarivo, le :</strong>{' '}
-                {emissionDate ? emissionDate.toLocaleDateString('fr-FR') : '—'}
+                {emissionDate || 'Date d’émission non enregistrée au dossier'}
               </p>
               <p>
-                <strong>Réf Dossier :</strong> DGI/DCF/2026/{declaration.annee}/N°{declaration.id_declaration}
+                <strong>Réf. dossier :</strong> Contribuable n° {declaration.id_contribuable ?? 'non rattaché'} ·
+                Déclaration n° {declaration.id_declaration ?? 'non enregistrée'} · Exercice{' '}
+                {declaration.annee ?? 'non renseigné au dossier'}
               </p>
               <p>
-                <strong>NIF :</strong> {declaration.nif || 'N/A'}
+                <strong>NIF :</strong> {ouAbsent(declaration.nif)}
               </p>
             </div>
           </div>
@@ -75,32 +115,37 @@ export default function DemandeEclaircissementModal({
           <div className="sheet-title-box">
             <h1>DEMANDE D'ÉCLAIRCISSEMENTS ET DE JUSTIFICATIONS</h1>
             <p>
-              Invitation à fournir les éclaircissements et les pièces justificatives prévus aux articles V-17 et
-              suivants du Code des Procédures Fiscales, avant toute proposition de rectification.
+              Invitation à fournir les éclaircissements et les pièces justificatives prévus à l’article V-02 du Code
+              des procédures fiscales (Section II — Demande d’éclaircissements et de justifications), avant toute
+              proposition de rectification.
             </p>
           </div>
 
           <div className="sheet-recipient">
             <strong>À l'attention du Représentant Légal de :</strong>
-            <h3>{declaration.raison_sociale || 'Contribuable'}</h3>
-            <p>Secteur d'activité : {declaration.secteur_activite || 'Général'}</p>
+            <h3>{ouAbsent(declaration.raison_sociale)}</h3>
+            <p>Secteur d'activité : {ouAbsent(declaration.secteur_activite)}</p>
             <p>
-              Exercice fiscal examiné : <strong>{declaration.annee}</strong>
+              Exercice fiscal examiné : <strong>{declaration.annee || VALEUR_ABSENTE}</strong>
             </p>
+            {declaration.centre_nom && <p>Centre gestionnaire : {declaration.centre_nom}</p>}
           </div>
 
           <div className="sheet-body">
             <h4>1. CONTEXTE</h4>
             <p>
-              Dans le cadre de l'examen de la situation fiscale d'ensemble au titre de l'exercice{' '}
-              <strong>{declaration.annee}</strong>, le service a relevé des éléments appelant votre attention : la
-              taxe sur la valeur ajoutée déclarée et payée s'élève à {formatAriary(declaration.tva_payee)} pour une
-              taxe théoriquement due de {formatAriary(declaration.tva_theorique)}.
+              Dans le cadre du contrôle sur pièces de vos déclarations au titre de l’exercice{' '}
+              <strong>{declaration.annee || VALEUR_ABSENTE}</strong> (articles V-01 et V-02 du Code des procédures
+              fiscales), le service a relevé des éléments appelant votre attention :{' '}
+              {tvaPayee === null || tvaTheorique === null
+                ? 'le dossier ne porte pas les deux termes de la comparaison (TVA payée et TVA théorique), et aucun écart chiffré ne peut être reporté sur la présente.'
+                : `la taxe sur la valeur ajoutée déclarée et payée s’y élève à ${formatAriary(tvaPayee)} pour une taxe théoriquement due de ${formatAriary(tvaTheorique)}.`}
             </p>
             <p>
-              La présente demande ne préjuge d'aucune imposition supplémentaire. Elle a pour seul objet de recueillir
-              votre position motivée et les justifications correspondantes avant l'engagement éventuel de la
-              procédure de rectification.
+              Aucun montant de droit, d'amende, de pénalité ou d'intérêt n'est arrêté à ce stade : la demande
+              d'éclaircissements ne liquide rien et ne préjuge d'aucune imposition supplémentaire. Elle a pour seul
+              objet de recueillir votre position motivée et les justifications correspondantes avant l'engagement
+              éventuel de la procédure de rectification.
             </p>
 
             <h4>2. POINTS APPELANT VOS ÉCLAIRCISSEMENTS</h4>
@@ -119,15 +164,22 @@ export default function DemandeEclaircissementModal({
                 la présente.
               </p>
               <p>
-                <strong>
-                  Date limite impérative de réponse :{' '}
-                  {limite ? limite.toLocaleDateString('fr-FR') : '—'}
-                </strong>
+                <strong>Date limite impérative de réponse : </strong>
+                {limite
+                  ? `${limite.toLocaleDateString('fr-FR')} (date calculée à partir de la date d’émission enregistrée)`
+                  : 'non calculable — aucune date d’émission n’est enregistrée au dossier'}
                 .
               </p>
+              <p>
+                Remarque : l’article V-02 du Code des procédures fiscales assigne au contribuable, pour répondre à une
+                demande écrite, <strong>un délai franc de 15 jours</strong>. Le délai porté sur le présent acte est
+                plus long ; c’est lui qui figure au dossier et c’est lui qui vous est accordé.
+              </p>
               <small>
-                * À défaut de réponse dans ce délai, l'administration fiscale pourra arrêter d'office les bases
-                d'imposition et engager la procédure contradictoire de redressement par notification primitive.
+                * À défaut de réponse, ou si la réponse parvient après la date limite, l’article V-38 du même code
+                expose le contribuable à une imposition d’office, établie après procès-verbal et notification des
+                bases, dans les conditions des articles V-42 et suivants. La présente demande ne liquide aucun droit
+                et ne préjuge pas de cette suite.
               </small>
             </div>
           </div>
@@ -143,6 +195,14 @@ export default function DemandeEclaircissementModal({
               <div className="stamp-placeholder">[ Cachet de la DGI ]</div>
             </div>
           </div>
+
+          <p className="notification-contact">
+            {contacts.length
+              ? `Pour plus d'information : ${declaration.centre_nom ? `${declaration.centre_nom} — ` : ''}${contacts.join(' · ')}`
+              : `Pour plus d'information, adressez-vous au centre gestionnaire${
+                  declaration.centre_nom ? ` : ${declaration.centre_nom}` : '.'
+                }`}
+          </p>
         </div>
       </div>
     </div>

@@ -1,9 +1,15 @@
 import * as XLSX from 'xlsx';
 import catalogue from '@/data/referentiel-unites';
 import { getContribuableByNif, getContribuables } from '@/api';
+import { VALEUR_ABSENTE } from '@/utils';
 
-/** Clé du référentiel NIF partagé par les pages de vérification. */
-export const REFERENTIEL_KEY = 'referentiel_nif_admin';
+/**
+ * Clé du référentiel NIF partagé par les pages de vérification. Versionnée :
+ * l'ancienne clé portait des entrées héritées du gabarit de démonstration et des
+ * statuts « Certifié (…) » que l'application ne soutient plus. Repartir d'un
+ * référentiel vide vaut mieux que ressasser un faux statut.
+ */
+export const REFERENTIEL_KEY = 'referentiel_nif_admin_v2';
 
 /** Nombre de dernières opérations conservées par type de vérification. */
 export const HISTORIQUE_MAX = 3;
@@ -17,14 +23,20 @@ export const TYPES_VERIFICATION = [
 
 const historiqueKey = (type) => `verif_nif_historique_${type}`;
 
-/** Référentiel exemple pré-intégré, utilisé tant qu'aucune source n'a été liée. */
-export const REFERENTIEL_DEFAUT = [
-  { nif: '1000000001', raison_sociale: 'JIRAMA S.A.', centre: 'DGE', statut: 'Certifié', source: 'SQL / Base locale' },
-  { nif: '1000000002', raison_sociale: 'TELMA MADAGASCAR', centre: 'DGE', statut: 'Certifié', source: 'SQL / Base locale' },
-  { nif: '2000000003', raison_sociale: 'AIR MADAGASCAR', centre: 'DGE', statut: 'Certifié', source: 'SQL / Base locale' },
-  { nif: '3000000004', raison_sociale: 'PHARMACIE CENTRALE', centre: 'SRE 1 Analamanga', statut: 'Certifié', source: 'unitefiscal.json' },
-  { nif: '3000000005', raison_sociale: 'DISTRIBUTEUR DU NORD', centre: 'SRE 2 Analamanga', statut: 'Certifié', source: 'unitefiscal.json' },
-];
+/**
+ * Statuts du référentiel. Ils disent **d'où vient une ligne**, jamais qu'un NIF a
+ * été authentifié : seule la base contribuable peut dire qu'un NIF existe, et
+ * encore faut-il l'avoir lue. Un fichier déposé par l'administrateur est une
+ * déclaration, pas une certification.
+ */
+export const STATUT_REFERENTIEL = {
+  base: 'Présent dans la base',
+  fichier: 'Déclaré par le fichier',
+  api: 'Déclaré par l’API JSON',
+};
+
+/** Le NIF a-t-il été confirmé par la base contribuable ? Seule réponse « vraie ». */
+export const estNifConfirme = (item) => item?.statut === STATUT_REFERENTIEL.base;
 
 /** Identifiant court d'une opération ; n'exige pas de contexte sécurisé. */
 export const nouvelIdentifiant = () =>
@@ -52,8 +64,12 @@ function ecrireJsonCle(cle, valeur) {
   }
 }
 
+/**
+ * Référentiel lié sur ce navigateur. Vide tant qu'aucune source n'a été lue :
+ * plus aucun gabarit fictif ne le peuple.
+ */
 export function loadReferentiel() {
-  return lireJsonCle(REFERENTIEL_KEY, REFERENTIEL_DEFAUT);
+  return lireJsonCle(REFERENTIEL_KEY, []);
 }
 
 /**
@@ -95,8 +111,10 @@ export function formatDateHeure(value) {
 }
 
 /**
- * 1 · Vérification d'un NIF : la base SQL d'abord, le référentiel local en repli.
- * Renvoie toujours un résultat ; l'erreur API est propagée à l'appelant.
+ * 1 · Vérification d'un NIF : la base contribuable d'abord (appel REST de
+ * `GET /api/contribuables/:nif`, pas une session PostgreSQL directe), le
+ * référentiel local en repli. Renvoie toujours un résultat ; l'erreur API est
+ * propagée à l'appelant.
  */
 export async function verifierNifSql(query, referentiel = loadReferentiel()) {
   const nif = String(query || '').trim();
@@ -107,10 +125,11 @@ export async function verifierNifSql(query, referentiel = loadReferentiel()) {
       trouve: true,
       nif: contribuable.nif,
       raison_sociale: contribuable.raison_sociale,
-      secteur: contribuable.secteur_activite || 'Général',
-      centre: contribuable.centres?.nom_centre || contribuable.centre_fiscal_ref || 'Non renseigné',
-      regime: contribuable.regime_fiscal || 'Réel',
-      source: 'Base de données SQL (PostgreSQL)',
+      secteur: contribuable.secteur_activite || VALEUR_ABSENTE,
+      centre: contribuable.centres?.nom_centre || contribuable.centre_fiscal_ref || VALEUR_ABSENTE,
+      regime: contribuable.regime_fiscal || VALEUR_ABSENTE,
+      statut: STATUT_REFERENTIEL.base,
+      source: 'Base contribuable (API /contribuables)',
     };
   }
 
@@ -120,17 +139,18 @@ export async function verifierNifSql(query, referentiel = loadReferentiel()) {
       trouve: true,
       nif: dansReferentiel.nif,
       raison_sociale: dansReferentiel.raison_sociale,
-      secteur: 'Certifié au catalogue',
-      centre: dansReferentiel.centre,
-      regime: 'Conforme',
-      source: dansReferentiel.source || 'Référentiel NIF',
+      secteur: VALEUR_ABSENTE,
+      centre: dansReferentiel.centre || VALEUR_ABSENTE,
+      regime: VALEUR_ABSENTE,
+      statut: dansReferentiel.statut || STATUT_REFERENTIEL.fichier,
+      source: `${dansReferentiel.source || 'Référentiel local'} — non revérifié en base`,
     };
   }
 
   return {
     trouve: false,
     nif,
-    message: `Le NIF ${nif} est introuvable dans la base SQL et le référentiel officiel.`,
+    message: `Le NIF ${nif} est introuvable dans la base contribuable et dans le référentiel local.`,
   };
 }
 
@@ -156,7 +176,7 @@ export function lireNifsDepuisExcel(file) {
 
         const entrees = normaliserLignesNif(lignes, {
           source: `Excel: ${file.name}`,
-          statut: 'Certifié (Excel)',
+          statut: STATUT_REFERENTIEL.fichier,
         });
 
         if (!entrees.length) {
@@ -176,36 +196,55 @@ export function lireNifsDepuisExcel(file) {
 }
 
 /**
- * 3 · Synchronisation avec le catalogue des unités fiscales et ses NIFs de
- * contrôle. Le catalogue est le même module JSON que `utils/uniteFiscale.utils` ;
- * il n'est pas servi en statique, donc importé directement.
+ * 3 · Synchronisation avec le catalogue des unités fiscales.
+ *
+ * `unitefiscal.json` décrit les services de la DGI (SRE, centres, unités
+ * opérationnelles) : il ne contient **aucun NIF de contribuable**. Le parcours ne
+ * fabrique donc plus de lignes — il cherche une clé `nif` où qu'elle se trouve et
+ * refuse la synchronisation quand le catalogue n'en porte aucune, ce qui est le
+ * cas aujourd'hui. Les voies réelles d'enrichissement restent le fichier déposé
+ * dans `frontend/public/referentiel-nif/` et l'API JSON déclarée par l'agent.
  */
-export async function synchroniserCatalogueJson() {
-  const entrees = [];
+const CLE_NIF = /^(nif|numero_nif|numeronif|identifiant_fiscal|identifiantfiscal)$/i;
 
-  if (catalogue.unites_operationnelles?.direction_des_grandes_entreprises) {
-    const dge = catalogue.unites_operationnelles.direction_des_grandes_entreprises;
-    entrees.push({
-      nif: '0000000001',
-      raison_sociale: dge.nom_complet || 'DGE Direction',
-      centre: 'DGE',
-      statut: 'Certifié (JSON)',
-      source: 'unitefiscal.json',
-    });
+/** Collecte, dans un objet quelconque, les lignes qui portent une clé NIF. */
+function nifsDepuisObjet(source, accums = []) {
+  if (Array.isArray(source)) {
+    source.forEach((item) => nifsDepuisObjet(item, accums));
+    return accums;
+  }
+  if (!source || typeof source !== 'object') return accums;
+
+  const cleNif = Object.keys(source).find((cle) => CLE_NIF.test(cle));
+  if (cleNif && source[cleNif]) {
+    accums.push(source);
+    return accums;
   }
 
-  entrees.push(
-    { nif: '4000100021', raison_sociale: 'BTM BANK MADAGASCAR', centre: 'DGE', statut: 'Certifié (JSON)', source: 'Catalogue NIF JSON' },
-    { nif: '4000100022', raison_sociale: 'SOCIETE BOISSONS MADAGASCAR', centre: 'SRE 1 Analamanga', statut: 'Certifié (JSON)', source: 'Catalogue NIF JSON' },
-    { nif: '4000100023', raison_sociale: 'MADAGASCAR ENERGY CORP', centre: 'SRE 2 Analamanga', statut: 'Certifié (JSON)', source: 'Catalogue NIF JSON' },
-  );
+  Object.values(source).forEach((valeur) => nifsDepuisObjet(valeur, accums));
+  return accums;
+}
+
+export async function synchroniserCatalogueJson() {
+  const lignes = nifsDepuisObjet(catalogue);
+  const entrees = normaliserLignesNif(lignes, {
+    source: 'unitefiscal.json',
+    statut: STATUT_REFERENTIEL.fichier,
+  });
+
+  if (!entrees.length) {
+    throw new Error(
+      'Le catalogue des unités fiscales ne contient aucun NIF : il décrit les services de la DGI, pas les contribuables. Déposez un fichier dans « /referentiel-nif/ » ou déclarez une API JSON pour enrichir le référentiel.',
+    );
+  }
 
   return entrees;
 }
 
 /**
- * NIFs des 100 premiers contribuables de la base, pour enrichir le référentiel
- * à l'ouverture des pages de vérification.
+ * NIFs des 100 premiers contribuables renvoyés par l'API, pour enrichir le
+ * référentiel à l'ouverture des pages de vérification. Ce sont les seules lignes
+ * dont l'existence est confirmée par la base.
  */
 export function nifsDepuisContribuables(data) {
   const liste = data?.data || (Array.isArray(data) ? data : []);
@@ -214,9 +253,9 @@ export function nifsDepuisContribuables(data) {
     .map((contribuable) => ({
       nif: contribuable.nif,
       raison_sociale: contribuable.raison_sociale,
-      centre: contribuable.centres?.nom_centre || contribuable.centre_fiscal_ref || 'Centre Fiscal',
-      statut: 'Certifié (Base SQL)',
-      source: 'PostgreSQL / contribuables',
+      centre: contribuable.centres?.nom_centre || contribuable.centre_fiscal_ref || VALEUR_ABSENTE,
+      statut: STATUT_REFERENTIEL.base,
+      source: 'Base contribuable (API /contribuables)',
     }));
 }
 
@@ -237,14 +276,13 @@ export const MODELE_JSON_NOM = 'modele de verificationnif.json';
  */
 export const MODELE_JSON = {
   description:
-    "Modèle vierge de référentiel NIF : remplacez l'entrée d'exemple par vos contribuables certifiés, puis déclarez ce fichier comme API JSON depuis la page « 3 · Synchronisation Base JSON » du back-office.",
-  colonnes: ['NIF', 'RaisonSociale', 'Centre', 'statut (facultatif)', 'source (facultatif)'],
+    "Modèle vierge de référentiel NIF : l'entrée ci-dessous est un exemple neutre, sans contribuable fictif ni réel, à remplacer par vos propres contribuables. Déclarez ensuite ce fichier comme API JSON depuis la page « 3 · Synchronisation Base JSON » du back-office. Le statut est attribué par l'application selon la voie d'arrivée (« Déclaré par l’API JSON ») : un fichier ne peut pas se certifier lui-même.",
+  colonnes: ['NIF', 'RaisonSociale', 'Centre', 'source (facultatif)'],
   referentiel: [
     {
-      NIF: '3000000004',
+      NIF: '1234567890',
       RaisonSociale: 'RAISON SOCIALE DU CONTRIBUTABLE',
       Centre: 'SRE 1 Analamanga',
-      statut: 'Certifié',
       source: 'modele-de-verificationnif.json',
     },
   ],
@@ -533,7 +571,7 @@ export async function chargerReferentielDepuisApiJson(url) {
   const lignes = extraireListeDepuisPayload(payload);
   const entrees = normaliserLignesNif(lignes, {
     source: `API JSON: ${absolute}`,
-    statut: 'Certifié (API JSON)',
+    statut: STATUT_REFERENTIEL.api,
   });
 
   if (!entrees.length) {
@@ -551,14 +589,21 @@ function extraireListeDepuisPayload(payload) {
   throw new Error('Format non reconnu : le JSON doit être un tableau, ou un objet avec une clé data, resultats ou referentiel.');
 }
 
-/** Mappe des lignes quelconques vers le format du référentiel, en ignorant celles sans NIF. */
+/**
+ * Mappe des lignes quelconques vers le format du référentiel, en ignorant celles
+ * sans NIF. Le statut vient de **la voie par laquelle la ligne est arrivée**, jamais
+ * de ce que le fichier déclare de lui-même : un classeur ou un JSON ne peut pas se
+ * certifier lui-même.
+ */
 function normaliserLignesNif(lignes, { source, statut }) {
   return lignes
     .map((row) => ({
       nif: String(row?.NIF || row?.nif || row?.Numero || row?.numero || '').trim(),
-      raison_sociale: String(row?.RaisonSociale || row?.raison_sociale || row?.Nom || row?.nom || 'Entreprise').trim(),
-      centre: String(row?.Centre || row?.centre || 'Centre Fiscal').trim(),
-      statut: String(row?.statut || statut),
+      raison_sociale: String(
+        row?.RaisonSociale || row?.raison_sociale || row?.Nom || row?.nom || VALEUR_ABSENTE,
+      ).trim(),
+      centre: String(row?.Centre || row?.centre || VALEUR_ABSENTE).trim(),
+      statut,
       source: String(row?.source || source),
     }))
     .filter((item) => item.nif);

@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import * as XLSX from 'xlsx';
 
-import { exportRapprochementsPdf, getErrorMessage } from '@/api';
+import { exportRapprochementsPdf, getErrorMessage, updateRapprochementStatut } from '@/api';
+import { BulkActionsBar, ModaleConfirmation } from '@/components/common';
+import { AideTerme } from '@/frontofficeagent/aide';
+import { useSelectionLot } from '@/hooks';
 import {
   buildPeriodOptions,
   declarationOf,
@@ -35,9 +38,22 @@ export default function RapprochementsList({
   onGoToLaunch,
   contribuable,
   apercu = null,
+  readOnly = false,
 }) {
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState('');
+  const { selection, basculer, basculerPage, remplacer, vider } = useSelectionLot();
+  const [lot, setLot] = useState(null);
+  const [lotMotif, setLotMotif] = useState('');
+  const [lotEnCours, setLotEnCours] = useState(false);
+  const [lotErreur, setLotErreur] = useState('');
+  const [lotMessage, setLotMessage] = useState('');
+
+  const idsPage = rows.map((row) => row.id_rapprochement);
+  const selectionPage = idsPage.filter((id) => selection.has(id));
+  const toutSelectionne = idsPage.length > 0 && selectionPage.length === idsPage.length;
+  const partiellementSelectionne = selectionPage.length > 0 && !toutSelectionne;
+  const motifObligatoire = Boolean(lot && ['rejete', 'annule'].includes(lot.statut));
   const hasFilters = Boolean(filters.search || filters.periode || filters.statut || filters.type);
   const { annees: periodesAnnee, mois: periodesMois } = buildPeriodOptions(apercu);
   const periodesConnues = new Set([
@@ -94,6 +110,41 @@ export default function RapprochementsList({
     } finally {
       setExporting(false);
     }
+  };
+
+  const ouvrirLot = (statut) => {
+    setLot({ statut });
+    setLotMotif('');
+    setLotErreur('');
+    setLotMessage('');
+  };
+
+  const confirmerLot = async () => {
+    if (!lot) return;
+    if (motifObligatoire && !lotMotif.trim()) {
+      setLotErreur('Le motif est obligatoire pour cette action.');
+      return;
+    }
+
+    const cible = rows.filter((row) => selection.has(row.id_rapprochement));
+    setLotEnCours(true);
+    setLotErreur('');
+    const resultats = await Promise.allSettled(
+      cible.map((row) => updateRapprochementStatut(row.id_rapprochement, {
+        statut: lot.statut,
+        motif: lotMotif.trim() || undefined,
+      }))
+    );
+    const echecs = cible.filter((row, index) => resultats[index].status === 'rejected');
+    const reussis = cible.length - echecs.length;
+
+    setLotEnCours(false);
+    setLot(null);
+    remplacer(echecs.map((row) => row.id_rapprochement));
+    setLotMessage(
+      `${reussis} rapprochement(s) mis à jour${echecs.length > 0 ? `, ${echecs.length} en échec — la sélection des échecs est conservée` : ''}.`
+    );
+    onRefresh();
   };
 
   return (
@@ -173,10 +224,10 @@ export default function RapprochementsList({
         </span>
       </div>
 
-      {error && <p className="empty error">{error}</p>}
+      {error && <p className="empty error" role="alert">{error}</p>}
 
       {loading ? (
-        <p className="status">Chargement…</p>
+        <p className="status" role="status">Chargement…</p>
       ) : total === 0 && !hasFilters ? (
         <div className="result-card alert">
           <h3>Aucun rapprochement enregistré</h3>
@@ -194,18 +245,45 @@ export default function RapprochementsList({
         </div>
       ) : (
         <>
+          {!readOnly && (
+            <BulkActionsBar
+              count={selectionPage.length}
+              onClear={vider}
+              actions={[
+                { label: 'Valider la sélection', onClick: () => ouvrirLot('valide'), disabled: lotEnCours },
+                {
+                  label: 'Rejeter la sélection',
+                  className: 'table-action bulk-danger',
+                  onClick: () => ouvrirLot('rejete'),
+                  disabled: lotEnCours,
+                },
+              ]}
+            />
+          )}
+          {lotMessage && <p className="form-submit-message success" role="status">{lotMessage}</p>}
           <div className="table-wrap">
-            <table>
+            <table aria-label="Rapprochements du contribuable">
               <thead>
                 <tr>
+                  {!readOnly && (
+                    <th className="bulk-check">
+                      <input
+                        type="checkbox"
+                        aria-label="Sélectionner tous les rapprochements de la page"
+                        checked={toutSelectionne}
+                        ref={(node) => { if (node) node.indeterminate = partiellementSelectionne; }}
+                        onChange={() => basculerPage(idsPage)}
+                      />
+                    </th>
+                  )}
                   <th>Période</th>
                   <th>Déclaration</th>
                   <th>Recoupement</th>
-                  <th>Type</th>
-                  <th>CA déclaré</th>
-                  <th>Recoupé (TTC)</th>
-                  <th>Écart (CA − recoupé)</th>
-                  <th>Statut</th>
+                  <th><AideTerme id="rapprochement">Type</AideTerme></th>
+                  <th><AideTerme id="ca">CA déclaré</AideTerme></th>
+                  <th><AideTerme id="recoupement">Recoupé (TTC)</AideTerme></th>
+                  <th><AideTerme id="ecart">Écart (CA − recoupé)</AideTerme></th>
+                  <th><AideTerme id="statut_rapprochement">Statut</AideTerme></th>
                   <th />
                 </tr>
               </thead>
@@ -216,6 +294,16 @@ export default function RapprochementsList({
 
                   return (
                     <tr className="clickable-row" key={row.id_rapprochement} onClick={() => onOpenDetail(row)}>
+                      {!readOnly && (
+                        <td className="bulk-check" onClick={(event) => event.stopPropagation()}>
+                          <input
+                            type="checkbox"
+                            aria-label={`Sélectionner le rapprochement ${periodLabel(row)}`}
+                            checked={selection.has(row.id_rapprochement)}
+                            onChange={() => basculer(row.id_rapprochement)}
+                          />
+                        </td>
+                      )}
                       <td><strong>{periodLabel(row)}</strong></td>
                       <td>
                         <strong>#{declaration.id_declaration ?? '—'}</strong>
@@ -261,6 +349,26 @@ export default function RapprochementsList({
           </div>
         </>
       )}
+
+      <ModaleConfirmation
+        ouvert={Boolean(lot)}
+        etiquette="Action en lot"
+        titre={lot?.statut === 'rejete' ? 'Rejeter les rapprochements sélectionnés' : 'Valider les rapprochements sélectionnés'}
+        intro={lot ? `${selectionPage.length} rapprochement(s) passeront au statut « ${statusLabel(lot.statut)} ».` : ''}
+        variante={lot?.statut === 'rejete' ? 'danger' : 'normale'}
+        texteValider={lot?.statut === 'rejete' ? 'Rejeter la sélection' : 'Valider la sélection'}
+        enCours={lotEnCours}
+        messageErreur={lotErreur}
+        onValider={confirmerLot}
+        onFermer={() => setLot(null)}
+      >
+        {motifObligatoire && (
+          <label className="field">
+            Motif (obligatoire)
+            <textarea rows="3" value={lotMotif} onChange={(event) => setLotMotif(event.target.value)} />
+          </label>
+        )}
+      </ModaleConfirmation>
     </div>
   );
 }

@@ -20,13 +20,14 @@ import {
   telechargerModeleJson,
 } from '@/backofficeadmin/verification-nif/utils/verification.utils';
 
-const FICHIER_EXEMPLE = `${DOSSIER_REFERENTIEL_LOCAL}referentiel-nif-exemple.json`;
+const FICHIER_MODELE = `${DOSSIER_REFERENTIEL_LOCAL}modele-de-verificationnif.json`;
 
 /**
  * Page dédiée du type 3 : liaison du référentiel NIF avec des sources JSON.
- * Trois voies — le catalogue des unités fiscales du frontend, un fichier déposé
- * dans `frontend/public/referentiel-nif/` (servi en statique) et une API JSON
- * distante — plus le modèle de déclaration téléchargeable.
+ * Deux voies réelles — un fichier déposé dans `frontend/public/referentiel-nif/`
+ * (servi en statique) et une API JSON distante — plus le modèle de déclaration
+ * téléchargeable. Le catalogue des unités fiscales peut être vérifié : il ne
+ * porte aucun NIF, l'opération est refusée et le dit.
  */
 export default function VerificationNifJson({ currentUser }) {
   const [message, setMessage] = useState('');
@@ -97,12 +98,12 @@ export default function VerificationNifJson({ currentUser }) {
       currentUser={currentUser}
       eyebrow="Backoffice Administration · Vérification NIF"
       titre="3 · Synchronisation Base JSON"
-      description="Liez les NIFs au catalogue des unités fiscales, à un fichier déposé dans le dossier public/referentiel-nif du frontend ou à une API JSON distante."
+      description="Liez les NIFs à un fichier déposé dans le dossier public/referentiel-nif du frontend ou à une API JSON distante. Les lignes liées portent le statut « Déclaré par l’API JSON » : seule la base contribuable peut confirmer un NIF."
     >
       <div className="panel" style={{ borderTop: '4px solid #8b5cf6' }}>
-        <p className="status" style={{ fontSize: '0.85rem' }}>
-          Référentiel actuel : {referentiel.length} entrées. La synchronisation ajoute l'unité opérationnelle DGE
-          déclarée dans le catalogue et trois NIFs de contrôle.
+        <p className="status" role="status" style={{ fontSize: '0.85rem' }}>
+          Référentiel actuel : {referentiel.length} entrée{referentiel.length > 1 ? 's' : ''} sur ce navigateur.
+          Une liaison ajoute les NIFs du fichier sans leur attribuer le statut de la base.
         </p>
 
         <button
@@ -112,8 +113,13 @@ export default function VerificationNifJson({ currentUser }) {
           className="admin-secondary-button"
           style={{ width: '100%', padding: '0.75rem', fontWeight: 600, marginTop: '0.5rem' }}
         >
-          {loading ? '⏳ Synchronisation…' : '⚡ Synchroniser avec le catalogue JSON'}
+          {loading ? '⏳ Vérification…' : '🔎 Vérifier le catalogue des unités fiscales'}
         </button>
+
+        <p className="verif-aide" style={{ marginTop: '0.5rem' }}>
+          <code>unitefiscal.json</code> décrit les services de la DGI (SRE, centres, unités opérationnelles) et ne
+          contient aucun NIF de contribuable : la vérification est refusée tant que le catalogue n'en porte pas.
+        </p>
 
         <div className="verif-gabarit">
           <p>
@@ -172,11 +178,11 @@ export default function VerificationNifJson({ currentUser }) {
           </div>
         ) : (
           <p className="verif-aide" style={{ marginTop: '0.9rem' }}>
-            Aucune API JSON enregistrée sur ce navigateur. Le jeu de démonstration servi par le frontend,{' '}
-            <a href={FICHIER_EXEMPLE} target="_blank" rel="noreferrer">
-              {FICHIER_EXEMPLE}
+            Aucune API JSON enregistrée sur ce navigateur. Le modèle servi par le frontend,{' '}
+            <a href={FICHIER_MODELE} target="_blank" rel="noreferrer">
+              {FICHIER_MODELE}
             </a>
-            , peut être ajouté tel quel pour tester la liaison.
+            , peut être ajouté tel quel pour tester la liaison ; complétez-le avant de l’utiliser comme référentiel.
           </p>
         )}
 

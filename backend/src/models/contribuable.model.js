@@ -128,8 +128,8 @@ class ContribuableModel {
       nb_declarations: String(nb_declarations),
       ca_moyen: ca_moyen !== null ? String(ca_moyen) : null,
       dernier_etat: dernierEtat,
-      statut_activite: dernierEtat?.statut_activite || 'Actif',
-      statut_conformite: dernierEtat?.statut_conformite || 'En règle',
+      statut_activite: dernierEtat?.statut_activite ?? null,
+      statut_conformite: dernierEtat?.statut_conformite ?? null,
     };
   }
 
@@ -182,8 +182,8 @@ class ContribuableModel {
         ...rest,
         nb_declarations: String(_count?.declarations || 0),
         dernier_etat: dernierEtat,
-        statut_activite: dernierEtat?.statut_activite || 'Actif',
-        statut_conformite: dernierEtat?.statut_conformite || 'En règle',
+        statut_activite: dernierEtat?.statut_activite ?? null,
+        statut_conformite: dernierEtat?.statut_conformite ?? null,
       };
     });
 

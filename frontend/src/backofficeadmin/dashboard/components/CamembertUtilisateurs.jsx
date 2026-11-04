@@ -100,6 +100,13 @@ export default function CamembertUtilisateurs({ stats, agents = [] }) {
     { angleCourant: 0, tranches: [] },
   ).tranches;
 
+  const resume = slices
+    .map((slice) => `${slice.label} ${slice.valeur} (${slice.pourcentage} %)`)
+    .join(', ');
+  const libelleVue = vue === 'statut'
+    ? 'Répartition des comptes par statut'
+    : 'Répartition des comptes par rôle';
+
   const handleSliceClick = (filtre) => {
     if (vue === 'statut') {
       navigate('/admin/utilisateurs', { state: { statut: filtre } });
@@ -142,14 +149,21 @@ export default function CamembertUtilisateurs({ stats, agents = [] }) {
         {/* Graphique SVG */}
         <div style={{ position: 'relative', width: '200px', height: '200px' }}>
           {total === 0 ? (
-            <svg width="200" height="200" viewBox="0 0 200 200">
+            <svg width="200" height="200" viewBox="0 0 200 200" role="img" aria-label={`${libelleVue} : aucune donnée`}>
               <circle cx="100" cy="100" r="70" fill="none" stroke="#e5e7eb" strokeWidth="30" />
               <text x="100" y="105" textAnchor="middle" fill="#9ca3af" fontSize="13">
                 Aucune donnée
               </text>
             </svg>
           ) : (
-            <svg width="200" height="200" viewBox="0 0 200 200" style={{ overflow: 'visible' }}>
+            <svg
+              width="200"
+              height="200"
+              viewBox="0 0 200 200"
+              style={{ overflow: 'visible' }}
+              role="img"
+              aria-label={`${libelleVue} : ${resume}`}
+            >
               <g>
                 {slices.map((slice) => {
                   const isHovered = hoveredSlice === slice.id;
@@ -215,8 +229,9 @@ export default function CamembertUtilisateurs({ stats, agents = [] }) {
             const isHovered = hoveredSlice === item.id;
 
             return (
-              <div
+              <button
                 key={item.id}
+                type="button"
                 onClick={() => handleSliceClick(item.filtre)}
                 onMouseEnter={() => setHoveredSlice(item.id)}
                 onMouseLeave={() => setHoveredSlice(null)}
@@ -225,9 +240,14 @@ export default function CamembertUtilisateurs({ stats, agents = [] }) {
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   gap: '0.75rem',
+                  width: '100%',
                   padding: '0.35rem 0.6rem',
+                  border: 0,
                   borderRadius: '6px',
+                  color: 'inherit',
                   background: isHovered ? 'rgba(0,0,0,0.05)' : 'transparent',
+                  font: 'inherit',
+                  textAlign: 'left',
                   cursor: 'pointer',
                   transition: 'background 0.15s ease',
                 }}
@@ -252,7 +272,7 @@ export default function CamembertUtilisateurs({ stats, agents = [] }) {
                   <strong style={{ marginRight: '4px' }}>{item.valeur}</strong>
                   <small style={{ color: 'var(--text-muted, #666)' }}>({pct}%)</small>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>

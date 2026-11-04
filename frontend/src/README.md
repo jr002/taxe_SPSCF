@@ -21,11 +21,11 @@ Point d'entrée de l'interface React (React 19 + Vite, routage `react-router-dom
 
 | Route | Élément |
 | --- | --- |
-| `/` | Écran de connexion si non authentifié, sinon redirection vers l'accueil du rôle (`/admin` pour un admin, `/acceuil` sinon) |
+| `/` | Écran de connexion si non authentifié, sinon redirection vers l'accueil du rôle (`/admin` pour un admin, `/accueil` sinon) |
 | `/espace-contribuable/:token` | `EspaceContribuable` — portail contribuable en lecture seule, déclaré **avant** la route de mise en page : ni `Header` ni cookie agent requis |
 | `/signin` | Redirection vers `/` |
 | `/signup` | `Signup` (demande de création de compte) |
-| `/acceuil` | `Accueil` |
+| `/accueil` | `Accueil` |
 | `/collecte` | `Collecte` (reçoit `currentModule`) |
 | `/entreprises/nouveau` | `PhaseClassement` |
 | `/entreprises/nouveau/form` | `FormInformation` |
@@ -36,7 +36,7 @@ Point d'entrée de l'interface React (React 19 + Vite, routage `react-router-dom
 | `/centres-fiscaux/:type/:index` | `UniteFiscaleDetail` |
 | `/suivi` | `SuiviFiscal` |
 | `/suivi/:id` | `DeclarationDetail` |
-| `/contribuables` | `Contribuables` — vue « Registre » ou « Statistique » (`?vue=statistique`) |
+| `/contribuables` | `Contribuables` — vue « Registre » ou « Statistique » (`?vue=statistique`) ; rôles opérationnels |
 | `/contribuables/:id` | `ContribuableDetail` |
 | `/contribuables/:id/classification` | `ContribuableDetail` |
 | `/contribuables/:id/declarations` | `ContribuableDetail` |
@@ -58,10 +58,18 @@ Point d'entrée de l'interface React (React 19 + Vite, routage `react-router-dom
 | `/admin/historique` | `AdminHistorique` (journal d'audit, administrateurs) |
 | `*` | Redirection vers `/` |
 
-Les routes protégées — de `/acceuil` à `/admin/historique` — sont des enfants
+Les routes protégées — de `/accueil` à `/admin/historique` — sont des enfants
 d'une même route de mise en page qui rend [`Header`](components/common/index.js)
 puis `<main className="app-main"><Outlet /></main>` ; sans session valide, elle
 redirige vers `/`.
+
+Les onze routes `/contribuables…` passent en plus par
+[`EspaceOperateurs`](components/common/EspaceOperateurs.jsx) (exporté par le barrel
+`components/common/index.js`) : le registre et ses fiches appartiennent à l'espace
+des rôles opérationnels, et un compte `admin` qui les atteint — même en tapant
+l'URL — obtient un écran « Contribuables non accessible » au lieu de la page. Le
+garde est côté route, jamais côté API, parce que la Vérification NIF de l'admin lit
+`GET /api/contribuables` pour son référentiel.
 
 ## Comment le code est organisé
 
@@ -97,18 +105,48 @@ redirige vers `/`.
 * [`assets/`](assets/) : ressources graphiques importées par le bundler.
 * [`components/`](components/) : composants réutilisables (`charts/`, `common/`, `forms/`).
 * [`hooks/`](hooks/) : hooks React partagés.
+* [`data/`](data/) : registre **neutre** des textes fiscaux officiels, hors des
+  trois espaces. [`data/textesFiscaux.data.js`](data/textesFiscaux.data.js) écrit
+  une seule fois chaque référence citée — l'article, la page imprimée, l'URL du
+  PDF de l'éditeur, et, quand l'article ne dit pas la valeur affichée par
+  l'application, la phrase d'écart (`conforme: 'partiel'`). Le portail, les actes
+  imprimables et les écrans d'instruction ne peuvent pas s'importer entre eux :
+  ils partagent donc ce registre et le rendent par
+  [`components/common/RefLegal.jsx`](components/common/RefLegal.jsx). Un numéro
+  d'article ou une page se corrige ici et nulle part ailleurs ; une règle interne
+  au système reste **sans source**, donc sans lien.
 * [`frontofficeagent/`](frontofficeagent/) : espace de travail fiscal des rôles
   opérationnels (agent, contrôleur, chef de centre, inspecteur), organisé par
   domaine métier (voir [`frontofficeagent/README.md`](frontofficeagent/README.md)).
   Un domaine peut porter ses propres helpers, comme
   `frontofficeagent/collecte/utils/enregistrerCollecte.js` qui transforme un
-  formulaire de collecte en écriture API.
+  formulaire de collecte en écriture API. Le domaine `aide/` est l'équivalent
+  agent du registre de règles du portail : `data/aideAgent.data.js` tient les
+  termes (`TERMES`) et les écrans (`AIDES`), `AideTerme` explique un mot au
+  survol, au focus clavier et au tap, `AideLectureModal` résume l'écran où se
+  trouve l'agent avec un glossaire déduit des termes qu'il cite, et `BoutonAide`
+  pose le `? Aide` des en-têtes de page. Rien n'est partagé avec
+  `accountcontribuable/` : les deux espaces gardent leur propre registre de
+  termes. Seule la référence légale est commune aux deux — elle vit hors des
+  espaces, dans [`data/textesFiscaux.data.js`](data/textesFiscaux.data.js) : le
+  registre d'aide nomme les articles en prose, l'article, sa page et son PDF
+  viennent du registre neutre et sont posés par
+  [`components/common/RefLegal.jsx`](components/common/RefLegal.jsx) sur les
+  écrans et les actes.
 * [`backofficeadmin/`](backofficeadmin/) : écrans d'authentification et backoffice
   administrateur (comptes, rôles, vérification NIF, journal d'audit).
 * [`accountcontribuable/`](accountcontribuable/) : portail « Ma situation fiscale »
   du contribuable, ouvert par un lien à usage unique et en lecture seule
   (formulaire NIF + e-mail, tableau de bord des taxes, conseils et pénalités,
-  historique TVA, droits de communication, recoupements, confrontation).
+  historique TVA, droits de communication, recoupements, confrontation) et sa vue
+  jumelle « Aide & repères légaux » ; les libellés de statuts et le contenu de
+  l'aide vivent dans `data/statuts.data.js` et `data/aide.data.js`, source unique
+  de tout le vocabulaire du portail ; les règles énoncées (amende de 40 %, jours
+  francs, seuil de redressement…) vivent dans `data/regles.data.js`, avec leur
+  `source` pointant une entrée de [`data/textesFiscaux.data.js`](data/textesFiscaux.data.js),
+  et sont rendues par `RegleFiscale` (survol `Infobulle` + renvoi `LienAide` +
+  puce `RefLegal`), le survol
+  fonctionnant aussi au focus clavier et au tap, et disparaissant à l'impression.
 * [`utils/`](utils/) : ce que plusieurs domaines réclament — formatage des
   montants, découpe de table en pages, état conservé dans l'URL et chemin
   d'atterrissage selon le rôle. Un helper propre à un domaine vit dans

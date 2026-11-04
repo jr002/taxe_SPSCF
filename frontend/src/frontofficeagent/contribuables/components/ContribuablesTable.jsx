@@ -1,3 +1,4 @@
+import { AideTerme } from '@/frontofficeagent/aide';
 import { formatAriary, toNumber } from '@/utils';
 
 function ContribuableRow({ contribuable, onOpenDetail }) {
@@ -49,13 +50,13 @@ function ContribuableRow({ contribuable, onOpenDetail }) {
 export default function ContribuablesTable({ allCount, contribuables, onOpenDetail }) {
   return (
     <div className="table-wrap">
-      <table>
+      <table aria-label="Contribuables">
         <thead>
           <tr>
             <th>Contribuable</th>
-            <th>Dernière année</th>
-            <th>Années suivies</th>
-            <th>TVA payée cumulée</th>
+            <th><AideTerme id="derniere_annee">Dernière année</AideTerme></th>
+            <th><AideTerme id="annees_suivies">Années suivies</AideTerme></th>
+            <th><AideTerme id="tva_payee">TVA payée cumulée</AideTerme></th>
             <th>Action</th>
           </tr>
         </thead>
