@@ -14,13 +14,13 @@ export default function TableauDecisionnel() {
   const curves = useMemo(() => buildCurves(years, declarations), [years, declarations]);
 
   if (loading) {
-    return <p className="page status" role="status">Chargement du tableau décisionnel...</p>;
+    return <p className="page status" role="status">Chargement des statistiques...</p>;
   }
 
   if (error) {
     return (
       <section className="page error">
-        <h1>Tableau décisionnel indisponible</h1>
+        <h1>Statistiques indisponibles</h1>
         <p>{error}</p>
         <p>Vérifiez que le serveur backend et la base de données PostgreSQL sont bien en ligne.</p>
       </section>
@@ -36,7 +36,7 @@ export default function TableauDecisionnel() {
     <section className="page">
       <div className="page-heading">
         <p className="eyebrow">Pilotage stratégique</p>
-        <h1>Tableau décisionnel</h1>
+        <h1>Statistiques</h1>
         <p>Vue consolidée sur 5 ans de l'activité fiscale et des écarts de TVA constatés.</p>
       </div>
 

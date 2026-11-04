@@ -1,35 +1,32 @@
 import { Link, useLocation } from 'react-router-dom';
+import { ongletsDeSection } from '@/data/navigationAgent.data';
 
-const DOSSIER_FISCAL_LINKS = [
-  { to: '/suivi', label: 'Suivi fiscal' },
-  { to: '/relance', label: 'Relance fiscale' },
-];
-
-const COLLECTE_LINKS = [
-  { to: '/collecte', label: 'Collecte TVA' },
-  { to: '/contribuables', label: 'Contribuables' },
-];
-
-export default function DossierFiscalNavigation({ mode = 'dossier' }) {
+/**
+ * Onglets d'un domaine fiscal, construits depuis le registre de navigation :
+ * l'onglet et la barre latérale affichent le même nom pour le même écran, et le
+ * groupe « Dossier fiscal » entraîne avec lui l'écran qui le prolonge
+ * (`Relance fiscale`).
+ *
+ * Prop `section` : id du groupe du registre (`suivi` par défaut, `contribuables`
+ * pour le registre des redevables).
+ */
+export default function DossierFiscalNavigation({ section = 'suivi' }) {
   const { pathname } = useLocation();
-  const links = mode === 'collecte' ? COLLECTE_LINKS : DOSSIER_FISCAL_LINKS;
-  const label = mode === 'collecte'
-    ? 'Navigation collecte et contribuables'
-    : 'Pages du dossier fiscal';
+  const { ariaLabel, liens } = ongletsDeSection(section);
 
   return (
-    <nav className="domain-page-switch" aria-label={label}>
-      {links.map((link) => {
-        const isActive = pathname.startsWith(link.to);
+    <nav className="domain-page-switch" aria-label={ariaLabel}>
+      {liens.map((lien) => {
+        const actif = pathname === lien.to || pathname.startsWith(`${lien.to}/`);
 
         return (
           <Link
-            key={link.to}
-            to={link.to}
-            className={isActive ? 'active' : ''}
-            aria-current={isActive ? 'page' : undefined}
+            key={lien.to}
+            to={lien.to}
+            className={actif ? 'active' : ''}
+            aria-current={actif ? 'page' : undefined}
           >
-            {link.label}
+            {lien.label}
           </Link>
         );
       })}

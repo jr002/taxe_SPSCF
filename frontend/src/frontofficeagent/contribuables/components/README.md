@@ -91,7 +91,7 @@ Propriété : `contribuables` — la liste déjà enrichie fournie par `useContr
 En-tête commun de la fiche détaillée. Il affiche :
 
 - le lien de retour vers la liste ;
-- la raison sociale, le NIF, le badge de catégorie, le nombre d'années suivies et le centre gestionnaire du contribuable ;
+- la raison sociale, le NIF, le badge de catégorie, le nombre d'années suivies et le centre gestionnaire du contribuable ; la ligne du NIF porte aussi l'e-mail du dossier (`E-mail : …`, `N/A` lorsqu'aucune adresse n'est enregistrée), visible de tous les rôles opérationnels ;
 - les six onglets Synthèse, Nature d'impôt, Déclarations, Recoupements, Droits de communication et Relances, qui renvoient vers `/contribuables/:id`, `/classification`, `/declarations`, `/recoupements`, `/droits-communication` et `/relances` ;
 - un bouton d'export Excel des données de l'onglet actif (`ExportFicheButton`), masqué sur les onglets Recoupements et Droits de communication ;
 - un bouton `secondary` « Lien contribuable », hors du contexte d'un onglet, qui ouvre la modale d'émission du portail (`LienAccesModal`).
@@ -189,6 +189,7 @@ Propriété : `id` — l'`id_contribuable`.
 | `onSubmit` | Déclenche l'enregistrement (POST) côté page. |
 | `submitting` | Désactive le bouton pendant l'enregistrement. |
 | `error` | Message d'erreur de validation ou d'API. |
+| `alerte` | Seule propriété propre à `DroitCommunicationForm` : message de blocage métier (année civile déjà couverte). Rendu dans un second `.form-submit-message` et, quand il est non vide, désactive le bouton d'envoi. |
 
 - `DeclarationForm` demande l'année, le chiffre d'affaires, le bénéfice, la TVA collectée, la TVA déductible et la TVA payée.
 - `RecoupementForm` couvre la source, la période, la référence, le type d'opération, le NIF du tiers, les dates et montants (déclaré, TVA, TTC) et le détail des marchandises, achats et services.

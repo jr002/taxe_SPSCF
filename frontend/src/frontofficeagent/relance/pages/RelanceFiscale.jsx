@@ -289,7 +289,7 @@ export default function RelanceFiscale() {
       {/* En-tête */}
       <div className="page-heading">
         <p className="eyebrow">DGI · Recouvrement fiscal</p>
-        <h1>Relance Fiscale</h1>
+        <h1>Relance fiscale</h1>
         <p>
           Suivi des arriérés de paiement et des contribuables non en règle.
           Cliquez sur <strong>Voir le dossier</strong> pour accéder à la fiche du contribuable

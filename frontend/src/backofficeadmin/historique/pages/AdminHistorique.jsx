@@ -1,14 +1,17 @@
 import AdminNav from '@/backofficeadmin/components/AdminNav';
 import HistoriqueUtilisateurs from '@/backofficeadmin/historique/components/HistoriqueUtilisateurs.jsx';
+import { AccesRefuse } from '@/components/common';
 
 export default function AdminHistorique({ currentUser }) {
   const isAdmin = currentUser?.role === 'admin';
 
   if (!isAdmin) {
     return (
-      <section className="page">
-        <p className="error" role="alert">Cette page est réservée aux administrateurs.</p>
-      </section>
+      <AccesRefuse
+        currentUser={currentUser}
+        titre="Journal d'audit non accessible"
+        message="L'historique des opérations touche aux comptes et aux rôles : seul un administrateur le consulte. Vos propres actions se lisent dans le dossier du contribuable concerné."
+      />
     );
   }
 

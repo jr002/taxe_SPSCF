@@ -54,6 +54,12 @@ centres 1 ──── n contribuables 1 ──── n declarations 1 ───
 - Un contribuable porte plusieurs `droits_communication` ; la suppression du
   contribuable les supprime (`onDelete: Cascade`).
 - La suppression d'un agent met `droits_communication.id_agent` à `NULL`.
+- La table ne porte ni colonne `annee` ni index unique : la règle « un seul droit
+  par contribuable et par année civile » est portée par
+  `DroitCommunicationModel.trouveDroitDeLAnnee()`
+  (`../src/models/droit-communication.model.js`), qui borne `date_demande` entre
+  deux 1ᵉʳ janvier. Un index unique aurait forcé à purger les années déjà
+  doubles en base.
 - Un contribuable porte plusieurs liens de consultation (`acces_contribuable`) ;
   la suppression du contribuable les supprime (`onDelete: Cascade`). La suppression
   de l'agent émetteur met `acces_contribuable.id_agent` à `NULL` : le lien reste

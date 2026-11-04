@@ -85,7 +85,9 @@ export default function ContribuableHeader({ activeTab, contribuable, declaratio
           )}
         </div>
       </div>
-      <p><AideTerme id="nif">NIF</AideTerme> : {contribuable.nif || 'N/A'} · {declarationsCount} année(s) suivie(s)</p>
+      <p>
+        <AideTerme id="nif">NIF</AideTerme> : {contribuable.nif || 'N/A'} · {declarationsCount} année(s) suivie(s) · E-mail : {contribuable.email || 'N/A'}
+      </p>
       <div className="contribuable-operational-unit" aria-label="Centre gestionnaire du contribuable">
         <AideTerme id="centre_gestionnaire">Centre gestionnaire</AideTerme>
         {operationalUnit ? (

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getAgents, getCentres, getErrorMessage, updateAgentCentre, updateAgentRole } from '@/api';
-import { ModaleConfirmation, Pagination } from '@/components/common';
+import { AccesRefuse, ModaleConfirmation, Pagination } from '@/components/common';
 import { useTablePagination, useFiltresUrl } from '@/hooks';
 import AdminNav from '@/backofficeadmin/components/AdminNav';
 import {
@@ -126,9 +126,11 @@ export default function AdminRoles({ currentUser }) {
 
   if (!isAdmin) {
     return (
-      <section className="page">
-        <p className="error" role="alert">Cette page est réservée aux administrateurs.</p>
-      </section>
+      <AccesRefuse
+        currentUser={currentUser}
+        titre="Rôles non accessible"
+        message="Attribuer un rôle ou un centre d'affectation à un agent relève de l'administrateur. Un chef de centre consulte et bloque les comptes de son équipe depuis « Mon équipe », il ne change pas les rôles."
+      />
     );
   }
 

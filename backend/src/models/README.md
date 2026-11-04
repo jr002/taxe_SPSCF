@@ -32,9 +32,17 @@ fichier expose une classe statique pour un domaine métier :
 - [`recoupement.model.js`](recoupement.model.js)
 - [`droit-communication.model.js`](droit-communication.model.js) : classe
   statique `DroitCommunicationModel` sur Prisma (`create`, `findById`,
-  `findAll` paginé, `findByContribuable`, `update` filtré par une whitelist
-  `allowedFields`, `delete`, `getStatutStats`) ; statuts autorisés
+  `findAll` paginé, `findByContribuable`, `trouveDroitDeLAnnee`, `update` filtré
+  par une whitelist `allowedFields`, `delete`, `getStatutStats`) ; statuts autorisés
   `demande`, `reponse`, `partiel`, `relance`, `sans_suite`.
+  `trouveDroitDeLAnnee(id_contribuable, date_demande, excludeId)` porte la règle
+  « un seul droit par contribuable et par année civile » : elle retourne la
+  première fiche dont `date_demande` tombe dans l'année civile (bornes `Date.UTC`
+  du 1ᵉʳ janvier au 1ᵉʳ janvier suivant) de la date soumise, en excluant la fiche
+  en cours d'édition quand `excludeId` est fourni. Le contrôle est rendu au
+  contrôleur sous forme de `409`, pas d'index unique : la base peut déjà contenir
+  deux demandes la même année et une contrainte nouvelle en aurait bloqué la
+  lecture.
 - [`centre.model.js`](centre.model.js) : exporte `{ CentreModel, CENTRE_TYPES }`
   et non une classe seule.
 - [`acces-contribuable.model.js`](acces-contribuable.model.js) : porte les liens

@@ -89,7 +89,7 @@ Remarques :
 - l'accueil agent est routé **`/accueil`** ; `/acceuil` (l'ancienne coquille)
   n'existe plus que comme redirection `Navigate` vers `/accueil`, pour ne casser
   aucun lien déjà partagé. Les liens du code utilisent `/accueil`
-  (`NAVIGATION_LINKS` du `Header`, `homePath`, `getLandingPath`) ;
+  (`ECRANS_AGENT` du registre de navigation, `homePath`, `getLandingPath`) ;
 - les pages sont réexportées par le barrel
   [`frontend/src/frontofficeagent/index.js`](frontend/src/frontofficeagent/index.js) ;
 - l'ancien doublon `backofficeadmin/auth/login.jsx`, importé par aucune route, a
@@ -134,15 +134,17 @@ Remarques :
   `Header` ne propose que les cinq entrées admin — « Tableau de bord »
   (`/admin`), « Utilisateurs », « Rôles », « Vérification NIF » et
   « Historique & Audit » — et son logo renvoie vers `/admin` (`ADMIN_LINKS`) ;
-  la navigation fiscale (`NAVIGATION_LINKS`) est réservée aux autres rôles. Les
-  URL de l'espace opérateur ne lui sont plus proposées, et aucune entrée du menu
-  admin ne portant leur chemin, elles ne sont même plus surlignées ;
+  la navigation fiscale, elle, vient du registre `ECRANS_AGENT` de la barre
+  latérale, que `App.jsx` ne monte pas pour ce rôle. Les URL de l'espace
+  opérateur ne lui sont proposées par aucune navigation et ne sont donc jamais
+  surlignées ;
 - **le registre contribuable est fermé à l'administrateur** : les onze routes
   `/contribuables…` de `App.jsx` sont enveloppées dans
   [`frontend/src/components/common/EspaceOperateurs.jsx`](frontend/src/components/common/EspaceOperateurs.jsx),
-  qui affiche un écran « Contribuables non accessible » et un lien de retour vers
-  `/admin` dès que `currentUser.role === 'admin'`. Un administrateur administre
-  les comptes, les rôles et la vérification des NIF ; il ne consulte pas les
+  qui affiche l'écran `AccesRefuse` « Contribuables non accessible » et un lien
+  de retour vers `/admin` dès que `currentUser.role === 'admin'`. Un
+  administrateur administre les comptes, les rôles et la vérification des
+  NIF ; il ne consulte pas les
   dossiers fiscaux. Le garde se place côté route et non côté API parce que
   `GET /api/contribuables` est aussi lu par l'admin pour son propre outil de
   vérification NIF (`AdminVerificationNIF.jsx` construit son référentiel avec
@@ -480,13 +482,22 @@ Fiches de droit de communication : une demande adressée par un agent à un tier
 contribuable donné. Table `droits_communication`, créée par le script additif
 [`backend/migrations/005-droits-communication.sql`](backend/migrations/005-droits-communication.sql).
 
+**Règle métier : un seul droit de communication par contribuable et par année
+civile.** L'année retenue est celle de `date_demande`. Elle est contrôlée au
+service ([`backend/src/models/droit-communication.model.js`](backend/src/models/droit-communication.model.js),
+`trouveDroitDeLAnnee`) et non par un index unique, car des fiches déjà
+enregistrées peuvent compter deux demandes la même année ; un index unique
+aurait imposé de les supprimer. Le contrôle est rejoué au `PUT` (en excluant la
+fiche éditée) pour qu'un simple changement de `date_demande` ne contourne pas la
+règle.
+
 | Méthode | Endpoint | Corps / paramètres | Codes |
 | :--- | :--- | :--- | :--- |
 | `GET` | `/api/droits-communication` | query `page`, `limit`, `search` (tiers, objet, NIF du tiers ou NIF / raison sociale du contribuable), `statut`, `type_tier`, `id_contribuable` | `200` — liste paginée triée par `date_demande` décroissant, enrichie du contribuable (NIF, raison sociale) et de l'agent instructeur (`agent_nom`) |
 | `GET` | `/api/droits-communication/stats/statuts` | query `id_contribuable` (facultative, restreint alors les compteurs à un contribuable) | `200` — effectifs par statut |
 | `GET` | `/api/droits-communication/:id` | `id` = `id_droit` | `200` ; `404` si introuvable |
-| `POST` | `/api/droits-communication` | `id_contribuable` (entier, obligatoire), `tier` (obligatoire, 255 car. max), `objet` (obligatoire), `date_demande` (ISO 8601, obligatoire) ; `type_tier` (30 car. max, défaut `autre`), `nif_tier` (50 car. max), `date_reponse` (ISO 8601), `statut` (`demande`, `reponse`, `partiel`, `relance`, `sans_suite` ; défaut `demande`), `pieces_demandees`, `documents_recus`, `observations`. L'`id_agent` instructeur est horodaté depuis la session (`req.user.id`) | `201` ; `400` si la validation échoue |
-| `PUT` | `/api/droits-communication/:id` | corps partiel, via la liste blanche `allowedFields` du modèle : les champs de constitution du dossier (`tier`, `objet`, `date_demande`) ne sont pas exigés | `200` — seuls les champs fournis sont écrits ; `400` si une valeur est invalide ; `404` si introuvable |
+| `POST` | `/api/droits-communication` | `id_contribuable` (entier, obligatoire), `tier` (obligatoire, 255 car. max), `objet` (obligatoire), `date_demande` (ISO 8601, obligatoire) ; `type_tier` (30 car. max, défaut `autre`), `nif_tier` (50 car. max), `date_reponse` (ISO 8601), `statut` (`demande`, `reponse`, `partiel`, `relance`, `sans_suite` ; défaut `demande`), `pieces_demandees`, `documents_recus`, `observations`. L'`id_agent` instructeur est horodaté depuis la session (`req.user.id`) | `201` ; `400` si la validation échoue ; `409` si ce contribuable a déjà un droit de communication l'année civile de `date_demande` |
+| `PUT` | `/api/droits-communication/:id` | corps partiel, via la liste blanche `allowedFields` du modèle : les champs de constitution du dossier (`tier`, `objet`, `date_demande`) ne sont pas exigés | `200` — seuls les champs fournis sont écrits ; `400` si une valeur est invalide ; `404` si introuvable ; `409` si `date_demande` déplacerait la fiche dans une année déjà occupée par un autre droit du même contribuable |
 | `DELETE` | `/api/droits-communication/:id` | `id` = `id_droit` | `200` — suppression de la fiche |
 
 `GET /stats/statuts` est déclaré **avant** `GET /:id` dans

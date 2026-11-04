@@ -62,7 +62,7 @@ export default function Contribuables() {
 
   return (
     <section className="page">
-      <DossierFiscalNavigation mode="collecte" />
+      <DossierFiscalNavigation section="contribuables" />
 
       <div className="page-heading">
         <p className="eyebrow">Registre fiscal</p>

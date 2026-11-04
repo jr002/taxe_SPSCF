@@ -1,8 +1,28 @@
 const DroitCommunicationModel = require('../models/droit-communication.model');
 
+/**
+ * Règle métier : un seul droit de communication par contribuable et par année
+ * civile, l'année étant portée par `date_demande`. Un doublon d'année est un
+ * conflit métier, pas une panne serveur — d'où le 409 plutôt que le 500.
+ */
+const conflitDAnnee = (conflit) => ({
+  success: false,
+  message: `Un droit de communication existe déjà pour ce contribuable en ${new Date(
+    conflit.date_demande,
+  ).getUTCFullYear()} : un seul par année civile.`,
+});
+
 class DroitCommunicationController {
   static async create(req, res) {
     try {
+      const conflit = await DroitCommunicationModel.trouveDroitDeLAnnee(
+        req.body.id_contribuable,
+        req.body.date_demande,
+      );
+      if (conflit) {
+        return res.status(409).json(conflitDAnnee(conflit));
+      }
+
       const droit = await DroitCommunicationModel.create({
         ...req.body,
         id_agent: req.user?.id || req.body.id_agent || null,
@@ -81,6 +101,25 @@ class DroitCommunicationController {
   static async update(req, res) {
     try {
       const { id } = req.params;
+
+      // Replacer la date de la demande changerait l'année couverte : le contrôle
+      // annuel est donc rejoué ici, sinon la règle se contournerait par un PUT.
+      if (req.body.date_demande !== undefined) {
+        const droit = await DroitCommunicationModel.findById(id);
+        if (!droit) {
+          return res.status(404).json({ success: false, message: 'Droit de communication non trouvé' });
+        }
+
+        const conflit = await DroitCommunicationModel.trouveDroitDeLAnnee(
+          droit.id_contribuable,
+          req.body.date_demande,
+          id,
+        );
+        if (conflit) {
+          return res.status(409).json(conflitDAnnee(conflit));
+        }
+      }
+
       const updated = await DroitCommunicationModel.update(id, req.body);
 
       if (!updated) {

@@ -5,6 +5,7 @@ import { deconnexion, getMoi } from '@/api';
 
 // Composants transverses et utilitaires chargés avec la coquille de l'application
 import { AgentSidebar, Header, EspaceOperateurs } from '@/components/common';
+import { SOUS_MODULES_COLLECTE } from '@/data/navigationAgent.data';
 import { getLandingPath } from '@/utils';
 // L'écran de connexion reste dans le bundle initial : c'est la porte d'entrée.
 import Signin from '@/backofficeadmin/auth/pages/Signin';
@@ -107,13 +108,6 @@ export default function App() {
     }
   };
 
-  const modules = [
-    { id: 'sales', label: 'TVA à payer' },
-    { id: 'theoretical', label: 'TVA théorique' },
-    { id: 'reconciliation', label: 'Recoupement' },
-    { id: 'declaration', label: 'Declaration' },
-  ];
-
   return (
     <div className={`app-shell${isDarkMode ? ' dark-theme' : ''}`}>
       <Suspense fallback={<p className="auth-loading">Chargement de la page…</p>}>
@@ -156,7 +150,7 @@ export default function App() {
             isAuthenticated ? (
               <>
                 <Header
-                  modules={modules}
+                  modules={SOUS_MODULES_COLLECTE}
                   currentModule={currentModule}
                   onSelectModule={setCurrentModule}
                   isDarkMode={isDarkMode}

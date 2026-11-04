@@ -46,7 +46,7 @@ Export par défaut `Header`. En-tête rendu par `App.jsx` pour toutes les routes
 
 * La marque renvoie vers `/admin` pour un administrateur et `/accueil` pour les rôles opérationnels.
 * **Backoffice inchangé** : les cinq entrées `ADMIN_LINKS` restent dans le `<nav>` du header. Le préfixe de route le plus long garde « Vérification NIF » actif sur `/admin/verification-nif/sql`, sans activer « Tableau de bord ».
-* **Frontoffice agent** : les liens de modules sont affichés en permanence dans [`AgentSidebar.jsx`](AgentSidebar.jsx), à côté du contenu sur grand écran et au-dessus sur mobile.
+* **Frontoffice agent** : le `<nav>` du header est vide pour ce rôle ; la navigation de modules est rendue par [`AgentSidebar.jsx`](AgentSidebar.jsx), à gauche du contenu sur grand écran et en bandeau au-dessus de lui à 1024 px et moins.
 * Barre rendue **fixe** (`position: sticky; top: 0; z-index: 40` dans
   [`../../App.css`](../../App.css)) au-dessus de 1024 px ; en dessous elle passe
   en `position: relative` — elle défile avec la page, mais reste le repère du
@@ -83,8 +83,9 @@ Props :
 
 Export par défaut `AgentSidebar`, réservé au shell des rôles opérationnels dans `App.jsx`.
 
-* Sept liens : `/accueil`, `/file-de-travail`, `/decisionnel`, `/suivi`, `/contribuables`, `/centres-fiscaux` et `/register`. Le chef de centre reçoit en plus « Mon équipe » (`/admin/utilisateurs` en mode restreint), soit huit entrées.
-* Le lien actif est le préfixe de route le plus long : `/contribuables/72/relances` active « Contribuables » et `/admin/utilisateurs` active « Mon équipe ».
+* Sept liens : `/accueil`, `/file-de-travail`, `/decisionnel`, `/suivi`, `/contribuables`, `/centres-fiscaux` et `/register`. Le chef de centre reçoit en plus « Mon équipe » (`/admin/utilisateurs` en mode restreint), soit huit entrées. Tous ces éléments — chemin, nom, icône, groupe — viennent de [`../../data/navigationAgent.data.js`](../../data/navigationAgent.data.js) ; la barre n'en affiche que les entrées marquées `rail`.
+* Le lien actif se résout sur **tout** le registre, pas seulement sur les entrées affichées : `/relance` allume « Dossier fiscal », `/collecte` et `/entreprises/nouveau` allument « Contribuables », `/centres/12` allume « Centres fiscaux », `/contribuables/72/relances` allume « Contribuables ». Aucun écran atteint par l'application ne laisse la barre éteinte.
+* Quand l'écran porte un nom différent de son groupe, le `aria-label` et l'`title` de l'entrée active le disent — « Dossier fiscal — Relance fiscale » — alors que le rail replié ne montre qu'une icône.
 * Huit icônes distinctes, toutes en traits de `1.8` dans une boîte `24×24` : dossier à rabat pour « Dossier fiscal » (`/suivi`), lignes d'annuaire pour « Registre » (`/register`) et carte d'agent pour « Mon équipe », afin qu'aucune ne se confonde avec une autre quand le rail est replié sur ses seules icônes.
 * L'état actif ne dépend pas du libellé (masqué rail replié) : la pastille porte un anneau intérieur plein de `1.5px` — `#1769aa` en clair, `#7dd3fc` en sombre — mesuré à 5,8:1 et 9,6:1 contre le fond du rail, et 4,8:1 et 6,1:1 contre la pastille, au-dessus du seuil de 3:1 des indicateurs non textuels.
 * Au-dessus de 1024 px, `.agent-layout` affiche une sidebar compacte à icônes ; au survol ou au focus clavier, elle s'élargit et révèle les libellés.
@@ -94,7 +95,7 @@ Export par défaut `AgentSidebar`, réservé au shell des rôles opérationnels 
 
 | Prop | Type | Rôle |
 | --- | --- | --- |
-| `isChefCentre` | `boolean` | Ajoute le lien « Mon équipe » |
+| `isChefCentre` | `boolean` | Ajoute l'entrée marquée `chefCentre` dans le registre, c'est-à-dire « Mon équipe » |
 
 ---
 
@@ -342,9 +343,8 @@ d'acte) et `frontofficeagent/collecte/components/TheoreticalForm.jsx`.
 
 Export par défaut `EspaceOperateurs`. Garde d'affichage qui ferme le portefeuille
 contribuable (`/contribuables` et ses dix sous-routes) au rôle `admin` : elle rend
-un simple `<section className="page">` « Contribuables non accessible » avec un
-`Link className="primary"` vers `/admin` à la place de l'enfant, sinon elle rend
-`children`.
+[`AccesRefuse.jsx`](AccesRefuse.jsx) « Contribuables non accessible » à la place de
+l'enfant, sinon elle rend `children`.
 
 | Prop | Type | Rôle |
 | --- | --- | --- |
@@ -360,3 +360,50 @@ un simple `<section className="page">` « Contribuables non accessible » avec u
   `403` le casserait. Le périmètre réel reste décidé par `data-scope` serveur.
 * Aucun rôle opérationnel n'est exclu, et les autres URL fiscales (`/suivi`,
   `/relance`, `/decisionnel`, `/centres-fiscaux`…) ne passent pas par ce garde.
+
+---
+
+## [`DossierFiscalNavigation.jsx`](DossierFiscalNavigation.jsx)
+
+Export par défaut `DossierFiscalNavigation`. Onglets rendus en haut d'un écran du
+frontoffice, pour passer d'une page du même domaine à l'autre.
+
+* Les chemins, les noms et le `aria-label` du groupe viennent du registre
+  [`../../data/navigationAgent.data.js`](../../data/navigationAgent.data.js)
+  (`ongletsDeSection`) : l'onglet et la barre latérale disent la même chose du
+  même écran — « Dossier fiscal », « Relance fiscale », « Collecte TVA »,
+  « Contribuables ».
+* Le groupe affiché est choisi par la prop `section`, `suivi` par défaut (les
+  écrans `/suivi` et `/relance` partagent ces deux onglets) et `contribuables`
+  sur la liste du registre.
+* L'onglet actif est celui dont le chemin préfixe l'URL courante.
+
+| Prop | Type | Rôle |
+| --- | --- | --- |
+| `section` | `string` | `id` d'une entrée de `SECTIONS_AGENT` (`suivi` ou `contribuables`) |
+
+---
+
+## [`AccesRefuse.jsx`](AccesRefuse.jsx)
+
+Export par défaut `AccesRefuse`, aussi repris par
+[`EspaceOperateurs.jsx`](EspaceOperateurs.jsx). Écran unique de refus d'accès :
+`eyebrow`, `h1`, raison, puis un `Link className="primary"` calculé par
+`getLandingPath(currentUser)` — `/admin` pour un administrateur, `/accueil` pour
+un rôle opérationnel — avec le libellé qui va avec.
+
+* Utilisé par les six gardes du backoffice (`AdminDashboard`, `AdminHistorique`,
+  `AdminRoles`, `AdminUtilisateurs`, `AdminVerificationNIF`,
+  `VerificationNifLayout`) : auparavant chacune n'affichait qu'une phrase
+  `<p className="error">`, sans titre ni moyen d'en sortir, quand un agent tapait
+  l'URL.
+* Le refus reste d'affichage : ce sont les `403` du serveur qui décident, et
+  `getLandingPath` est le même chemin que la redirection après connexion, pour que
+  les deux ne se contredisent pas.
+
+| Prop | Type | Rôle |
+| --- | --- | --- |
+| `currentUser` | `object \| null` | Détermine le chemin et le libellé du lien de retour |
+| `titre` | `string` | `h1` de l'écran, du type « Rôles non accessible » |
+| `message` | `string` | Raison du refus, en une phrase |
+| `eyebrow` | `string` | Mention au-dessus du titre (défaut `Backoffice Administration`) |

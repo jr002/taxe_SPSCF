@@ -109,10 +109,15 @@ export const TERMES = {
     sens:
       'Information obtenue légalement auprès d’un tiers (banque, fournisseur, administration…) et enregistrée dans le dossier pour être comparée aux déclarations.',
   },
+  cadence_recoupement: {
+    terme: 'Fréquence des recoupements',
+    sens:
+      'Deux cadences. En TVA, le recoupement des annexes récapitulatives clients et fournisseurs (déposées sur NIFONLINE) suit l’échéance mensuelle : douze fois par an. En IR et en IS, le recoupement du chiffre d’affaires, du bénéfice et de la somme recoupée (ventes, achats, débours, importations et douanes) se fait une fois par an, au dépôt de la déclaration annuelle et des états financiers.',
+  },
   droit_communication: {
     terme: 'Droit de communication',
     sens:
-      'Demande adressée à un tiers pour obtenir des documents ou des informations. Son statut dit où en est la réponse du tiers, pas l’état de l’imposition.',
+      'Demande adressée à un tiers pour obtenir des documents ou des informations. Son statut dit où en est la réponse du tiers, pas l’état de l’imposition. Un seul droit par contribuable et par année civile.',
   },
   statut_droit: {
     terme: 'Statut du droit',
@@ -329,6 +334,12 @@ export const AIDES = {
         termes: ['rapprochement', 'tolerance'],
       },
       {
+        titre: 'Deux cadences',
+        texte:
+          'La période de la ligne dit de quelle cadence elle relève. En TVA, les annexes récapitulatives clients et fournisseurs déposées sur NIFONLINE arrivent à chaque échéance mensuelle : douze recoupements par an. En IR et en IS, le chiffre d’affaires, le bénéfice et la somme recoupée (ventes, achats, débours, importations et douanes) ne sont recoupés qu’une fois par an, au dépôt de la déclaration annuelle et des états financiers. Une année sans ligne annuelle n’est donc pas une anomalie.',
+        termes: ['cadence_recoupement', 'recoupement'],
+      },
+      {
         titre: 'Ajouter une ligne',
         texte:
           'Le bouton d’enregistrement ouvre le formulaire dédié ; la ligne rejoint aussitôt les comparaisons de la confrontation. Export et lien contribuable sont suspendus ici parce que la donnée est en cours d’instruction.',
@@ -352,6 +363,12 @@ export const AIDES = {
         texte:
           'Demande (émise, sans réponse), réponse reçue, réponse partielle (incomplète), relance émise (une seconde demande a suivi), sans suite (clôturée sans exploiter). Le statut qualifie la réponse du tiers — jamais la situation fiscale du contribuable.',
         termes: ['statut_droit'],
+      },
+      {
+        titre: 'Un droit par année civile',
+        texte:
+          'Le système n’admet qu’une demande par contribuable et par année, l’année étant celle de la date de la demande. Une seconde demande la même année est refusée à l’enregistrement, et le serait aussi si une modification venait replacer la date dans une année déjà couverte : il faut datrer d’une année encore libre.',
+        termes: ['droit_communication'],
       },
     ],
   },

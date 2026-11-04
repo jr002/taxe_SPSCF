@@ -493,6 +493,10 @@ Les modèles Prisma sont :
 - `recoupements` : données provenant de sources externes ;
 - `droits_communication` : demandes de communication adressées aux tiers (un
   contribuable, un agent instructeur, un statut `demande`/`reponse`/`partiel`/`relance`/`sans_suite`) ;
+  la table accepte plusieurs fiches par année — la règle « un seul droit par
+  contribuable et par année civile » est appliquée par le service (`409`), pas
+  par la base — et le champ `email` de `contribuables` est renvoyé tel quel à
+  tous les rôles opérationnels qui ouvrent un dossier ;
 - `centres` : centres fiscaux rattachés aux contribuables ;
 - `rapprochements` : confrontations entre une déclaration, un recoupement et un contrôle ;
 - `etat_contribuable` : historique des statuts d'activité et de conformité ;

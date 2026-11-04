@@ -4,11 +4,20 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import {
   createDroitCommunication,
   getContribuableById,
+  getDroitsCommunication,
   getErrorMessage,
 } from '@/api';
 import DroitCommunicationForm from '@/frontofficeagent/contribuables/components/DroitCommunicationForm';
 
 const today = () => new Date().toISOString().slice(0, 10);
+
+/**
+ * Règle du produit : un seul droit de communication par contribuable et par année
+ * civile. `date_demande` porte `@db.Date`, donc l'année se lit en UTC pour coller à
+ * l'année écrite, quel que soit le fuseau du poste. Le serveur garde le dernier mot
+ * (409) ; cet écran ne fait que le dire avant l'envoi.
+ */
+const anneeCivil = (value) => new Date(value).getUTCFullYear();
 
 const initialForm = () => ({
   tier: '',
@@ -28,6 +37,7 @@ export default function DroitCommunicationCreate() {
   const navigate = useNavigate();
 
   const [contribuable, setContribuable] = useState(null);
+  const [anneesPrises, setAnneesPrises] = useState([]);
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -35,9 +45,21 @@ export default function DroitCommunicationCreate() {
   useEffect(() => {
     let cancelled = false;
 
-    getContribuableById(id)
-      .then((result) => { if (!cancelled) setContribuable(result); })
-      .catch((requestError) => { if (!cancelled) setError(getErrorMessage(requestError)); });
+    const load = async () => {
+      try {
+        const [dossier, droits] = await Promise.all([
+          getContribuableById(id),
+          getDroitsCommunication({ id_contribuable: id, limit: 100 }),
+        ]);
+        if (cancelled) return;
+        setContribuable(dossier);
+        setAnneesPrises((droits?.data || []).map((droit) => anneeCivil(droit.date_demande)));
+      } catch (requestError) {
+        if (!cancelled) setError(getErrorMessage(requestError));
+      }
+    };
+
+    load();
 
     return () => { cancelled = true; };
   }, [id]);
@@ -99,12 +121,19 @@ export default function DroitCommunicationCreate() {
     );
   }
 
+  const anneeDemandee = Number(form.date_demande.slice(0, 4));
+  const alerte =
+    form.date_demande && anneesPrises.includes(anneeDemandee)
+      ? `Un droit de communication est déjà enregistré pour ce contribuable en ${anneeDemandee} : la règle est un seul droit par année civile.`
+      : '';
+
   return (
     <section className="page declaration-page contribuable-detail-page">
       <Link className="detail-back-link" to={`/contribuables/${id}/droits-communication`}>
         ← Retour aux droits de communication
       </Link>
       <DroitCommunicationForm
+        alerte={alerte}
         contribuable={contribuable}
         error={error}
         form={form}

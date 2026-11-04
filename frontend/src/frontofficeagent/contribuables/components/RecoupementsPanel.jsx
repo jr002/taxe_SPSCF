@@ -84,7 +84,7 @@ export default function RecoupementsPanel({ id }) {
             <table aria-label="Recoupements du contribuable">
               <thead>
                 <tr>
-                  <th>Période</th>
+                  <th><AideTerme id="cadence_recoupement">Période</AideTerme></th>
                   <th>Source</th>
                   <th>Type d’opération</th>
                   <th><AideTerme id="nif_tiers">NIF du tiers</AideTerme></th>

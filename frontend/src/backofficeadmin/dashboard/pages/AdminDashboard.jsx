@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getAgents, getErrorMessage } from '@/api';
-import { Pagination } from '@/components/common';
+import { AccesRefuse, Pagination } from '@/components/common';
 import { useTablePagination } from '@/hooks';
 import AdminNav from '@/backofficeadmin/components/AdminNav';
 import CamembertUtilisateurs from '@/backofficeadmin/dashboard/components/CamembertUtilisateurs.jsx';
@@ -83,16 +83,11 @@ export default function AdminDashboard({ currentUser }) {
 
   if (!isAdmin) {
     return (
-      <section className="page">
-        <div className="page-heading">
-          <p className="eyebrow">Administration</p>
-          <h1>Tableau de bord</h1>
-        </div>
-        <p className="error" role="alert">
-          Cet espace est réservé aux administrateurs. Connectez-vous avec un compte
-          administrateur pour consulter le tableau de bord des utilisateurs.
-        </p>
-      </section>
+      <AccesRefuse
+        currentUser={currentUser}
+        titre="Tableau de bord non accessible"
+        message="Le tableau de bord d'administration compte les comptes et leurs statuts : seul un administrateur l'ouvre. Vos écrans de travail sont dans l'espace agent."
+      />
     );
   }
 

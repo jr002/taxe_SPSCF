@@ -365,8 +365,10 @@ admin (`ADMIN_LINKS` : `/admin`, `/admin/utilisateurs`, `/admin/roles`,
 `/admin` — les modules fiscaux ne sont donc pas proposés à un admin. La page
 affiche un lien « ← Retour au tableau de bord ». L'API répond `403` à tout autre
 rôle, et si un agent ni admin ni chef de centre ouvre l'URL directement, la page
-affiche un message « réservée aux administrateurs et aux chefs de centre » au
-lieu de la liste. Le `chef_centre` y entre en **mode restreint** décrit plus bas.
+rend l'écran [`AccesRefuse`](../components/common/AccesRefuse.jsx) « Comptes non
+accessible », qui explique la réserve et ramène l'agent à `/accueil` par « Retour
+à mon espace de travail ». Le `chef_centre` y entre en **mode restreint** décrit
+plus bas.
 
 | Propriété | Description |
 | --- | --- |
@@ -475,8 +477,10 @@ seules utilisées. Le mode restreint retire tout ce que l'API refuserait :
 Les refus du serveur restent visibles tels quels dans la modale : un pair
 `chef_centre`, un `inspecteur`, un `admin` ou un compte d'un autre centre
 répondent `403` avec leur message, et le chef de centre lit la raison sans que
-l'interface ait à la re-prédire. Le `Header` complète `NAVIGATION_LINKS` d'une
-seule entrée « Mon équipe » vers `/admin/utilisateurs` pour ce rôle.
+l'interface ait à la re-prédire. La barre latérale, elle, ajoute à son registre
+`ECRANS_AGENT`
+([`src/data/navigationAgent.data.js`](../data/navigationAgent.data.js)) une seule
+entrée pour ce rôle : « Mon équipe », vers `/admin/utilisateurs`.
 
 ## `roles/pages/AdminRoles.jsx` — rôles et périmètre par centre
 

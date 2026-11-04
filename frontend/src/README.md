@@ -115,6 +115,12 @@ garde est côté route, jamais côté API, parce que la Vérification NIF de l'a
   [`components/common/RefLegal.jsx`](components/common/RefLegal.jsx). Un numéro
   d'article ou une page se corrige ici et nulle part ailleurs ; une règle interne
   au système reste **sans source**, donc sans lien.
+  [`data/navigationAgent.data.js`](data/navigationAgent.data.js) tient de la même
+  façon les écrans du frontoffice agent — chemin, nom, icône, groupe et rôle
+  autorisé — lus à la fois par la barre latérale et par les onglets de domaine.
+  Un écran n'a donc qu'un seul nom, et un écran sans entrée de barre
+  (`/relance`, `/collecte`, `/entreprises/nouveau`) allume malgré tout le groupe
+  dont il relève.
 * [`frontofficeagent/`](frontofficeagent/) : espace de travail fiscal des rôles
   opérationnels (agent, contrôleur, chef de centre, inspecteur), organisé par
   domaine métier (voir [`frontofficeagent/README.md`](frontofficeagent/README.md)).

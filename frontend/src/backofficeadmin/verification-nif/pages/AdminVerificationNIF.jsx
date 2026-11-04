@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getContribuables } from '@/api';
-import { Pagination } from '@/components/common';
+import { AccesRefuse, Pagination } from '@/components/common';
 import { useTablePagination, useFiltresUrl } from '@/hooks';
 import AdminNav from '@/backofficeadmin/components/AdminNav';
 import {
@@ -113,9 +113,11 @@ export default function AdminVerificationNIF({ currentUser }) {
 
   if (!isAdmin) {
     return (
-      <section className="page">
-        <p className="error" role="alert">Cette page est réservée aux administrateurs.</p>
-      </section>
+      <AccesRefuse
+        currentUser={currentUser}
+        titre="Vérification NIF non accessible"
+        message="Contrôler un NIF, importer un référentiel ou interroger la liaison à la base relèvent de l'administrateur. Les rôles opérationnels lisent le NIF enregistré sur la fiche du contribuable."
+      />
     );
   }
 

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import AdminNav from '@/backofficeadmin/components/AdminNav';
+import { AccesRefuse } from '@/components/common';
 
 /**
  * Gabarit des trois pages dédiées de vérification NIF (`/sql`, `/excel`, `/json`) :
@@ -9,9 +10,11 @@ import AdminNav from '@/backofficeadmin/components/AdminNav';
 export default function VerificationNifLayout({ currentUser, eyebrow, titre, description, children }) {
   if (currentUser?.role !== 'admin') {
     return (
-      <section className="page">
-        <p className="error" role="alert">Cette page est réservée aux administrateurs.</p>
-      </section>
+      <AccesRefuse
+        currentUser={currentUser}
+        titre="Vérification NIF non accessible"
+        message={`« ${titre} » manipule le référentiel administratif des NIF : seul un administrateur y accède.`}
+      />
     );
   }
 

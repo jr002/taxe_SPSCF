@@ -16,7 +16,13 @@ puis renvoient les statuts et les données JSON.
 - [`recoupement.controller.js`](recoupement.controller.js)
 - [`droit-communication.controller.js`](droit-communication.controller.js) :
   CRUD et statistiques par statut ; le `create` horodate `id_agent` depuis la
-  session (`req.user?.id`).
+  session (`req.user?.id`). `create` et `update` interrogent d'abord
+  `DroitCommunicationModel.trouveDroitDeLAnnee` : un second droit pour la même
+  année civile du même contribuable répond `409` avec le message « Un droit de
+  communication existe déjà pour ce contribuable en AAAA : un seul par année
+  civile. ». Le `update` ne rejoue le contrôle que lorsque `date_demande` est
+  fourni, en excluant la fiche éditée, pour qu'un changement de date ne
+  contourne pas la règle.
 - [`relance.controller.js`](relance.controller.js)
 - [`acces-contribuable.controller.js`](acces-contribuable.controller.js) : les
   trois temps du portail. `generer` (route agent) borne la durée à 1–30 jours,

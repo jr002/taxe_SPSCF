@@ -119,6 +119,36 @@ class DroitCommunicationModel {
     });
   }
 
+  /**
+   * Droit déjà enregistré pour la même année civile que `date_demande`.
+   *
+   * La règle métier est un seul droit de communication par contribuable et par an.
+   * `date_demande` est une `@db.Date` : les bornes sont donc posées en UTC pour que
+   * l'année lue soit l'année écrite, quel que soit le fuseau du serveur.
+   * `excludeId` sert à la modification, où le droit en cours de réécriture ne doit
+   * pas se compter lui-même.
+   */
+  static async trouveDroitDeLAnnee(id_contribuable, date_demande, excludeId = null) {
+    const numericId = parseInt(id_contribuable, 10);
+    const annee = new Date(date_demande).getUTCFullYear();
+    if (isNaN(numericId) || !Number.isFinite(annee)) return null;
+
+    const where = {
+      id_contribuable: numericId,
+      date_demande: {
+        gte: new Date(Date.UTC(annee, 0, 1)),
+        lt: new Date(Date.UTC(annee + 1, 0, 1)),
+      },
+    };
+    const numericExclude = parseInt(excludeId, 10);
+    if (!isNaN(numericExclude)) where.id_droit = { not: numericExclude };
+
+    return await prisma.droits_communication.findFirst({
+      where,
+      orderBy: { date_demande: 'asc' },
+    });
+  }
+
   static async update(id, data) {
     const numericId = parseInt(id, 10);
     if (isNaN(numericId)) return null;

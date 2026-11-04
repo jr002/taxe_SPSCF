@@ -64,14 +64,14 @@ export function VolumeChart({ years = [] }) {
       <div className="chart-axis-label">Nombre de dossiers</div>
       <div className="chart-layout">
         <div className="chart-y-axis">
-          {yTicks.map((tick) => (
-            <span key={tick}>{formatAxisValue(tick)}</span>
+          {yTicks.map((tick, index) => (
+            <span key={`palier-${index}`}>{formatAxisValue(tick)}</span>
           ))}
         </div>
         <div className="bar-chart">
           <div className="chart-grid-lines">
-            {yTicks.slice(0, -1).map((tick) => (
-              <i key={tick} />
+            {yTicks.slice(0, -1).map((tick, index) => (
+              <i key={`grille-${index}`} />
             ))}
           </div>
           {years.map((yearData) => (
@@ -144,14 +144,14 @@ export function CurveChart({ curve }) {
       <div className="chart-axis-label">Montant en Ar</div>
       <div className="chart-layout">
         <div className="chart-y-axis">
-          {yTicks.map((tick) => (
-            <span key={tick}>{formatAxisValue(tick)}</span>
+          {yTicks.map((tick, index) => (
+            <span key={`palier-${index}`}>{formatAxisValue(tick)}</span>
           ))}
         </div>
         <div className="line-chart">
           <div className="chart-grid-lines">
-            {yTicks.slice(0, -1).map((tick) => (
-              <i key={tick} />
+            {yTicks.slice(0, -1).map((tick, index) => (
+              <i key={`grille-${index}`} />
             ))}
           </div>
           <div className="line-svg-layer">
@@ -322,14 +322,14 @@ export function Histogramme({
           .join(' ; ')}`}
       >
         <div className="chart-y-axis">
-          {yTicks.map((tick) => (
-            <span key={tick}>{formatTick(tick)}</span>
+          {yTicks.map((tick, index) => (
+            <span key={`palier-${index}`}>{formatTick(tick)}</span>
           ))}
         </div>
         <div className="bar-chart">
           <div className="chart-grid-lines">
-            {yTicks.slice(0, -1).map((tick) => (
-              <i key={tick} />
+            {yTicks.slice(0, -1).map((tick, index) => (
+              <i key={`grille-${index}`} />
             ))}
           </div>
           {groups.map((group) => (

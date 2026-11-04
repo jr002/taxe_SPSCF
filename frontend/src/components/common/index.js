@@ -13,4 +13,5 @@ export { default as NotificationModal } from '@/components/common/NotificationMo
 export { default as DemandeEclaircissementModal } from '@/components/common/DemandeEclaircissementModal';
 export { default as DossierFiscalNavigation } from '@/components/common/DossierFiscalNavigation';
 export { default as EspaceOperateurs } from '@/components/common/EspaceOperateurs';
+export { default as AccesRefuse } from '@/components/common/AccesRefuse';
 export { default as RefLegal } from '@/components/common/RefLegal';

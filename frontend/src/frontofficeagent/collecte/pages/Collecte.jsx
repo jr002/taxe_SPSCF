@@ -47,7 +47,12 @@ export default function Collecte({ currentModule }) {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 p-4">
+    <section className="page">
+      <div className="page-heading">
+        <p className="eyebrow">Déclaration de TVA</p>
+        <h1>Collecte TVA</h1>
+      </div>
+
       {message.text && (
         <p
           className={`${message.tone} form-submit-message collecte-message`}
@@ -58,6 +63,6 @@ export default function Collecte({ currentModule }) {
       )}
 
       {renderModule()}
-    </div>
+    </section>
   );
 }

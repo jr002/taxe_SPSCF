@@ -108,14 +108,17 @@ Les routes protégées partagent un même layout (`<Outlet />`) qui rend
 [`Header`](src/components/common/Header.jsx) puis `<main className="app-main">`.
 Le `Header` est donc absent de l'écran de connexion.
 
-La navigation du `Header` dépend du rôle : un agent voit « Accueil », « Collecte »,
-« Décisionnel », « Dossier fiscal », « Relances », « Contribuables », « Centres »
-et « Registre » ; un administrateur voit « Tableau de bord », « Utilisateurs »,
-« Rôles », « Vérification NIF » et « Historique & Audit », son logo
-renvoyant vers `/admin` (constantes `NAVIGATION_LINKS` et `ADMIN_LINKS` de
-`Header.jsx`). La barre est fixe en haut de l'écran (`position: sticky`) et le
-lien actif est celui dont le chemin est le préfixe le plus long de l'URL, y
-compris sur les routes détaillées.
+La navigation dépend du rôle. Un administrateur trouve dans le `Header` les cinq
+écrans du backoffice — « Tableau de bord », « Utilisateurs », « Rôles »,
+« Vérification NIF » et « Historique & Audit » — et son logo renvoie vers
+`/admin` (constante `ADMIN_LINKS` de `Header.jsx`). La barre est fixe en haut de
+l'écran (`position: sticky`) et le lien actif est celui dont le chemin est le
+préfixe le plus long de l'URL, y compris sur les routes détaillées. Les rôles
+opérationnels, eux, n'ont aucune navigation fiscale dans le `Header` : leurs
+modules sont rendus par la barre latérale
+[`AgentSidebar`](src/components/common/AgentSidebar.jsx), qui lit le registre
+[`src/data/navigationAgent.data.js`](src/data/navigationAgent.data.js) — chemin,
+nom, icône et groupe de chaque écran — et leur logo les ramène à `/accueil`.
 
 La barre se termine par le profil de l'agent connecté, ancré au coin supérieur
 droit de l'en-tête hors du flux des liens

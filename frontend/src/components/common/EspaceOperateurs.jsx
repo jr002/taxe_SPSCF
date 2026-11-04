@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import AccesRefuse from '@/components/common/AccesRefuse';
 
 /**
  * Garde d'accès de l'espace opérationnel pour le portefeuille contribuable.
@@ -20,19 +20,11 @@ import { Link } from 'react-router-dom';
 export default function EspaceOperateurs({ currentUser = null, children }) {
   if (currentUser?.role === 'admin') {
     return (
-      <section className="page">
-        <p className="eyebrow">Backoffice Administration</p>
-        <h1>Contribuables non accessible</h1>
-        <p>
-          Le registre des contribuables et ses fiches fiscales relèvent de l'espace
-          des rôles opérationnels (agent fiscal, contrôleur, chef de centre,
-          inspecteur). Un administrateur administre les comptes, les rôles et la
-          vérification des NIF, mais ne consulte pas les dossiers fiscaux.
-        </p>
-        <p>
-          <Link className="primary" to="/admin">Retour au tableau de bord administration</Link>
-        </p>
-      </section>
+      <AccesRefuse
+        currentUser={currentUser}
+        titre="Contribuables non accessible"
+        message="Le registre des contribuables et ses fiches fiscales relèvent de l'espace des rôles opérationnels (agent fiscal, contrôleur, chef de centre, inspecteur). Un administrateur administre les comptes, les rôles et la vérification des NIF, mais ne consulte pas les dossiers fiscaux."
+      />
     );
   }
 

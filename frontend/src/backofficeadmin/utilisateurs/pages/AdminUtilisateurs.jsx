@@ -12,7 +12,7 @@ import {
   updateAgentRole,
   updateAgentStatut,
 } from '@/api';
-import { ModaleConfirmation, Pagination } from '@/components/common';
+import { AccesRefuse, ModaleConfirmation, Pagination } from '@/components/common';
 import { useTablePagination, useFiltresUrl } from '@/hooks';
 import { initialsOf } from '@/utils';
 import AdminNav from '@/backofficeadmin/components/AdminNav';
@@ -457,16 +457,11 @@ export default function AdminUtilisateurs({ currentUser }) {
 
   if (!peutGererComptes) {
     return (
-      <section className="page">
-        <div className="page-heading">
-          <p className="eyebrow">Administration</p>
-          <h1>Utilisateurs</h1>
-        </div>
-        <p className="error" role="alert">
-          Cette page est réservée aux administrateurs et aux chefs de centre.
-          Connectez-vous avec l'un de ces comptes pour gérer les utilisateurs.
-        </p>
-      </section>
+      <AccesRefuse
+        currentUser={currentUser}
+        titre="Comptes non accessible"
+        message="La liste des comptes est réservée aux administrateurs et aux chefs de centre ; un chef de centre n'y voit que les agents de son centre. Les autres rôles consultent leur propre profil depuis le menu de l'en-tête."
+      />
     );
   }
 

@@ -81,7 +81,9 @@ export default function DroitCommunicationPanel({ id }) {
           <p className="aide-ecran-intro">
             <AideTerme id="droit_communication">Droit de communication</AideTerme> : demande
             adressée à un tiers pour obtenir des documents ou des informations. Son statut dit où
-            en est la réponse du tiers — jamais l’état de l’imposition du contribuable.
+            en est la réponse du tiers — jamais l’état de l’imposition du contribuable. La règle
+            est <strong>un seul droit par année civile</strong> : l’année d’une demande est celle
+            de sa date, et une seconde demande la même année est refusée.
           </p>
           <div className="table-wrap">
             <table aria-label="Droits de communication du contribuable">

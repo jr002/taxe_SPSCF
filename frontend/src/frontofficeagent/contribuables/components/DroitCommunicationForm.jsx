@@ -23,6 +23,7 @@ const TEXT_AREAS = [
 ];
 
 export default function DroitCommunicationForm({
+  alerte = '',
   contribuable,
   error,
   form,
@@ -43,6 +44,14 @@ export default function DroitCommunicationForm({
       {error && (
         <p className="error form-submit-message" role="alert">
           {error}
+        </p>
+      )}
+
+      {/* Avertissement de contrôle, posé avant l'envoi : l'année civile est déjà
+          couverte, l'API répondrait 409. L'envoi est désactivé en conséquence. */}
+      {alerte && (
+        <p className="error form-submit-message" role="alert">
+          {alerte}
         </p>
       )}
 
@@ -144,7 +153,12 @@ export default function DroitCommunicationForm({
       </div>
 
       <div className="form-actions">
-        <button className="primary" type="submit" disabled={submitting}>
+        <button
+          className="primary"
+          type="submit"
+          disabled={submitting || Boolean(alerte)}
+          title={alerte || 'Enregistrer cette demande au dossier'}
+        >
           {submitting ? 'Enregistrement…' : 'Enregistrer le droit de communication'}
         </button>
       </div>
