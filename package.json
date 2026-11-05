@@ -6,6 +6,7 @@
     "setup:project": "pnpm install --frozen-lockfile && pnpm run prisma:deploy",
     "prisma:deploy": "pnpm --filter backend run prisma:deploy",
     "dev": "pnpm --parallel --filter backend --filter frontend run dev",
-    "build": "pnpm --filter frontend run build"
+    "build": "pnpm --filter frontend run build",
+    "test": "pnpm --filter backend test"
   }
 }

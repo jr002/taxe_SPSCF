@@ -1,6 +1,11 @@
 import { Fragment } from 'react';
+import { AideTerme } from '@/frontofficeagent/aide';
 import { formatAxisValue, formatCompact } from '@/utils';
 import { getRegime, getRegimePercentage } from '@/frontofficeagent/decisionnel/utils/decisionnel.utils.js';
+
+/** Libellé d'une barre au survol : « IS 2024 : 12 déclarations ». */
+const titreBarre = (serie, annee, nombre) =>
+  `${serie} ${annee} : ${nombre} déclaration${nombre > 1 ? 's' : ''}`;
 
 /**
  * Calcule les coordonnées SVG d'une polyligne à partir d'un tableau de valeurs
@@ -17,9 +22,10 @@ const buildChartPoints = (values = [], max = 1, min = 0) => {
 };
 
 /**
- * Mini-courbe SVG vectorielle (sparkline)
+ * Mini-courbe SVG vectorielle (sparkline). `legende` porte l'infobulle native de
+ * la courbe et son alternative lue par les lecteurs d'écran.
  */
-export function MiniLine({ data = [], color = '#2563eb', max = 1 }) {
+export function MiniLine({ data = [], color = '#2563eb', max = 1, legende = null }) {
   const safeMax = Math.max(max, 1);
   const points = data
     .map((point, index) => {
@@ -34,8 +40,9 @@ export function MiniLine({ data = [], color = '#2563eb', max = 1 }) {
       viewBox="0 0 100 100"
       preserveAspectRatio="none"
       role="img"
-      aria-label="Évolution annuelle"
+      aria-label={legende ?? 'Évolution annuelle'}
     >
+      {legende && <title>{legende}</title>}
       <polyline
         points={points}
         fill="none"
@@ -48,7 +55,8 @@ export function MiniLine({ data = [], color = '#2563eb', max = 1 }) {
 }
 
 /**
- * Graphique en barres : Nombre de déclarations par régime (IS, IR, TVA) sur 5 ans
+ * Graphique en barres : lignes de déclaration par régime et par exercice,
+ * sur la fenêtre des cinq exercices courants.
  * Utilisé dans le Tableau Décisionnel
  */
 export function VolumeChart({ years = [] }) {
@@ -57,12 +65,24 @@ export function VolumeChart({ years = [] }) {
     1
   );
   const yTicks = [maxBars, Math.round(maxBars * 0.66), Math.round(maxBars * 0.33), 0];
+  const lecture = years
+    .map((item) => `${item.year} — IS ${item.is}, IR ${item.ir}, total ${item.tva}`)
+    .join(' ; ');
 
   return (
     <article className="panel wide">
-      <h2>Contribuables par régime et TVA</h2>
-      <div className="chart-axis-label">Nombre de dossiers</div>
-      <div className="chart-layout">
+      <div className="chart-panel-heading">
+        <div>
+          <p className="eyebrow">Exercices courants</p>
+          <h2>
+            <AideTerme id="declaration_enregistree" direction="bas">
+              Déclarations par régime et par exercice
+            </AideTerme>
+          </h2>
+        </div>
+        <span>Nombre de lignes</span>
+      </div>
+      <div className="chart-layout" role="img" aria-label={`Déclarations par régime et par exercice : ${lecture}`}>
         <div className="chart-y-axis">
           {yTicks.map((tick, index) => (
             <span key={`palier-${index}`}>{formatAxisValue(tick)}</span>
@@ -78,15 +98,15 @@ export function VolumeChart({ years = [] }) {
             <div className="bar-group" key={yearData.year}>
               <div className="bars">
                 <i
-                  title={`IS: ${yearData.is}`}
+                  title={titreBarre('IS', yearData.year, yearData.is)}
                   style={{ height: `${(yearData.is / maxBars) * 100}%` }}
                 />
                 <i
-                  title={`IR: ${yearData.ir}`}
+                  title={titreBarre('IR', yearData.year, yearData.ir)}
                   style={{ height: `${(yearData.ir / maxBars) * 100}%` }}
                 />
                 <i
-                  title={`TVA: ${yearData.tva}`}
+                  title={titreBarre('Total', yearData.year, yearData.tva)}
                   style={{ height: `${(yearData.tva / maxBars) * 100}%` }}
                 />
               </div>
@@ -97,32 +117,57 @@ export function VolumeChart({ years = [] }) {
       </div>
       <div className="chart-x-axis">Année</div>
       <p className="legend">
-        <span className="is" /> IS <span className="ir" /> IR <span className="tva" /> Déclarations TVA
+        <span /> IS <span className="ir" /> IR <span className="tva" /> Total (IS + IR)
       </p>
     </article>
   );
 }
 
 /**
- * Graphique en Donut : Répartition des dossiers entre régime IS et régime IR
+ * Graphique en Donut : part des lignes de déclaration sous régime IS et sous
+ * régime IR, tel que déduit ligne à ligne.
  * Utilisé dans le Tableau Décisionnel
  */
 export function RegimeChart({ declarations = [] }) {
   const isCount = declarations.filter((d) => getRegime(d) === 'IS').length;
   const irCount = declarations.length - isCount;
   const isPercentage = declarations.length ? (isCount / declarations.length) * 100 : 0;
+  // Un régime sans ligne n'a rien à comparer : sa courbe n'est pas tracée, et
+  // l'anneau le dit ici plutôt que de laisser un graphique vide ailleurs.
+  const regimesAbsents = [['IS', isCount], ['IR', irCount]]
+    .filter(([, nombre]) => nombre === 0)
+    .map(([regime]) => `régime ${regime} : aucune ligne, comparaison non tracée`);
 
   return (
     <article className="panel">
-      <h2>Répartition IS / IR</h2>
-      <div className="donut" style={{ '--is': `${isPercentage}%` }}>
-        <strong>{declarations.length}</strong>
-        <small>dossiers</small>
+      <div className="chart-panel-heading">
+        <div>
+          <p className="eyebrow">Lignes du périmètre</p>
+          <h2>
+            <AideTerme id="regime_repartition" direction="bas">
+              Répartition IS / IR
+            </AideTerme>
+          </h2>
+        </div>
+        <span>Part des lignes</span>
       </div>
+      <div
+        className="donut"
+        style={{ '--is': `${isPercentage}%` }}
+        role="img"
+        aria-label={`Répartition IS / IR sur ${declarations.length} lignes : IS ${isCount} (${getRegimePercentage(isCount, declarations.length)} %), IR ${irCount} (${getRegimePercentage(irCount, declarations.length)} %)`}
+      >
+        <strong>{declarations.length}</strong>
+        <small>lignes</small>
+      </div>
+      <p className="legend">
+        <span /> IS <span className="ir" /> IR
+      </p>
       <p className="split">
         IS {isCount} ({getRegimePercentage(isCount, declarations.length)} %) · IR {irCount} (
         {getRegimePercentage(irCount, declarations.length)} %)
       </p>
+      {regimesAbsents.length > 0 && <p className="empty">{regimesAbsents.join(' · ')}</p>}
     </article>
   );
 }
@@ -137,12 +182,31 @@ export function CurveChart({ curve }) {
     1
   );
   const yTicks = [max, Math.round(max * 0.5), Math.round(max * 0.25), 0];
+  const lecture = curve.expected
+    .map((point, index) => {
+      const paid = curve.paid[index];
+      return `${point.year} — théorique ${formatCompact(point.amount)} Ar, payée ${formatCompact(paid ? paid.amount : 0)} Ar`;
+    })
+    .join(' ; ');
 
   return (
     <article className="panel">
-      <h2>Écart {curve.regime} : payé / théorique</h2>
-      <div className="chart-axis-label">Montant en Ar</div>
-      <div className="chart-layout">
+      <div className="chart-panel-heading">
+        <div>
+          <p className="eyebrow">Régime {curve.regime}</p>
+          <h2>
+            <AideTerme id="tva_theorique" direction="bas">
+              TVA attendue et TVA versée
+            </AideTerme>
+          </h2>
+        </div>
+        <span>Montant en Ar</span>
+      </div>
+      <div
+        className="chart-layout"
+        role="img"
+        aria-label={`TVA du régime ${curve.regime}, attendue et versée par exercice : ${lecture}`}
+      >
         <div className="chart-y-axis">
           {yTicks.map((tick, index) => (
             <span key={`palier-${index}`}>{formatAxisValue(tick)}</span>
@@ -155,8 +219,18 @@ export function CurveChart({ curve }) {
             ))}
           </div>
           <div className="line-svg-layer">
-            <MiniLine data={curve.expected} color="#2563eb" max={max} />
-            <MiniLine data={curve.paid} color="#f59e0b" max={max} />
+            <MiniLine
+              data={curve.expected}
+              color="#2563eb"
+              max={max}
+              legende={`TVA théorique ${curve.regime}`}
+            />
+            <MiniLine
+              data={curve.paid}
+              color="#f59e0b"
+              max={max}
+              legende={`TVA payée ${curve.regime}`}
+            />
           </div>
           <div className="line-x-labels">
             {curve.expected.map((point) => (

@@ -65,6 +65,16 @@ const periodeDeDeclaration = (declaration) =>
       ? `Exercice ${declaration.annee}`
       : 'Période non renseignée';
 
+/** Une primitive est au dossier dès qu'une date ou le statut l'enregistre. */
+const primitiveOuverte = (declaration) =>
+  Boolean(declaration?.date_notification_primitive)
+  || String(declaration?.statut || '').toUpperCase() === 'PRIMITIVE_ENVOYÉE';
+
+/** La définitive close la phase de notification : il ne reste plus d'acte à proposer. */
+const definitiveEmise = (declaration) =>
+  Boolean(declaration?.date_notification_definitive)
+  || String(declaration?.statut || '').toUpperCase() === 'DÉFINITIVE_ENVOYÉE';
+
 /**
  * @param {object} sources
  * @param {Array} sources.declarations
@@ -75,13 +85,13 @@ const periodeDeDeclaration = (declaration) =>
 export const construireFile = ({ declarations = [], rapprochements = [], relances = [] } = {}) => {
   const actes = [];
   const declarationsCouvertes = new Set();
+  // Une relance porte `id_declaration` : c'est le seul moyen de savoir si l'acte
+  // qu'elle appelle a déjà été enregistré au dossier.
+  const declarationsParId = new Map(declarations.map((d) => [d.id_declaration, d]));
 
   // 1. Procédure contradictoire : une primitive ouverte attend sa suite.
   declarations.forEach((declaration) => {
-    const statut = String(declaration.statut || '').toUpperCase();
-    const primitive = Boolean(declaration.date_notification_primitive) || statut === 'PRIMITIVE_ENVOYÉE';
-    const definitive = Boolean(declaration.date_notification_definitive) || statut === 'DÉFINITIVE_ENVOYÉE';
-    if (!primitive || definitive) return;
+    if (!primitiveOuverte(declaration) || definitiveEmise(declaration)) return;
 
     declarationsCouvertes.add(declaration.id_declaration);
     const limite = declaration.date_limite_reponse ? new Date(declaration.date_limite_reponse) : null;
@@ -121,6 +131,13 @@ export const construireFile = ({ declarations = [], rapprochements = [], relance
     if (relance.type_relance === 'demande_eclaircissement') {
       // Tant que le délai de réponse court, il n'y a pas d'acte à poser.
       if (reste > 7) return;
+
+      // L'éclaircissement appelle la primitive. Si le dossier en porte déjà une,
+      // l'acte a été posé : c'est le bloc 1 qui propose la définitive, avec sa
+      // propre échéance. Le proposer une seconde fois contredirait le dossier.
+      const declaration = declarationsParId.get(relance.id_declaration);
+      if (declaration && (definitiveEmise(declaration) || primitiveOuverte(declaration))) return;
+
       actes.push({
         id: `eclaircissement-${relance.id_relance}`,
         categorie: 'procedure',
@@ -152,27 +169,52 @@ export const construireFile = ({ declarations = [], rapprochements = [], relance
     });
   });
 
-  // 3. Écarts de rapprochement encore ouverts.
+  // 3. Écarts de rapprochement encore ouverts : un acte par dossier. La
+  //    confrontation se mène contribuable par contribuable — quarante écarts
+  //    d'un même dossier forment une visite, pas quarante lignes de file.
+  const dossiersOuverts = new Map();
   rapprochements.forEach((rapprochement) => {
     const declaration = rapprochement.declarations || {};
-    const idContribuable = declaration.contribuables?.id_contribuable;
-    if (!idContribuable) return;
+    const rattachement = declaration.contribuables;
+    if (!rattachement?.id_contribuable) return;
     if (rapprochement.id_declaration) declarationsCouvertes.add(rapprochement.id_declaration);
 
-    actes.push({
-      id: `rapprochement-${rapprochement.id_rapprochement}`,
-      categorie: 'ecart',
-      priorite: rapprochement.statut === 'ecart' ? 2 : 3,
-      echeance: null,
-      acte: rapprochement.statut === 'ecart' ? 'Traiter un écart confirmé' : 'Vérifier un rapprochement',
-      motif: `${periodeDeDeclaration(declaration)} · écart de ${formatAriary(rapprochement.ecart)}`,
+    const cle = rattachement.id_contribuable;
+    const dossier = dossiersOuverts.get(cle) || {
       contribuable: {
-        id: idContribuable,
-        nom: declaration.contribuables?.raison_sociale || 'Contribuable',
-        nif: declaration.contribuables?.nif || '',
+        id: cle,
+        nom: rattachement.raison_sociale || 'Contribuable',
+        nif: rattachement.nif || '',
       },
-      montant: toNumber(rapprochement.ecart),
-      to: `/contribuables/${idContribuable}/confrontation`,
+      ecarts: 0,
+      aVerifier: 0,
+      periodes: [],
+      cumul: 0,
+    };
+    if (rapprochement.statut === 'ecart') dossier.ecarts += 1;
+    else dossier.aVerifier += 1;
+    dossier.periodes.push(periodeDeDeclaration(declaration));
+    dossier.cumul += toNumber(rapprochement.ecart);
+    dossiersOuverts.set(cle, dossier);
+  });
+
+  dossiersOuverts.forEach((dossier, cle) => {
+    const { ecarts, aVerifier, periodes, cumul } = dossier;
+    const horsPremieres = Math.max(0, periodes.length - 3);
+    const libellePeriodes = `${periodes.slice(0, 3).join(', ')}${
+      horsPremieres ? ` + ${horsPremieres} autre(s)` : ''
+    }`;
+
+    actes.push({
+      id: `rapprochement-${cle}`,
+      categorie: 'ecart',
+      priorite: ecarts > 0 ? 2 : 3,
+      echeance: null,
+      acte: ecarts > 0 ? 'Traiter les écarts confirmés' : 'Vérifier les rapprochements',
+      motif: `${periodes.length} ligne(s) ouverte(s) · ${ecarts} écart(s) confirmé(s), ${aVerifier} à vérifier · ${libellePeriodes} · cumul déclaré − recoupé`,
+      contribuable: dossier.contribuable,
+      montant: cumul,
+      to: `/contribuables/${cle}/confrontation`,
       action: 'Confronter',
     });
   });

@@ -208,6 +208,15 @@ export default function Confrontation({ currentUser = null }) {
     patch({ [CLE_FILTRE[key]]: value, page: '' });
   };
 
+  /**
+   * Une seule écriture d'URL : `patch` applique ses modifications au jeu de
+   * paramètres du rendu courant, donc quatre appels successifs dans le même
+   * gestionnaire ne laisseraient survivre que le dernier.
+   */
+  const clearFilters = () => {
+    patch({ ...Object.fromEntries(Object.values(CLE_FILTRE).map((cle) => [cle, ''])), page: '' });
+  };
+
   const openModal = (action, label) => {
     setModal({ action, label });
     setMotif('');
@@ -324,6 +333,7 @@ export default function Confrontation({ currentUser = null }) {
               error={listError}
               filters={filters}
               onFilterChange={changeFilter}
+              onResetFilters={clearFilters}
               onPageChange={(valeur) => patch({ page: valeur <= 1 ? '' : valeur })}
               onRefresh={loadList}
               onOpenDetail={openDetail}

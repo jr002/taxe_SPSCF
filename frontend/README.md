@@ -100,7 +100,9 @@ contribuable n'a pas de session agent, et le réseau du navigateur ne montre ni
 | `/contribuables/:id/classification`, `/declarations`, `/recoupements`, `/droits-communication`, `/relances` | `ContribuableDetail` (mêmes écrans, onglets déduits du chemin) | protégé |
 | `/contribuables/:id/confrontation` | `Confrontation` — page unique de confrontation déclarations / recoupements | protégé |
 | `/contribuables/:id/declarations/nouveau`, `/recoupements/nouveau`, `/droits-communication/nouveau` | pages dédiées d'enregistrement | protégé |
-| `/register`, `/centres-fiscaux`, `/centres/:id`, `/centres-fiscaux/:type/:index` | `Register`, `CentreListe`, `CentreDetail`, `UniteFiscaleDetail` | protégé |
+| `/unites-operationnelles` | `UnitesOperationnelles` — cartographie institutionnelle et registre des centres fusionnés | protégé |
+| `/unites-operationnelles/:type/:nom` | `UniteOperationnelleDetail` — fiche de l'unité et dossiers rattachés | protégé |
+| `/register`, `/centres-fiscaux`, `/centres/:id`, `/centres-fiscaux/:type/:index` | redirections vers `/unites-operationnelles` (écrans dédoublés fusionnés) | protégé |
 | `/relance` | `RelanceFiscale` | protégé — entrée « Relances » du `Header` |
 | toute autre URL | redirection vers `/` | — |
 

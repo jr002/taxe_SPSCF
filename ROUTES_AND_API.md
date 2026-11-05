@@ -56,11 +56,10 @@ est affiché. Ensuite :
 | `/collecte` | `frontofficeagent/collecte/pages/Collecte.jsx` | protégé | Simulateur de collecte TVA ; l'onglet actif est porté par `currentModule` (`sales`, `theoretical`, `reconciliation`, `declaration`) |
 | `/entreprises/nouveau` | `frontofficeagent/entreprises/pages/PhaseClassement.jsx` | protégé | Étape 1 de l'immatriculation : choix de la structure compétente |
 | `/entreprises/nouveau/form` | `frontofficeagent/entreprises/pages/FormInformation.jsx` | protégé | Étape 2 de l'immatriculation : formulaire de création d'un contribuable (`?structure=…`) |
-| `/decisionnel` | `frontofficeagent/decisionnel/pages/TableauDecisionnel.jsx` | protégé | Tableau de bord de pilotage (KPI et graphiques) |
-| `/register` | `frontofficeagent/centres/pages/Register.jsx` | protégé | Registre fiscal par centre |
-| `/centres-fiscaux` | `frontofficeagent/centres/pages/CentreListe.jsx` | protégé | Liste des centres et unités fiscales |
-| `/centres/:id` | `frontofficeagent/centres/pages/CentreDetail.jsx` | protégé | Fiche d'un centre et de ses contribuables |
-| `/centres-fiscaux/:type/:index` | `frontofficeagent/centres/pages/UniteFiscaleDetail.jsx` | protégé | Fiche d'une unité fiscale (centre fiscal, SRE ou DGE) |
+| `/decisionnel` | `frontofficeagent/decisionnel/pages/TableauDecisionnel.jsx` | protégé | « Statistiques » du rail : agrégat des déclarations de TVA du périmètre de l'agent (cartes : lignes enregistrées, lignes à examiner, écart théorique − payée, théorique attendu) et graphiques bornés aux exercices N−4 → N ; chaque titre s'explique au survol et l'écran porte son `? Aide` |
+| `/unites-operationnelles` | `frontofficeagent/centres/pages/UnitesOperationnelles.jsx` | protégé | Écran unique des unités opérationnelles : registre des centres fiscaux, SRE et DGE avec leurs agents et contribuables rattachés ; l'onglet actif, la recherche et la page vivent dans l'URL |
+| `/unites-operationnelles/:type/:nom` | `frontofficeagent/centres/pages/UniteOperationnelleDetail.jsx` | protégé | Fiche d'une unité opérationnelle (centre fiscal, SRE ou DGE) |
+| `/register`, `/centres-fiscaux`, `/centres/:id`, `/centres-fiscaux/:type/:index` | — | protégé | Redirections `Navigate` vers `/unites-operationnelles` (anciens liens conservés) |
 | `/suivi` | `frontofficeagent/suivi-fiscal/pages/SuiviFiscal.jsx` | protégé | Suivi et recherche des déclarations ; badge de contrôle **Rien à signaler** (vert, écart ≤ 25 %), **Risque moyen** (orange, écart ≤ 50 %) ou **À risque** (rouge) |
 | `/suivi/:id` | `frontofficeagent/suivi-fiscal/pages/DeclarationDetail.jsx` | protégé | Fiche détaillée d'une déclaration et actes de procédure contradictoire : notification primitive, notification définitive, demande d'éclaircissements (code des procédures fiscales, art. V-02, persistée dans `relances`), imputation du crédit d'impôt (code des impôts, art. 01.01.15 et 01.02.06) |
 | `/contribuables` | `frontofficeagent/contribuables/pages/Contribuables.jsx` | protégé | Registre des contribuables (vue liste) |

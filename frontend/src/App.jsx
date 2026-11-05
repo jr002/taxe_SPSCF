@@ -26,10 +26,8 @@ const MotDePasseOublie = lazy(() => import('@/backofficeadmin/auth/pages/MotDePa
 const Signup = lazy(() => import('@/backofficeadmin/auth/pages/Signup'));
 
 const Accueil = lazy(() => import('@/frontofficeagent/accueil/pages/Accueil'));
-const CentreDetail = lazy(() => import('@/frontofficeagent/centres/pages/CentreDetail'));
-const CentreListe = lazy(() => import('@/frontofficeagent/centres/pages/CentreListe'));
-const Register = lazy(() => import('@/frontofficeagent/centres/pages/Register'));
-const UniteFiscaleDetail = lazy(() => import('@/frontofficeagent/centres/pages/UniteFiscaleDetail'));
+const UnitesOperationnelles = lazy(() => import('@/frontofficeagent/centres/pages/UnitesOperationnelles'));
+const UniteOperationnelleDetail = lazy(() => import('@/frontofficeagent/centres/pages/UniteOperationnelleDetail'));
 const Collecte = lazy(() => import('@/frontofficeagent/collecte/pages/Collecte'));
 const Confrontation = lazy(() => import('@/frontofficeagent/confrontation/pages/Confrontation'));
 const ContribuableDetail = lazy(() => import('@/frontofficeagent/contribuables/pages/ContribuableDetail'));
@@ -179,10 +177,15 @@ export default function App() {
           <Route path="/entreprises/nouveau" element={<PhaseClassement />} />
           <Route path="/entreprises/nouveau/form" element={<FormInformation />} />
           <Route path="/decisionnel" element={<TableauDecisionnel />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/centres/:id" element={<CentreDetail />} />
-          <Route path="/centres-fiscaux" element={<CentreListe />} />
-          <Route path="/centres-fiscaux/:type/:index" element={<UniteFiscaleDetail />} />
+          {/* Un seul écran pour les centres : le registre administré (`centres`)
+              et la cartographie `unitefiscal.json` sont fusionnés ligne à ligne.
+              Les quatre chemins d'avant la fusion redirectent dessus. */}
+          <Route path="/unites-operationnelles" element={<UnitesOperationnelles currentUser={currentUser} />} />
+          <Route path="/unites-operationnelles/:type/:nom" element={<UniteOperationnelleDetail />} />
+          <Route path="/register" element={<Navigate to="/unites-operationnelles" replace />} />
+          <Route path="/centres-fiscaux" element={<Navigate to="/unites-operationnelles" replace />} />
+          <Route path="/centres/:id" element={<Navigate to="/unites-operationnelles" replace />} />
+          <Route path="/centres-fiscaux/:type/:index" element={<Navigate to="/unites-operationnelles" replace />} />
           <Route path="/suivi" element={<SuiviFiscal />} />
           <Route path="/file-de-travail" element={<FileTravail />} />
           <Route path="/suivi/:id" element={<DeclarationDetail />} />

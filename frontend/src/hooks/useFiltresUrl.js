@@ -15,6 +15,12 @@ export default function useFiltresUrl() {
     [searchParams],
   );
 
+  /**
+   * `changes` s'applique au jeu de paramètres **du rendu courant**. Plusieurs
+   * appels successifs dans un même gestionnaire d'événement se lisent donc sur la
+   * même image figée : le dernier écrase les précédents. Regrouper les modifications
+   * d'une même action en un seul `patch`.
+   */
   const patch = useCallback(
     (changes, options = {}) => setSearchParams(
       updateSearchParams(searchParams, changes),

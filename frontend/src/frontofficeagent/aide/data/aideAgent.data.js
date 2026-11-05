@@ -194,6 +194,46 @@ export const TERMES = {
     sens:
       'URL de consultation en lecture seule émise pour ce dossier : le contribuable y retrouve ses chiffres et l’aide à la lecture, sans accès au back-office. Une nouvelle émission révoque les liens précédents.',
   },
+  perimetre_statistiques: {
+    terme: 'Périmètre des statistiques',
+    sens:
+      'Les chiffres d’agrègent que les déclarations visibles depuis votre périmètre : le centre pour un agent ou un chef de centre, tout le territoire pour un inspecteur ou un administrateur. Deux agents de centres différents ne lisent jamais le même total.',
+  },
+  fenetre_exercices: {
+    terme: 'Cinq exercices',
+    sens:
+      'Les graphiques sont bornés aux exercices N−4 à N. Une déclaration enregistrée hors de cette fenêtre compte dans les cartes du haut, jamais dans les barres ni dans les courbes.',
+  },
+  declaration_enregistree: {
+    terme: 'Déclaration enregistrée',
+    sens:
+      'Une ligne de la table des déclarations : une déclaration de TVA par exercice et par dossier. Les compteurs dénombrent ces lignes, pas les contribuables — un dossier suivi cinq années pèse cinq.',
+  },
+  lignes_a_examiner: {
+    terme: 'Lignes à examiner',
+    sens:
+      'Addition des lignes dont le statut enregistré est « alerte » ou « critique ». Le statut se saisit au suivi fiscal ; l’écran le lit tel quel et n’y ajoute ni les « non conforme », ni les lignes engagées sous notification.',
+  },
+  ecart_total: {
+    terme: 'Écart agrégé',
+    sens:
+      'Somme des TVA théoriques moins somme des TVA payées, sur toutes les lignes du périmètre. Positif, le total versé reste en deçà de la référence ; négatif, il la dépasse. Un ordre de grandeur, jamais une créance : seule une notification définitive rend une somme exigible.',
+  },
+  regime_repartition: {
+    terme: 'Partage IS / IR',
+    sens:
+      'Déduit ligne à ligne : IR quand le chiffre d’affaires est inférieur à 400 M Ar et que la déclaration porte le régime IR, IS dans tous les autres cas — y compris quand le régime n’est pas renseigné.',
+  },
+  ca_moyen: {
+    terme: 'Chiffre d’affaires moyen',
+    sens:
+      'Moyenne des chiffres d’affaires déclarés sur les lignes du périmètre, toutes années confondues. Une ligne saisie sans chiffre d’affaires vaut 0 et tire la moyenne vers le bas.',
+  },
+  part_theorique_nationale: {
+    terme: 'Part du théorique national',
+    sens:
+      'Le théorique attendu de votre périmètre rapporté au théorique attendu de toutes les déclarations enregistrées. Seule la ligne « TVA théorique » de cet écran le porte, et il ignore la matière non déclarée : c’est une part d’agrégat, pas un taux officiel.',
+  },
 };
 
 /** Accès sûr : une id inconnue rend `null`, le composant retombe alors sur son texte nu. */
@@ -425,6 +465,44 @@ export const AIDES = {
         texte:
           'La confrontation raisonne en chiffres d’affaires. Les montants TVA affichés aident à situer la ligne ; ils ne sont pas la base du rapprochement.',
         termes: ['tva_theorique'],
+      },
+    ],
+  },
+  statistiques: {
+    titre: 'Lire l’écran Statistiques',
+    intro:
+      'Cet écran agrège les déclarations de TVA enregistrées dans votre périmètre. Il montre ce qui est saisi au fichier — pas ce qui reste à recouvrer : aucun montant affiché ici ne devient une somme exigible.',
+    rubriques: [
+      {
+        titre: 'Deux horloges',
+        texte:
+          'Les cartes du haut additionnent toutes les lignes du périmètre, quel que soit l’exercice. Les graphiques du bas ne regardent que les cinq exercices courants. Un dossier dont la dernière déclaration date d’avant la fenêtre alimente donc les cartes et reste absent des barres.',
+        termes: ['fenetre_exercices', 'perimetre_statistiques'],
+      },
+      {
+        titre: 'Les quatre cartes',
+        texte:
+          'Le nombre de lignes de déclaration, le nombre de lignes dont le statut appelle un examen, l’écart agrégé entre le théorique attendu et le réellement payé, et ce théorique attendu. Les montants se lisent en notation compacte (k, M, Md Ar) ; le détail d’une ligne se lit dans son dossier.',
+        termes: [
+          'declaration_enregistree',
+          'lignes_a_examiner',
+          'statut_declaration',
+          'ecart_total',
+          'tva_theorique',
+          'tva_payee',
+        ],
+      },
+      {
+        titre: 'Les graphiques',
+        texte:
+          'Les barres décomptent les lignes par exercice et par régime. L’anneau donne la part IS / IR sur la même population, déduite ligne à ligne. Les deux courbes superposent, pour cinq exercices, la TVA payée et la TVA théorique de chaque régime : deux courbes qui s’écartent dessinent un dossier à confronter.',
+        termes: ['regime_repartition', 'nature_impot', 'fenetre_exercices'],
+      },
+      {
+        titre: 'Ce que l’écran ne dit pas',
+        texte:
+          'Une barre à zéro n’est pas une absence d’activité : c’est l’absence de déclaration enregistrée. Un dossier sans ligne n’existe pas ici. La matière recoupée auprès des tiers et les divergences qui en découlent se lisent dans la confrontation, pas dans ces totaux.',
+        termes: ['recoupement', 'confrontation'],
       },
     ],
   },

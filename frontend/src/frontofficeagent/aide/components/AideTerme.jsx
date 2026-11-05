@@ -13,8 +13,12 @@ import { terme } from '@/frontofficeagent/aide/data/aideAgent.data.js';
  *
  * Une id absente du registre rend le texte sans artifice : rien ne disparaît,
  * l'absence d'explication signale un terme non enregistré.
+ *
+ * `direction="bas"` pose la bulle sous le terme et l'aligne sur son bord gauche :
+ * les panneaux de graphique sont en `overflow: hidden`, une bulle centrée au-dessus
+ * d'un titre court y serait rognée.
  */
-export default function AideTerme({ id, children }) {
+export default function AideTerme({ id, children, direction = 'haut' }) {
   const entree = terme(id);
   const tipId = useId();
   const [ouvert, setOuvert] = useState(false);
@@ -22,7 +26,9 @@ export default function AideTerme({ id, children }) {
   if (!entree) return <>{children}</>;
 
   return (
-    <span className={`aide-term${ouvert ? ' ouvert' : ''}`}>
+    <span
+      className={`aide-term${ouvert ? ' ouvert' : ''}${direction === 'bas' ? ' aide-term-bas' : ''}`}
+    >
       <button
         type="button"
         className="aide-term-cible"

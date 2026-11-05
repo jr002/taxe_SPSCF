@@ -1,6 +1,6 @@
 # Graphiques
 
-Composants SVG de visualisation des indicateurs fiscaux. [`Diagrammes.jsx`](Diagrammes.jsx) est le seul fichier du sous-dossier ; il n'exporte que des symboles nommés (aucun export par défaut), n'utilise aucune bibliothèque de graphiques, et s'appuie sur [`../../utils/formatters.js`](../../utils/formatters.js) (`formatAxisValue`, `formatCompact`) et [`../../frontofficeagent/decisionnel/utils/decisionnel.utils.js`](../../frontofficeagent/decisionnel/utils/decisionnel.utils.js) (`getRegime`, `getRegimePercentage`).
+Composants SVG de visualisation des indicateurs fiscaux. [`Diagrammes.jsx`](Diagrammes.jsx) est le seul fichier du sous-dossier ; il n'exporte que des symboles nommés (aucun export par défaut), n'utilise aucune bibliothèque de graphiques, et s'appuie sur [`../../utils/formatters.js`](../../utils/formatters.js) (`formatAxisValue`, `formatCompact`), [`../../frontofficeagent/decisionnel/utils/decisionnel.utils.js`](../../frontofficeagent/decisionnel/utils/decisionnel.utils.js) (`getRegime`, `getRegimePercentage`) et [`../../frontofficeagent/aide/components/AideTerme.jsx`](../../frontofficeagent/aide/components/AideTerme.jsx) pour les explications au survol des titres.
 
 ---
 
@@ -10,9 +10,9 @@ Composants SVG de visualisation des indicateurs fiscaux. [`Diagrammes.jsx`](Diag
 
 Convertit un tableau de valeurs en chaîne de points pour un `<polyline>` SVG (`"x,y x,y ..."`), dans un repère `viewBox="0 0 100 100"` : l'abscisse est répartie de 0 à 100 (valeur unique centrée sur 50) et l'ordonnée est ramenée entre 94 et 10. La plage est bornée à `Math.max(max - min, 1)` pour éviter la division par zéro.
 
-### `MiniLine({ data, color, max })`
+### `MiniLine({ data, color, max, legende })`
 
-Sparkline SVG. `data` est un tableau d'objets portant un champ `amount` ; `color` vaut `#2563eb` par défaut et `max` vaut `1`. Le composant porte `role="img"` et un `aria-label` « Évolution annuelle ».
+Sparkline SVG. `data` est un tableau d'objets portant un champ `amount` ; `color` vaut `#2563eb` par défaut et `max` vaut `1`. `legende` (par défaut `null`) est le nom de la série : fourni, il remplace le `aria-label` « Évolution annuelle » et est répété dans un `<title>` SVG, ce qui rend l'infobulle native du tracé lisible à la souris. Le composant garde `role="img"`.
 
 ### `polarToCartesian()` et `describeArc()`
 
@@ -38,17 +38,19 @@ Barres groupées réutilisant intégralement la charte des panneaux existants (`
 
 ## Graphiques du tableau décisionnel
 
+Ces trois graphiques ne sont utilisés que par [`TableauDecisionnel.jsx`](../../frontofficeagent/decisionnel/pages/TableauDecisionnel.jsx). Chacun ouvre son panneau par `.chart-panel-heading` — un `.eyebrow` (la source des données), le titre dans un `AideTerme` `direction="bas"` (l'explication au survol, posée sous le titre car `.dashboard-grid > .panel` est en `overflow: hidden`), et un `<span>` à droite pour l'unité — puis porte `role="img"` et un `aria-label` qui récite point par point ce que le tracé montre en couleurs.
+
 ### `VolumeChart({ years })`
 
-Graphique en barres empilées horizontalement par année (`article.panel.wide`), avec trois séries par année : IS, IR et total TVA. Attend des éléments `{ year, is, ir, tva }`. L'axe des ordonnées est gradué avec `formatAxisValue` sur quatre niveaux (maximum, 66 %, 33 %, 0).
+Barres groupées par exercice (`article.panel.wide`), trois barres par année : IS, IR et total. Attend des éléments `{ year, is, ir, tva }`. L'axe des ordonnées est gradué avec `formatAxisValue` sur quatre niveaux (maximum, 66 %, 33 %, 0) et la hauteur de chaque barre est rapportée au maximum des trois séries. Chaque `<i>` porte une `title` native du type « IS 2024 : 12 déclarations » (helper interne `titreBarre`). La légende dit « Total (IS + IR) » — la troisième barre est une somme des deux premières, pas une troisième catégorie — et reprend les classes de couleur réellement tracées : `<span />` (le bleu de `.legend span`, comme la barre IS), `<span className="ir" />`, `<span className="tva" />`.
 
 ### `RegimeChart({ declarations })`
 
-Anneau (« donut ») de répartition IS / IR. Le nombre de dossiers IS est calculé avec `getRegime`, la part IR en déduction, et le pourcentage d'anneau est transmis à la variable CSS `--is`. Les effectifs et pourcentages sont affichés via `getRegimePercentage`.
+Anneau (« donut ») de la part des lignes sous régime IS et sous régime IR. Le nombre de lignes IS est calculé avec `getRegime`, la part IR en déduction, et le pourcentage d'anneau est transmis à la variable CSS `--is`. Le centre affiche le nombre de lignes (`strong` + `small`), la légende et le `.split` donnent les effectifs et pourcentages via `getRegimePercentage`. Un régime sans aucune ligne n'a rien à comparer : ses courbes sont filtrées par la page et l'anneau le dit en `.empty` (« régime IR : aucune ligne, comparaison non tracée »).
 
 ### `CurveChart({ curve })`
 
-Deux courbes superposées pour un régime donné : attend un objet `{ regime, paid, expected }` où `paid` et `expected` sont des tableaux de points `{ year, amount }`. Le maximum est calculé sur la concaténation des deux séries ; deux `MiniLine` sont tracées (théorique en `#2563eb`, payé en `#f59e0b`).
+Deux courbes superposées pour un régime donné : attend un objet `{ regime, paid, expected }` où `paid` et `expected` sont des tableaux de points `{ year, amount }`. Le maximum est calculé sur la concaténation des deux séries ; deux `MiniLine` sont tracées (théorique en `#2563eb`, payée en `#f59e0b`), chacune nommée par `legende` (« TVA théorique IS », « TVA payée IS »). L'`aria-label` récite pour chaque année le théorique et le payée en `formatCompact`.
 
 ---
 

@@ -27,18 +27,26 @@ export default function useFileTravail() {
       getRelances({ statut: 'emise', limit: 500 }),
     ]);
 
-    // Les fonctions de `@/api` renvoient déjà le tableau de lignes.
-    const lignes = (resultat) => (resultat.status === 'fulfilled' ? resultat.value : []);
+    // `@/api` renvoie pour ces trois listes l'enveloppe de pagination du serveur
+    // `{ data, pagination }` : ce sont les lignes qu'il faut passer à la file,
+    // pas l'enveloppe. Le tableau brut reste accepté si une source change de forme.
+    const lignes = (resultat) => {
+      if (resultat.status !== 'fulfilled') return [];
+      const valeur = resultat.value;
+      if (Array.isArray(valeur)) return valeur;
+      return Array.isArray(valeur?.data) ? valeur.data : [];
+    };
+    const sources = {
+      declarations: lignes(declarations),
+      rapprochements: [...lignes(aVerifier), ...lignes(ecarts)],
+      relances: lignes(relances),
+    };
     const aEchoue = [declarations, aVerifier, ecarts, relances].filter(
       (resultat) => resultat.status === 'rejected',
     );
 
     return {
-      actes: construireFile({
-        declarations: lignes(declarations) || [],
-        rapprochements: [...(lignes(aVerifier) || []), ...(lignes(ecarts) || [])],
-        relances: lignes(relances) || [],
-      }),
+      actes: construireFile(sources),
       error: aEchoue.length ? getErrorMessage(aEchoue[0].reason) : '',
     };
   }, []);

@@ -83,10 +83,10 @@ Props :
 
 Export par défaut `AgentSidebar`, réservé au shell des rôles opérationnels dans `App.jsx`.
 
-* Sept liens : `/accueil`, `/file-de-travail`, `/decisionnel`, `/suivi`, `/contribuables`, `/centres-fiscaux` et `/register`. Le chef de centre reçoit en plus « Mon équipe » (`/admin/utilisateurs` en mode restreint), soit huit entrées. Tous ces éléments — chemin, nom, icône, groupe — viennent de [`../../data/navigationAgent.data.js`](../../data/navigationAgent.data.js) ; la barre n'en affiche que les entrées marquées `rail`.
-* Le lien actif se résout sur **tout** le registre, pas seulement sur les entrées affichées : `/relance` allume « Dossier fiscal », `/collecte` et `/entreprises/nouveau` allument « Contribuables », `/centres/12` allume « Centres fiscaux », `/contribuables/72/relances` allume « Contribuables ». Aucun écran atteint par l'application ne laisse la barre éteinte.
+* Six liens : `/accueil`, `/file-de-travail`, `/decisionnel`, `/suivi`, `/contribuables` et `/unites-operationnelles`. Le chef de centre reçoit en plus « Mon équipe » (`/admin/utilisateurs` en mode restreint), soit sept entrées. Tous ces éléments — chemin, nom, icône, groupe — viennent de [`../../data/navigationAgent.data.js`](../../data/navigationAgent.data.js) ; la barre n'en affiche que les entrées marquées `rail`.
+* Le lien actif se résout sur **tout** le registre, pas seulement sur les entrées affichées : `/relance` allume « Dossier fiscal », `/collecte` et `/entreprises/nouveau` allument « Contribuables », `/unites-operationnelles/centres_fiscaux/CF1%20Analakely` et l'URL héritée `/centres/12` allument « Unités opérationnelles », `/contribuables/72/relances` allume « Contribuables ». Aucun écran atteint par l'application ne laisse la barre éteinte.
 * Quand l'écran porte un nom différent de son groupe, le `aria-label` et l'`title` de l'entrée active le disent — « Dossier fiscal — Relance fiscale » — alors que le rail replié ne montre qu'une icône.
-* Huit icônes distinctes, toutes en traits de `1.8` dans une boîte `24×24` : dossier à rabat pour « Dossier fiscal » (`/suivi`), lignes d'annuaire pour « Registre » (`/register`) et carte d'agent pour « Mon équipe », afin qu'aucune ne se confonde avec une autre quand le rail est replié sur ses seules icônes.
+* Sept icônes distinctes, toutes en traits de `1.8` dans une boîte `24×24` : dossier à rabat pour « Dossier fiscal » (`/suivi`), façade d'édifice pour « Unités opérationnelles » (`/unites-operationnelles`) et carte d'agent pour « Mon équipe », afin qu'aucune ne se confonde avec une autre quand le rail est replié sur ses seules icônes.
 * L'état actif ne dépend pas du libellé (masqué rail replié) : la pastille porte un anneau intérieur plein de `1.5px` — `#1769aa` en clair, `#7dd3fc` en sombre — mesuré à 5,8:1 et 9,6:1 contre le fond du rail, et 4,8:1 et 6,1:1 contre la pastille, au-dessus du seuil de 3:1 des indicateurs non textuels.
 * Au-dessus de 1024 px, `.agent-layout` affiche une sidebar compacte à icônes ; au survol ou au focus clavier, elle s'élargit et révèle les libellés.
 * À 1024 px et moins, la sidebar reste visible au-dessus du contenu avec ses icônes et libellés.
@@ -359,7 +359,7 @@ l'enfant, sinon elle rend `children`.
   `/admin/verification-nif/sql` fait des `SELECT` sur `contribuables`), et un
   `403` le casserait. Le périmètre réel reste décidé par `data-scope` serveur.
 * Aucun rôle opérationnel n'est exclu, et les autres URL fiscales (`/suivi`,
-  `/relance`, `/decisionnel`, `/centres-fiscaux`…) ne passent pas par ce garde.
+  `/relance`, `/decisionnel`, `/unites-operationnelles`…) ne passent pas par ce garde.
 
 ---
 

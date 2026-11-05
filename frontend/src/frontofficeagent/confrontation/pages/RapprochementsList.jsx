@@ -23,6 +23,18 @@ import {
 const STATUS_OPTIONS = ['rapproche', 'a_verifier', 'ecart', 'valide', 'rejete', 'annule'];
 const TYPE_OPTIONS = ['exact', 'tolerance', 'partiel', 'manuel'];
 
+/**
+ * Nom de fichier envoyé par le serveur (`Content-Disposition`), qui porte la
+ * période et la date d'édition. À défaut, nom de fichier reconstruit depuis le
+ * NIF. Les caractères de chemin sont retirés : le nom vient d'un en-tête.
+ */
+const nomFichierPdf = (disposition, nif) => {
+  const brut = /filename="?([^";]+)"?/.exec(String(disposition || ''))?.[1];
+  if (!brut) return `confrontation-${nif}.pdf`;
+  const propre = brut.replace(/["/\\]/g, '').trim();
+  return propre || `confrontation-${nif}.pdf`;
+};
+
 export default function RapprochementsList({
   rows,
   total,
@@ -32,6 +44,7 @@ export default function RapprochementsList({
   error,
   filters,
   onFilterChange,
+  onResetFilters,
   onPageChange,
   onRefresh,
   onOpenDetail,
@@ -60,12 +73,6 @@ export default function RapprochementsList({
     ...periodesAnnee.map((entree) => entree.value),
     ...periodesMois.map((entree) => entree.value),
   ]);
-  const resetFilters = () => {
-    onFilterChange('search', '');
-    onFilterChange('periode', '');
-    onFilterChange('statut', '');
-    onFilterChange('type', '');
-  };
 
   const exportExcel = () => {
     const sheet = XLSX.utils.json_to_sheet(rows.map((row) => ({
@@ -100,11 +107,13 @@ export default function RapprochementsList({
       const url = URL.createObjectURL(response.data);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `confrontation-${contribuable.nif}.pdf`;
+      link.download = nomFichierPdf(response.headers?.['content-disposition'], contribuable.nif);
       document.body.appendChild(link);
       link.click();
       link.remove();
-      URL.revokeObjectURL(url);
+      // Le téléchargement n'est pas garanti démarré à la ligne suivante :
+      // révoquer trop tôt donne un fichier vide dans certains navigateurs.
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
     } catch (error) {
       setExportError(getErrorMessage(error));
     } finally {
@@ -205,7 +214,7 @@ export default function RapprochementsList({
           {TYPE_OPTIONS.map((value) => <option key={value} value={value}>{matchTypeLabel(value)}</option>)}
         </select>
         <button type="button" onClick={onRefresh} disabled={loading}>Actualiser</button>
-        {hasFilters && <button type="button" onClick={resetFilters}>Effacer les filtres</button>}
+        {hasFilters && <button type="button" onClick={onResetFilters}>Effacer les filtres</button>}
         <button type="button" onClick={exportExcel} disabled={!rows.length}>Exporter Excel</button>
         <button type="button" onClick={exportPdf} disabled={!rows.length || exporting}>
           {exporting ? 'Génération du PDF…' : 'Exporter PDF'}
@@ -241,7 +250,7 @@ export default function RapprochementsList({
             La recherche, la période, le statut et le type s’appliquent à l’ensemble des
             rapprochements du contribuable. Aucun ne correspond aux critères choisis.
           </p>
-          <button type="button" onClick={resetFilters}>Effacer les filtres</button>
+          <button type="button" onClick={onResetFilters}>Effacer les filtres</button>
         </div>
       ) : (
         <>

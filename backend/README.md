@@ -82,6 +82,17 @@ schéma se trouvent dans [`prisma/migrations/`](prisma/migrations/) et
 s'appliquent avec `pnpm --filter backend run prisma:deploy` (voir
 [`prisma/README.md`](prisma/README.md)).
 
+**Les scripts de [`seeds/`](seeds/) ne sont pas des migrations.** Ils insèrent
+de la matière de démonstration, ne touchent aucune structure et se relancent à
+l'infini puisqu'ils commencent par purger les lignes qu'ils ont créées.
+[`seeds/file-travail-exemples.sql`](seeds/file-travail-exemples.sql) alimente la
+file de travail de trois dossiers marqués « EXEMPLE » (NIF réservés
+9500000001 à 9500000003, centre CF1 Analakely) ; ses dates se recalculent sur
+`CURRENT_DATE`, donc le relancer juste avant une démonstration recentre toutes
+les échéances. Application :
+`npx prisma db execute --schema prisma/schema.prisma --file seeds/file-travail-exemples.sql`,
+retrait : le bloc « PURGE » commenté en bas du fichier.
+
 > **Drift de schéma — à lire avant toute opération de migration.** Le dépôt
 > contient deux systèmes de migration qui ont divergé :
 > [`prisma/migrations/`](prisma/migrations/) (3 migrations enregistrées :
@@ -467,6 +478,7 @@ backend/
 │   ├── middlewares/          # authentification, validation, gestion des erreurs
 │   └── utils/                # périmètre de données et références fiscales
 ├── scripts/create-agent.js   # création d'un compte agent
+├── tests/                    # suite de tests du moteur de rapprochement
 ├── prisma/schema.prisma      # modèles et relations de la base
 ├── prisma/migrations/        # migrations gérées par Prisma
 └── migrations/               # scripts SQL ponctuels (hors Prisma)
@@ -542,10 +554,13 @@ pnpm --filter backend run prisma:generate
 - `app.use('/uploads', ...)` sert des fichiers statiques depuis
   `backend/uploads`, dossier qui n'existe pas dans le dépôt (à créer si des
   pièces jointes sont ajoutées).
-- Les dépendances `multer`, `pdfkit`, `xlsx` et `pg-pool` sont déclarées dans
-  `package.json` mais ne sont utilisées par aucun fichier du backend.
-- `pnpm --filter backend run test` est encore un script placeholder : aucun test automatisé n'est
-  actuellement configuré dans le backend.
+- Les dépendances `multer`, `xlsx` et `pg-pool` sont déclarées dans
+  `package.json` mais ne sont utilisées par aucun fichier du backend. `pdfkit`
+  sert : [`src/services/rapprochement-pdf.service.js`](src/services/rapprochement-pdf.service.js)
+  construit les documents de rapprochement.
+- Les tests couvrent le moteur de rapprochement (voir [`tests/`](tests/)) : la
+  confrontation, le typage de l'écart et le rattachement automatique. Les autres
+  services, les contrôleurs et la base réelle restent vérifiés à la main.
 
 ## Scripts pnpm
 
@@ -559,4 +574,37 @@ pnpm --filter backend run prisma:generate
 | `pnpm --filter backend run agent:create` | crée un compte agent à partir des variables `AGENT_*` |
 | `pnpm --filter backend run dev` | lance le serveur avec nodemon |
 | `pnpm --filter backend start` | lance le serveur en mode normal |
-| `pnpm --filter backend run test` | placeholder, aucun test configuré |
+| `pnpm test` (racine) | lance les tests du backend depuis la racine |
+| `pnpm --filter backend run test` | suite de tests du moteur de rapprochement (35 tests, runner Node intégré) |
+| `pnpm --filter backend run test:watch` | relance la suite à chaque sauvegarde |
+
+## Tests
+
+`pnpm --filter backend run test` lance [`tests/rapprochement.test.js`](tests/rapprochement.test.js)
+avec le runner intégré à Node (`node --test`) : aucune dépendance de test n'est
+ajoutée au projet et la suite ne demande ni PostgreSQL, ni `.env`, ni serveur
+démarré. Les lignes `declarations`, `recoupements` et `rapprochements` sont
+fournies par des doublures posées sur `DeclarationModel`, `RecoupementModel` et
+`RapprochementModel` — `confronter` rend donc le rapprochement tel qu'il serait
+écrit en base, sans écriture.
+
+La suite verrouille deux invariants :
+
+- **aucun recoupement n'est confronté à la déclaration d'un autre exercice**
+  (`isPeriodCompatible` : période mensuelle identique, année demandée en
+  `AAAA`, repli sur `date_operation`, exclusion explicite d'une ligne sans
+  information de période exploitable) ;
+- **`écart = montant déclaré − montant recoupé`**, typé en quatre paliers —
+  concordance exacte, tolérance jusqu'à 1 000 Ar, partiel jusqu'à 5 % du
+  chiffre d'affaires déclaré, au-delà statut `ecart` et score nul — avec
+  l'ordre de priorité du montant recoupé (somme recoupée, puis TTC, puis
+  montant déclaré du tiers) et le fait que `type_rapprochement` et `statut`
+  appartiennent aux listes admises par `chk_rapprochements_type` et
+  `chk_rapprochements_statut`.
+
+Elle couvre aussi le rattachement automatique d'un contribuable : paires
+constituées, rapprochement préexistant non recréé, recoupements ignorés, et
+période imposée depuis l'écran de confrontation.
+
+Pour étendre la suite, un fichier par domaine sous `tests/` avec le suffixe
+`.test.js` suffit — le motif `tests/**/*.test.js` du script les découvre.

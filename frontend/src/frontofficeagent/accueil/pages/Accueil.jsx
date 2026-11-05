@@ -78,7 +78,11 @@ export default function Accueil({ currentUser = null }) {
   }), [rapprochements, relances]);
 
   const aTraiter = file.actes.length;
-  const prenom = currentUser?.prenom || '';
+  // Même écriture que le profil de la barre : prénom + nom tels qu'en base,
+  // l'e-mail en repli quand un des deux manque.
+  const identite = currentUser
+    ? `${currentUser.prenom ?? ''} ${currentUser.nom ?? ''}`.trim() || currentUser.email || ''
+    : '';
   const perimetre = currentUser?.nom_centre || 'Administration centrale';
   const mention = loading || file.loading
     ? 'Préparation de vos dossiers à traiter…'
@@ -100,7 +104,10 @@ export default function Accueil({ currentUser = null }) {
           <div className="workbench-brief-copy">
             <p className="workbench-brief-institution">République de Madagascar · DGI</p>
             <p className="eyebrow">Espace agent · {perimetre}</p>
-            <h1>{prenom ? `Bonjour, ${prenom}.` : 'Bonjour.'}</h1>
+            <h1>{identite ? `Bonjour, ${identite}.` : 'Bonjour.'}</h1>
+            {currentUser?.email && (
+              <p className="workbench-compte">{currentUser.email}</p>
+            )}
             <p className="workbench-mention">{mention}</p>
           </div>
         </div>
@@ -236,9 +243,9 @@ export default function Accueil({ currentUser = null }) {
           <strong>Nouveau contribuable</strong>
           <span>Créer une fiche assujettie à la TVA</span>
         </Link>
-        <Link to="/register">
-          <strong>Registre</strong>
-          <span>Parcourir les contribuables par centre</span>
+        <Link to="/unites-operationnelles">
+          <strong>Unités opérationnelles</strong>
+          <span>Ouvrir un centre et ses dossiers rattachés</span>
         </Link>
       </section>
     </div>

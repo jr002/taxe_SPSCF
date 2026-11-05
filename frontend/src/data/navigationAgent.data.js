@@ -58,18 +58,11 @@ export const ECRANS_AGENT = [
   { id: 'collecte', chemin: '/collecte', label: 'Collecte TVA', section: 'contribuables' },
   { id: 'entreprise', chemin: '/entreprises', label: 'Nouvelle entreprise', section: 'contribuables' },
   {
-    id: 'centres',
-    chemin: '/centres-fiscaux',
-    label: 'Centres fiscaux',
+    id: 'unites',
+    chemin: '/unites-operationnelles',
+    label: 'Unités opérationnelles',
     icone: ['M3 21h18', 'M5 21V7l7-4 7 4v14', 'M9 10h.01', 'M15 10h.01', 'M9 14h.01', 'M15 14h.01', 'M10 21v-4h4v4'],
-    alias: ['/centres'],
-    rail: true,
-  },
-  {
-    id: 'registre',
-    chemin: '/register',
-    label: 'Registre',
-    icone: ['M4.5 5h.01', 'M4.5 12h.01', 'M4.5 19h.01', 'M9 5h11', 'M9 12h11', 'M9 19h7'],
+    alias: ['/centres', '/centres-fiscaux', '/register'],
     rail: true,
   },
   {

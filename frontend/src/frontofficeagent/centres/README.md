@@ -1,116 +1,75 @@
-# 🏛️ Module Centres Fiscaux & Unités Opérationnelles (`/src/frontofficeagent/centres`)
+# 🏛️ Module Unités opérationnelles (`/src/frontofficeagent/centres`)
 
-Ce dossier regroupe les composants responsables de la gestion, de la consultation et de l'affichage des **centres fiscaux** et des **unités opérationnelles** de l'administration fiscale (DGI / SSIF).
+Un seul écran pour répondre à « quelle unité gère quels dossiers, où est-elle et comment la joindre ? ». Deux sources décrivaient le même objet — la table `centres` (registre administré) et `unitefiscal.json` (cartographie institutionnelle) — sur deux entrées de la barre latérale ; elles sont désormais fusionnées.
 
 ---
 
-## 📁 Structure du Dossier
+## 📁 Structure du dossier
 
 ```text
 centres/
-├── Register.jsx              # Registre administratif interactif des centres (API / BDD)
-├── CentreDetail.jsx          # Fiche détaillée d'un centre et contribuables rattachés (API)
-├── CentreListe.jsx           # Annuaire territorial des unités opérationnelles (unitefiscal.json)
-├── UniteFiscaleDetail.jsx    # Fiche d'une unité opérationnelle territoriale (unitefiscal.json)
-└── README.md                 # Documentation du module
+├── pages/
+│   ├── UnitesOperationnelles.jsx      # Liste fusionnée (cartographie + registre)
+│   └── UniteOperationnelleDetail.jsx  # Fiche d'une unité + dossiers rattachés
+├── utils/
+│   ├── uniteOperationnelle.utils.js   # Jointure des deux sources
+│   └── uniteFiscale.utils.js          # Lecture du référentiel `unitefiscal.json`
+└── README.md
 ```
 
 ---
 
-## ⚙️ Architecture & Deux Sources de Données
+## ⚙️ Deux sources, une ligne
 
-Le module combine deux approches complémentaires selon les besoins métiers :
+| | Registre administré | Cartographie institutionnelle |
+| --- | --- | --- |
+| Source | table `centres` via `GET /api/centres` | `unitefiscal.json` (`unites_operationnelles`) |
+| Apport | `numero_centre`, contacts saisis, dossiers rattachés (`_count.contribuables`) | régions couvertes, DRI de rattachement, adresse, téléphones multiples, attributs DGE |
+| Clé de jointure | `type_centre` → `cle_unite`, puis `nom_centre` | `cle_unite`, puis `nom` |
 
-1. **Gestion dynamique via API Backend (fonctions de `@/api`)** :
-   * Utilisé par [`pages/Register.jsx`](pages/Register.jsx) et [`pages/CentreDetail.jsx`](pages/CentreDetail.jsx).
-   * Les données proviennent de la base de données via les endpoints `/api/centres` et `/api/contribuables`.
-   * Permet le suivi en temps réel des centres enregistrés et le comptage/listing des contribuables qui leur sont rattachés.
+`construireUnites(centres)` ([`utils/uniteOperationnelle.utils.js`](utils/uniteOperationnelle.utils.js)) produit une ligne par unité cartographiée, enrichie de sa ligne de registre quand les deux se reconnaissent, puis ajoute les centres enregistrés que le référentiel ne cartographie pas (créations administratives, centre SSIF). Une unité cartographiée mais absente du registre **reste visible** : c'est le trou que le registre doit combler, pas un fantôme à masquer.
 
-2. **Référentiel structurel et territorial (`unitefiscal.json`)** :
-   * Utilisé par [`pages/CentreListe.jsx`](pages/CentreListe.jsx) et [`pages/UniteFiscaleDetail.jsx`](pages/UniteFiscaleDetail.jsx).
-   * Les données proviennent du fichier de référence institutionnel à la racine du projet (`unitefiscal.json`), recensant la cartographie fiscale à Madagascar (DGE, SRE, Centres fiscaux par DRI et région).
-
----
-
-## 🧭 Routes Déclarées dans l'Application (`App.jsx`)
-
-| Route | Composant | Source de données | Description |
-| --- | --- | --- | --- |
-| `/register` | `Register` | API (`GET /api/centres`) | Tableau de bord et registre paginé des centres fiscaux |
-| `/centres/:id` | `CentreDetail` | API (`GET /api/centres/:id` & `/api/contribuables`) | Fiche détaillée d'un centre et liste des contribuables rattachés |
-| `/centres-fiscaux` | `CentreListe` | Fichier statique `unitefiscal.json` | Annuaire global des unités réparties par DGE, SRE et Centres fiscaux |
-| `/centres-fiscaux/:type/:index` | `UniteFiscaleDetail` | Fichier statique `unitefiscal.json` | Fiche détaillée d'une unité opérationnelle (DRI, régions, contacts) |
-
-Toutes ces pages sont réexportées au niveau du point d'entrée central [`../index.js`](../index.js).
+Rien n'est inventé pour la source absente — `null` veut dire « non renseigné » et s'affiche `—`.
 
 ---
 
-## 🔍 Description Détaillée des Composants
+## 🧭 Routes (`App.jsx`)
 
-### 1. `Register.jsx` (`/register`)
-**Rôle :** Registre principal des centres fiscaux enregistrés dans le système.
+| Route | Composant | Contenu |
+| --- | --- | --- |
+| `/unites-operationnelles` | `UnitesOperationnelles` | Tableau paginé : recherche, filtre par type, tri par colonne |
+| `/unites-operationnelles/:type/:nom` | `UniteOperationnelleDetail` | Fiche de l'unité et dossiers fiscaux rattachés |
+| `/register`, `/centres-fiscaux` | `Navigate` | Redirection vers la liste (anciennes entrées de la barre) |
+| `/centres/:id`, `/centres-fiscaux/:type/:index` | `Navigate` | Redirection des anciennes fiches — l'URL est désormais adressée par `cle/nom`, plus par un index positionnel dans le tableau JSON |
 
-* **Données & API :**
-  * Appelle `getCentres()` pour charger la liste des centres et le décompte de leurs contribuables (`_count.contribuables`).
-* **Fonctionnalités :**
-  * **Recherche en temps réel** multi-champs (nom, type, numéro, e-mail, téléphone).
-  * **Filtre par type de centre** : `Centre Fiscal`, `SRE`, `DGE`, `autre`.
-  * **Tri interactif** par colonne (nom, type, numéro, e-mail, téléphone, nombre de contribuables rattachés) en mode ascendant `↑` / descendant `↓`.
-  * **Pagination** côté client (10 centres par page).
-  * **Navigation interactive** : clic sur une ligne ou validation clavier (`Enter` / `Espace`) pour ouvrir la fiche du centre (`/centres/:id`).
-  * Bouton d'actualisation des données et bouton retour vers l'accueil (`/`).
+Point d'entrée du domaine : [`index.js`](index.js).
 
 ---
 
-### 2. `CentreDetail.jsx` (`/centres/:id`)
-**Rôle :** Fiche d'identité d'un centre fiscal sélectionné et portefeuille des contribuables qui lui sont affectés.
+## 🔍 Écrans
 
-* **Données & API :**
-  * Récupère en parallèle via `Promise.all` :
-    * Les informations du centre : `getCentreById(id)` (`GET /api/centres/:id`).
-    * La liste globale des contribuables : `getContribuables({ limit: 10000 })`.
-  * Filtre côté client les contribuables dont l'attribut `id_centre` correspond à l'identifiant du centre (`String(contribuable.id_centre) === String(id)`).
-* **Fonctionnalités :**
-  * **Cartouche récapitulatif** : type de centre, numéro, e-mail officiel, téléphone et nombre total de contribuables rattachés.
-  * **Tableau des contribuables rattachés** : raison sociale, NIF, secteur d'activité et e-mail.
-  * **Navigation croisée** : un clic sur une ligne redirige directement vers la fiche détaillée du contribuable (`/contribuables/:id_contribuable`) en passant l'objet contribuable dans `location.state`.
-  * Bouton retour vers `/register`.
+### `UnitesOperationnelles.jsx`
 
----
+Recherche indifférente (nom, type, région, DRI, numéro, téléphone, e-mail), filtre par type, tri sur les huit colonnes, pagination à 10 lignes — état conservé dans l'URL par `useFiltresUrl` (`q`, `type`, `tri`, `sens`, `page`). Une ligne s'ouvre au clic, à `Entrée` ou à `Espace`.
 
-### 3. `CentreListe.jsx` (`/centres-fiscaux`)
-**Rôle :** Annuaire territorial et institutionnel des unités opérationnelles fiscales de Madagascar.
+Le cartouche s'adapte au périmètre de l'agent :
 
-* **Données :**
-  * Lit directement `unitefiscal.json` (`unites_operationnelles`).
-* **Organisation par catégorie :**
-  1. **Direction des Grandes Entreprises (DGE)** : Entreprises de grande envergure (chiffre d'affaires > 4 milliards Ar).
-  2. **Services Régionaux des Entreprises (SRE)** : Entreprises de taille intermédiaire (2 à 4 milliards Ar).
-  3. **Centres Fiscaux** : Gestion des petites et moyennes entreprises au niveau des arrondissements / districts (< 2 milliards Ar).
-* **Fonctionnalités :**
-  * Présentation sous forme de cartes d'information avec régions couvertes, DRI (Direction Régionale des Impôts), adresse physique, téléphones (avec formateur de tableau multi-numéros) et e-mails.
-  * Chaque bloc est un lien cliquable vers `/centres-fiscaux/${type}/${index}`.
+- `admin` et `inspecteur` voient l'ensemble du registre, donc le badge **« non enregistré »** est une affirmation vérifiée ;
+- les rôles centrés ne reçoivent de `GET /api/centres` que leur propre centre : étaler « non enregistré » sur 111 lignes serait faux. Le numéro y vaut `—` et l'en-tête annonce que seul leur centre est visible du registre.
+
+### `UniteOperationnelleDetail.jsx`
+
+L'unité est retrouvée depuis l'URL par `trouverUnite({ cle, nom, centres })`. Deux requêtes indépendantes, toutes deux annulables, chacune avec son état d'erreur (`erreurRegistre`, `erreurDossiers`) : le registre d'abord, puis les dossiers.
+
+Le rattachement fiscal porte deux colonnes synchronisées côté backend (`contribuables.id_centre` et `contribuables.centre_fiscal_ref`). La fiche demande `{ centre_fiscal_ref: ligne.reference }` quand l'unité est cartographiée ; pour un centre créé hors référentiel, elle charge les dossiers et filtre sur `id_centre` côté client. C'est ce qui ferme le doublon ancien : les deux fiches comptaient les mêmes dossiers avec deux clés différentes, et les dossiers d'un centre pouvaient être invisibles sur l'une des deux.
+
+Le cartouche réunit enregistrement au registre, régions, DRI, adresse, contacts et dossiers rattachés, plus les attributs propres à la DGE (rôle, critère de rattachement, portail, télédéclaration, contact DGI). Un clic sur un dossier ouvre `/contribuables/:id` avec l'objet passé en `location.state`.
 
 ---
 
-### 4. `UniteFiscaleDetail.jsx` (`/centres-fiscaux/:type/:index`)
-**Rôle :** Vue détaillée d'une unité opérationnelle issue du référentiel territorial `unitefiscal.json`.
+## 🔗 Liens avec les autres modules
 
-* **Données :**
-  * Extrait l'élément correspondant via les paramètres d'URL `type` (`dge`, `sre`, `centres_fiscaux`) et `index` (index numérique dans le tableau JSON).
-* **Fonctionnalités :**
-  * Validation des paramètres avec écran d'erreur si l'index ou le type n'existe pas.
-  * Mapping des libellés (`TYPE_LABELS`) pour un affichage en clair :
-    * `dge` ➔ *Direction des Grandes Entreprises*
-    * `sre` ➔ *Service Régional des Entreprises*
-    * `centres_fiscaux` ➔ *Centre Fiscal*
-  * Affichage structuré : régions couvertes, DRI de rattachement, adresse, téléphones et e-mails.
-  * Bouton de retour vers `/centres-fiscaux`.
-
----
-
-## 🔗 Liens & Interactions avec les Autres Modules
-
-* **Lien avec `accueil/` :** Le tableau de bord d'accueil ([`../accueil/pages/Accueil.jsx`](../accueil/pages/Accueil.jsx)) propose un raccourci direct vers le registre (`/register`).
-* **Lien avec `contribuables/` :** Depuis [`pages/CentreDetail.jsx`](pages/CentreDetail.jsx), l'utilisateur accède en un clic à la fiche complète du contribuable rattaché ([`../contribuables/pages/ContribuableDetail.jsx`](../contribuables/pages/ContribuableDetail.jsx)).
-* **Lien avec `entreprises/` :** Lors de l'immatriculation d'une nouvelle entreprise ([`../entreprises/pages/FormInformation.jsx`](../entreprises/pages/FormInformation.jsx)), les centres fiscaux servent de référence pour le rattachement administratif de l'entreprise.
+* **Lien avec `accueil/` :** le raccourci « Unités opérationnelles » du tableau de bord ([`../accueil/pages/Accueil.jsx`](../accueil/pages/Accueil.jsx)) mène ici ; il ne promet plus les contribuables du registre, qu'il ne montrait pas.
+* **Lien avec `contribuables/` :** depuis la fiche de l'unité, un clic sur un dossier ouvre la fiche complète du contribuable rattaché ([`../contribuables/pages/ContribuableDetail.jsx`](../contribuables/pages/ContribuableDetail.jsx)).
+* **Lien avec `entreprises/` :** lors de l'immatriculation d'une nouvelle entreprise ([`../entreprises/pages/FormInformation.jsx`](../entreprises/pages/FormInformation.jsx)), les unités opérationnelles servent de référence pour le rattachement administratif.
+* **Lien avec la navigation :** l'entrée `unites` de [`../../data/navigationAgent.data.js`](../../data/navigationAgent.data.js) porte les alias `/register`, `/centres-fiscaux` et `/centres` pour que la barre latérale reste allumée sur les URLs héritées.

@@ -120,6 +120,7 @@ Vérification rapide de l'API : `GET http://localhost:5000/health`.
 | racine | `pnpm run setup:project` | installe les dépendances, applique les migrations et génère Prisma |
 | racine | `pnpm run dev` | lance frontend et backend en parallèle |
 | racine | `pnpm run build` | construit le frontend de production |
+| racine | `pnpm test` | lance la suite de tests du moteur de rapprochement (runner Node, sans base) |
 | racine | `pnpm run prisma:deploy` | applique les migrations et régénère Prisma |
 | `backend/` | `pnpm --filter backend run dev` / `start` | démarre l'API avec nodemon / en mode normal |
 | `backend/` | `pnpm --filter backend run prisma:migrate`, `prisma:deploy`, `prisma:studio` | gestion du schéma et de la base |

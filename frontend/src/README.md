@@ -30,10 +30,9 @@ Point d'entrée de l'interface React (React 19 + Vite, routage `react-router-dom
 | `/entreprises/nouveau` | `PhaseClassement` |
 | `/entreprises/nouveau/form` | `FormInformation` |
 | `/decisionnel` | `TableauDecisionnel` |
-| `/register` | `Register` |
-| `/centres/:id` | `CentreDetail` |
-| `/centres-fiscaux` | `CentreListe` |
-| `/centres-fiscaux/:type/:index` | `UniteFiscaleDetail` |
+| `/unites-operationnelles` | `UnitesOperationnelles` |
+| `/unites-operationnelles/:type/:nom` | `UniteOperationnelleDetail` |
+| `/register`, `/centres-fiscaux`, `/centres/:id`, `/centres-fiscaux/:type/:index` | redirection vers `/unites-operationnelles` |
 | `/suivi` | `SuiviFiscal` |
 | `/suivi/:id` | `DeclarationDetail` |
 | `/contribuables` | `Contribuables` — vue « Registre » ou « Statistique » (`?vue=statistique`) ; rôles opérationnels |

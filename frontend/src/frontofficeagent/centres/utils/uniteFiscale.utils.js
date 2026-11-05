@@ -20,9 +20,3 @@ export function getOperationalUnits(type) {
   const units = fiscalData.unites_operationnelles?.[type];
   return Array.isArray(units) ? units : [];
 }
-
-export function getAllOperationalUnits() {
-  return ['dge', 'sre', 'centres_fiscaux'].flatMap((type) =>
-    getOperationalUnits(type).map((item, index) => ({ item, type, index }))
-  );
-}
