@@ -76,14 +76,17 @@ button, input, textarea { font: inherit; }
 .app-main { width: min(100%, 1180px); margin: 0 auto; padding: 1.5rem; }
 .auth-loading { display: grid; min-height: 100vh; place-items: center; margin: 0; color: #1769aa; font-weight: 700; }
 .login-page { display: grid; grid-template-columns: minmax(280px, 0.9fr) minmax(360px, 1.1fr); min-height: 100vh; background: #f4f7fb; }
-.login-brand-panel { display: flex; flex-direction: column; justify-content: center; align-items: flex-start; padding: clamp(2rem, 7vw, 7rem); color: #f8fbff; background: #123b4a; }
-.login-brand-panel img { width: 4rem; height: 4rem; margin-bottom: 3rem; border: 2px solid rgba(255,255,255,.75); border-radius: 12px; object-fit: cover; }
+.login-brand-panel { display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; padding: clamp(2rem, 7vw, 7rem); color: #f8fbff; background: #123b4a; }
+.login-brand-panel img { width: 7rem; height: 7rem; margin-bottom: 2rem; border: 2px solid rgba(255,255,255,.75); border-radius: 18px; box-shadow: 0 16px 40px rgba(0,0,0,.35); object-fit: cover; }
+.login-brand-head { display: flex; align-items: center; justify-content: center; gap: .9rem; flex-wrap: wrap; margin-bottom: 2rem; }
+.login-brand-panel .login-brand-head img { width: 4rem; height: 4rem; margin-bottom: 0; }
+.login-brand-head .login-kicker { margin: 0; }
 .login-kicker { margin: 0 0 .7rem; color: #138b79; font-size: var(--text-xs); font-weight: 800; text-transform: uppercase; }
 .login-brand-panel .login-kicker { color: #76d7c4; }
-.login-brand-panel h1 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(2.5rem, 5vw, 4.5rem); font-weight: 500; }
-.login-brand-panel h1 span { color: #f2b84b; }
+.login-brand-panel h1 { margin: 0; font-family: Georgia, 'Times New Roman', serif; font-size: clamp(3rem, 6vw, 6rem); font-weight: 500; white-space: nowrap; width: 100%; color: #f8fbff; text-align: justify; text-align-last: justify; text-justify: inter-character; }
+.login-brand-panel h1 span, .login-brand-panel .login-brand-caption span { color: #f2b84b; }
 .login-brand-caption { max-width: 24rem; margin: .7rem 0 0; color: #c6d9dc; font-size: var(--text-base); }
-.login-brand-panel h1.login-brand-caption { max-width: none; font-size: 1.5rem; line-height: 1.5; white-space: nowrap; }
+.login-brand-panel .login-brand-caption { max-width: none; font-size: 1.5rem; line-height: 1.5; white-space: nowrap; color: #c6d9dc; }
 .login-panel-rule { width: 3.5rem; height: 3px; margin: 2.5rem 0 1.25rem; background: #f2b84b; }
 .login-brand-note { max-width: 22rem; margin: 0; color: #c6d9dc; font-size: var(--text-sm); line-height: 1.7; }
 .login-form-panel { display: grid; place-items: center; padding: 2rem; }
@@ -160,7 +163,7 @@ button, input, textarea { font: inherit; }
 /* Profil connecté : seule la pastille d'initiales reste dans la barre ; le nom, le rôle et les commandes se déroulent au clic.
    Il est sorti du flux de la navigation, ancré à droite de la barre et centré sur sa hauteur (`top: 50%`) : il y reste collé
    même quand les liens passent sur deux lignes. La marge à droite reproduit le rembourrage horizontal de `.topbar`. */
-.user-profile { position: absolute; top: 50%; right: max(1.5rem, calc((100vw - 1180px) / 2)); z-index: 45; display: flex; align-items: center; transform: translateY(-50%); }
+.user-profile { position: absolute; top: calc(50% - 1.5rem); right: max(1.5rem, calc((100vw - 1180px) / 2)); z-index: 45; display: flex; align-items: center; }
 .user-profile-toggle { display: grid; width: 3rem; height: 3rem; flex: 0 0 auto; place-items: center; border: 1px solid #1769aa; border-radius: 50%; color: #fff; background: #1769aa; font-size: var(--text-sm); font-weight: 800; letter-spacing: 0.02em; cursor: pointer; transition: background 180ms ease, border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease; }
 .user-profile-toggle:hover, .user-profile-toggle.open { transform: translateY(-1px); background: #12558c; border-color: #12558c; box-shadow: 0 6px 14px rgba(23, 105, 170, 0.24); }
 .user-profile-avatar { display: grid; width: 1.9rem; height: 1.9rem; flex: 0 0 auto; place-items: center; border-radius: 50%; color: #fff; background: #1769aa; font-size: var(--text-xs); font-weight: 800; letter-spacing: 0.02em; }
@@ -2095,6 +2098,22 @@ body:has(.dark-theme) { background: #111827; }
 .admin-repartition-puce { display: inline-block; width: 0.55rem; height: 0.55rem; margin-right: 0.45rem; border-radius: 999px; vertical-align: middle; }
 .admin-repartition-barre { height: 0.5rem; border-radius: 999px; background: #eef2f7; overflow: hidden; }
 .admin-repartition-barre span { display: block; height: 100%; border-radius: 999px; transition: width 320ms ease; }
+
+.admin-accueil .page-heading h1 { overflow-wrap: anywhere; }
+.admin-accueil-depart, .admin-accueil-synthese { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1.25rem; }
+.admin-accueil-depart { border-left: 4px solid var(--brand); }
+.admin-accueil-depart > div, .admin-accueil-synthese > div { flex: 1 1 320px; min-width: 0; }
+.admin-accueil-depart h2, .admin-accueil-synthese h2 { margin-bottom: 0.5rem; }
+.admin-accueil .panel p { margin: 0; color: var(--text-muted); font-size: var(--text-sm); line-height: 1.6; }
+.admin-accueil .primary { display: inline-flex; text-decoration: none; text-align: center; font-size: var(--text-sm); }
+.admin-accueil-titre { margin: 1.75rem 0 1rem; font-size: var(--text-lg); }
+.admin-accueil-outil { display: flex; flex-direction: column; gap: 0.75rem; color: var(--text-color); text-decoration: none; transition: border-color 150ms ease, background 150ms ease; }
+.admin-accueil-outil:hover { border-color: var(--brand); background: var(--card-bg); }
+.admin-accueil-outil h3 { margin: 0; font-size: var(--text-base); }
+.admin-accueil-lien { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: auto; padding-top: 0.5rem; color: var(--brand); font-size: var(--text-sm); font-weight: 700; }
+.admin-accueil-lien svg { flex-shrink: 0; }
+.admin-accueil-synthese { margin-top: 1.5rem; }
+.admin-accueil-perimetre { margin: 1.5rem 0 0; padding-top: 1rem; border-top: 1px solid var(--border-color); color: var(--text-muted); font-size: var(--text-xs); line-height: 1.6; }
 
 .admin-dashboard-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.75rem; }
 .admin-dashboard-actions .primary { display: inline-flex; align-items: center; text-decoration: none; }

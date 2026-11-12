@@ -287,7 +287,7 @@ export default function CamembertUtilisateurs({ stats, agents = [] }) {
           fontStyle: 'italic',
         }}
       >
-        💡 Cliquez sur une portion du camembert ou de la légende pour filtrer la liste des utilisateurs.
+        Cliquez sur une portion du camembert ou de la légende pour filtrer la liste des utilisateurs.
       </p>
     </div>
   );

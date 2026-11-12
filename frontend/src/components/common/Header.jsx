@@ -3,12 +3,13 @@ import logoDgi from '@/assets/logodgi.jpg';
 import UserProfile from '@/components/common/UserProfile';
 
 /**
- * Espace administrateur : la navigation du backoffice est bornée aux cinq écrans
+ * Espace administrateur : la navigation du backoffice est bornée aux écrans
  * d'administration. Elle ne propose aucun module fiscal — un administrateur n'a
  * pas accès aux dossiers fiscaux.
  */
 const ADMIN_LINKS = [
-  { to: '/admin', label: 'Tableau de bord' },
+  { to: '/admin', label: 'Accueil' },
+  { to: '/admin/tableau-de-bord', label: 'Tableau de bord' },
   { to: '/admin/utilisateurs', label: 'Utilisateurs' },
   { to: '/admin/roles', label: 'Rôles' },
   { to: '/admin/verification-nif', label: 'Vérification NIF' },

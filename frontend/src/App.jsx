@@ -13,6 +13,7 @@ import Signin from '@/backofficeadmin/auth/pages/Signin';
 // Chaque page est un module séparé, chargé à la première visite de sa route.
 const EspaceContribuable = lazy(() => import('@/accountcontribuable/pages/EspaceContribuable'));
 
+const AdminAccueil = lazy(() => import('@/backofficeadmin/dashboard/pages/AdminAccueil'));
 const AdminDashboard = lazy(() => import('@/backofficeadmin/dashboard/pages/AdminDashboard'));
 const AdminHistorique = lazy(() => import('@/backofficeadmin/historique/pages/AdminHistorique'));
 const AdminRoles = lazy(() => import('@/backofficeadmin/roles/pages/AdminRoles'));
@@ -203,7 +204,8 @@ export default function App() {
           <Route path="/contribuables/:id/relances" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
           <Route path="/contribuables/:id/confrontation" element={<EspaceOperateurs currentUser={currentUser}><Confrontation currentUser={currentUser} /></EspaceOperateurs>} />
           <Route path="/relance" element={<RelanceFiscale />} />
-          <Route path="/admin" element={<AdminDashboard currentUser={currentUser} />} />
+          <Route path="/admin" element={<AdminAccueil currentUser={currentUser} />} />
+          <Route path="/admin/tableau-de-bord" element={<AdminDashboard currentUser={currentUser} />} />
           <Route path="/admin/utilisateurs" element={<AdminUtilisateurs currentUser={currentUser} />} />
           <Route path="/admin/roles" element={<AdminRoles currentUser={currentUser} />} />
           <Route path="/admin/verification-nif" element={<AdminVerificationNIF currentUser={currentUser} />} />

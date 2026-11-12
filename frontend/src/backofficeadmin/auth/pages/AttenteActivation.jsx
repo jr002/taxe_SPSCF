@@ -21,10 +21,12 @@ export default function AttenteActivation() {
   return (
     <div className="login-page">
       <section className="login-brand-panel" aria-label="Direction Générale des Impôts">
-        <img src={logoDgi} alt="Logo de la Direction Générale des Impôts" />
-        <p className="login-kicker">République de Madagascar · DGI</p>
-        <h1>Hetra<span>•</span>SSIF</h1>
-        <h1 className="login-brand-caption">S <span>•</span> P <span>•</span> S <span>•</span> C <span>•</span> F</h1>
+        <div className="login-brand-head">
+          <img src={logoDgi} alt="Logo de la Direction Générale des Impôts" />
+          <p className="login-kicker">République de Madagascar · DGI</p>
+        </div>
+        <h1>SPSCF</h1>
+        <p className="login-brand-caption">Hetra<span>•</span>SSIF</p>
         <div className="login-panel-rule" />
         <p className="login-brand-note">
           Acces à la plateforme du systeme de pilotage et du suivi de la conformite fiscale.
@@ -43,7 +45,7 @@ export default function AttenteActivation() {
                 : 'La plateforme n’est accessible qu’aux comptes activés par un administrateur. Saisissez vos identifiants pour savoir où en est votre demande.'}
           </p>
 
-          <p className="attente-statut">
+          <p className="attente-statut" role={estConnexionRefusee ? 'alert' : 'status'}>
             <span className="badge surveillance">En attente d’activation</span>
           </p>
 

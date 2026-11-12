@@ -3,6 +3,13 @@ import { NavLink } from 'react-router-dom';
 const ADMIN_PAGES = [
   {
     to: '/admin',
+    label: 'Accueil',
+    icon: <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true"><path d="m3 10 9-7 9 7v10H3Z M9 20v-7h6v7" /></svg>,
+    exact: true,
+    description: 'Présentation & accès aux outils',
+  },
+  {
+    to: '/admin/tableau-de-bord',
     label: 'Tableau de bord & Camembert',
     icon: '📊',
     exact: true,
@@ -43,7 +50,7 @@ export default function AdminNav() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
           gap: '0.65rem',
           background: 'var(--panel-bg, #ffffff)',
           padding: '0.65rem',

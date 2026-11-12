@@ -2,8 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { getAgents, getErrorMessage } from '@/api';
-import { AccesRefuse, Pagination } from '@/components/common';
-import { useTablePagination } from '@/hooks';
+import { AccesRefuse } from '@/components/common';
 import AdminNav from '@/backofficeadmin/components/AdminNav';
 import CamembertUtilisateurs from '@/backofficeadmin/dashboard/components/CamembertUtilisateurs.jsx';
 
@@ -72,14 +71,14 @@ export default function AdminDashboard({ currentUser }) {
 
   const derniersComptes = useMemo(
     () =>
-      [...agents].sort(
-        (first, second) =>
-          formatDateValue(second.date_creation) - formatDateValue(first.date_creation),
-      ),
+      [...agents]
+        .sort(
+          (first, second) =>
+            formatDateValue(second.date_creation) - formatDateValue(first.date_creation),
+        )
+        .slice(0, 6),
     [agents],
   );
-
-  const comptes = useTablePagination(derniersComptes, 10);
 
   if (!isAdmin) {
     return (
@@ -159,7 +158,7 @@ export default function AdminDashboard({ currentUser }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {comptes.pageItems.map((agent) => (
+                      {derniersComptes.map((agent) => (
                         <tr key={agent.id_agent} className="admin-row">
                           <td>
                             <strong>
@@ -193,11 +192,6 @@ export default function AdminDashboard({ currentUser }) {
               ) : (
                 <p className="status" role="status">Aucun compte enregistré pour le moment.</p>
               )}
-              <Pagination
-                currentPage={comptes.currentPage}
-                onPageChange={comptes.setCurrentPage}
-                totalPages={comptes.totalPages}
-              />
             </div>
           </div>
 
