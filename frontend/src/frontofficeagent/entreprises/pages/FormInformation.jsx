@@ -1,13 +1,20 @@
 import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createContribuable, getErrorMessage } from '@/api';
+import { DossierFiscalNavigation } from '@/components/common';
 import { getOperationalUnits } from '@/frontofficeagent/centres/utils/uniteFiscale.utils';
 
-const CENTRES_BY_STRUCTURE = {
-  centre_fiscal: getOperationalUnits('centres_fiscaux'),
-  sre: getOperationalUnits('sre'),
-  dge: getOperationalUnits('dge'),
+// La référence attendue par l'API est `cle:nom` avec la clé du référentiel
+// `unitefiscal.json` : `centre_fiscal` (structure du formulaire) n'en fait pas partie.
+const CLE_UNITE_PAR_STRUCTURE = {
+  centre_fiscal: 'centres_fiscaux',
+  sre: 'sre',
+  dge: 'dge',
 };
+
+const CENTRES_BY_STRUCTURE = Object.fromEntries(
+  Object.entries(CLE_UNITE_PAR_STRUCTURE).map(([structure, cle]) => [structure, getOperationalUnits(cle)]),
+);
 
 const normalizeCentreText = (value) => value
   .normalize('NFD')
@@ -102,7 +109,7 @@ export default function FormInformation() {
     if (formData.fiscalStructure === 'centre_fiscal' && !formData.regimeFiscal) {
       newErrors.regimeFiscal = 'Veuillez sélectionner le régime IS ou IR';
     }
-
+    
     if (!formData.phone.trim()) {
       newErrors.phone = 'Le numéro de téléphone est obligatoire';
     } else if (!/^[0-9+\-\s]{8,}$/.test(formData.phone)) {
@@ -197,7 +204,7 @@ export default function FormInformation() {
   const centreSuggestions = centresFiltres.slice(0, 8);
 
   const selectCentre = (centre) => {
-    const centreValue = `${formData.fiscalStructure}:${centre.nom}`;
+    const centreValue = `${CLE_UNITE_PAR_STRUCTURE[formData.fiscalStructure]}:${centre.nom}`;
     const zone = centre.regions_couvertes?.join(', ') || centre.region;
     setFormData((previous) => ({ ...previous, centreSelection: centreValue }));
     setCentreSearch(`${centre.nom} - ${centre.type}${zone ? ` (${zone})` : ''}`);
@@ -224,6 +231,7 @@ export default function FormInformation() {
 
   return (
     <div className="max-w-4xl mx-auto p-6 md:p-8 bg-white rounded-xl shadow-lg my-6">
+      <DossierFiscalNavigation />
       <h2 className="text-3xl font-bold text-center text-indigo-900 mb-8 pb-4 border-b-4 border-indigo-900">
         Informations du contribuable
       </h2>
@@ -458,7 +466,7 @@ export default function FormInformation() {
               className="max-h-64 overflow-y-auto rounded-lg border border-gray-300 bg-white shadow-lg"
             >
               {centreSuggestions.map((centre, index) => {
-                const centreValue = `${formData.fiscalStructure}:${centre.nom}`;
+                const centreValue = `${CLE_UNITE_PAR_STRUCTURE[formData.fiscalStructure]}:${centre.nom}`;
                 const zone = centre.regions_couvertes?.join(', ') || centre.region;
                 const label = `${centre.nom} - ${centre.type}${zone ? ` (${zone})` : ''}`;
 

@@ -24,6 +24,7 @@ import {
 import RappelOrdreModal from '@/frontofficeagent/relance/components/RappelOrdreModal';
 import ClassificationPanel from '@/frontofficeagent/contribuables/components/ClassificationPanel';
 import ContribuableHeader from '@/frontofficeagent/contribuables/components/ContribuableHeader';
+import ContribuableAccueil from '@/frontofficeagent/contribuables/components/ContribuableAccueil';
 import ContribuableOverview from '@/frontofficeagent/contribuables/components/ContribuableOverview';
 import DeclarationHistory from '@/frontofficeagent/contribuables/components/DeclarationHistory';
 import DroitCommunicationPanel from '@/frontofficeagent/contribuables/components/DroitCommunicationPanel';
@@ -53,12 +54,13 @@ const EXPORT_LABELS = {
 };
 
 function getActiveTab(pathname) {
+  if (pathname.endsWith('/synthese')) return 'overview';
   if (pathname.endsWith('/classification')) return 'classification';
   if (pathname.endsWith('/declarations')) return 'declarations';
   if (pathname.endsWith('/recoupements')) return 'recoupements';
   if (pathname.endsWith('/droits-communication')) return 'droits';
   if (pathname.endsWith('/relances')) return 'relances';
-  return 'overview';
+  return 'home';
 }
 
 export default function ContribuableDetail() {
@@ -137,10 +139,6 @@ export default function ContribuableDetail() {
   }, [id]);
 
   const currentRegime = contribuable ? getRegime(contribuable) : 'IS';
-  const totalPaid = declarations.reduce(
-    (total, row) => total + toNumber(row.tva_payee),
-    0,
-  );
   const reference = useMemo(() => getCaReference(declarations), [declarations]);
   const fiche = getFicheCategorie(
     getCategorieFromCa(reference.ca),
@@ -381,7 +379,7 @@ export default function ContribuableDetail() {
 
   return (
     <>
-      <section className="page declaration-page contribuable-detail-page">
+      <section className={`page declaration-page contribuable-detail-page${activeTab === 'home' ? ' contribuable-landing-page' : ''}`}>
         <ContribuableHeader
           activeTab={activeTab}
           contribuable={contribuable}
@@ -399,16 +397,6 @@ export default function ContribuableDetail() {
           onPartager={() => setLienAccesOpen(true)}
           onOuvrirAide={() => setAideOuverte(true)}
         />
-
-        {activeTab === 'overview' && (
-          <Link
-            className="primary detail-back"
-            to={`/contribuables/${id}/confrontation`}
-            state={{ contribuable }}
-          >
-            ⚖️ Ouvrir la confrontation
-          </Link>
-        )}
 
         {activeTab === 'declarations' && (
           <div className="register-toolbar">
@@ -440,6 +428,17 @@ export default function ContribuableDetail() {
           </p>
         )}
 
+        {activeTab === 'home' && (
+          <ContribuableAccueil
+            declarations={declarations}
+            fiche={fiche}
+            idContribuable={id}
+            reference={reference}
+            relances={relances}
+            contribuable={contribuable}
+          />
+        )}
+
         {activeTab === 'overview' && (
           <ContribuableOverview
             annualData={annualData}
@@ -448,7 +447,6 @@ export default function ContribuableDetail() {
             declarations={declarations}
             maxBars={maxBars}
             curveMax={curveMax}
-            totalPaid={totalPaid}
           />
         )}
 
@@ -498,7 +496,7 @@ export default function ContribuableDetail() {
       />
       <AideLectureModal
         ouvert={aideOuverte}
-        ecran={activeTab}
+        ecran={activeTab === 'home' ? 'overview' : activeTab}
         onFermer={() => setAideOuverte(false)}
       />
       {lienAccesOpen && (

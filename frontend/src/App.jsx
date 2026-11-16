@@ -194,6 +194,7 @@ export default function App() {
               l'administrateur même quand il tape l'URL directement. */}
           <Route path="/contribuables" element={<EspaceOperateurs currentUser={currentUser}><Contribuables /></EspaceOperateurs>} />
           <Route path="/contribuables/:id" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
+          <Route path="/contribuables/:id/synthese" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
           <Route path="/contribuables/:id/classification" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
           <Route path="/contribuables/:id/declarations" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
           <Route path="/contribuables/:id/declarations/nouveau" element={<EspaceOperateurs currentUser={currentUser}><DeclarationCreate /></EspaceOperateurs>} />

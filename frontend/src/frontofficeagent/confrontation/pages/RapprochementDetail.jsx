@@ -61,8 +61,8 @@ export default function RapprochementDetail({
   const phrase = isMatch
     ? `Le recoupement « ${source} » (${formatAriary(data.montant_recoupe)}) concorde avec le chiffre d’affaires déclaré pour ${exercice} (${formatAriary(data.montant_declare)}).`
     : `Le recoupement « ${source} » (${formatAriary(data.montant_recoupe)}) ${ecart < 0
-      ? 'dépasse'
-      : 'reste inférieur à'} le chiffre d’affaires déclaré pour ${exercice} (${formatAriary(data.montant_declare)}) de ${formatAriary(Math.abs(ecart))}.`;
+      ? 'dépasse le'
+      : 'reste inférieur au'} chiffre d’affaires déclaré pour ${exercice} (${formatAriary(data.montant_declare)}) de ${formatAriary(Math.abs(ecart))}.`;
 
   return (
     <div>

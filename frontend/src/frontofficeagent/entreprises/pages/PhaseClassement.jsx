@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { DossierFiscalNavigation } from '@/components/common';
 
 const STRUCTURES_FISCALES = [
   {
@@ -30,6 +31,7 @@ const STRUCTURES_FISCALES = [
 export default function PhaseClassement() {
   return (
     <section className="page classification-page">
+      <DossierFiscalNavigation />
       <div className="page-heading">
         <p className="eyebrow">Nouveau contribuable</p>
         <h1>Choisir la structure fiscale</h1>

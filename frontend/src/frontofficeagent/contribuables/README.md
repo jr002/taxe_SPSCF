@@ -1,17 +1,18 @@
 # Module Contribuables
 
-Ce dossier regroupe le registre fiscal des contribuables : la liste et sa vue statistique, la fiche détaillée d'un contribuable et ses onglets (déclarations, recoupements, droits de communication, relances), la page de confrontation et les pages dédiées d'enregistrement.
+Ce dossier regroupe le registre fiscal des contribuables : la liste et sa vue statistique, l'accueil plein écran d'un dossier et ses rubriques (synthèse, nature d'impôt, déclarations, recoupements, droits de communication, relances), la page de confrontation et les pages dédiées d'enregistrement.
 
 ## Organisation
 
 ```text
 contribuables/
 ├── Contribuables.jsx          # Registre (liste) + vue Statistique
-├── ContribuableDetail.jsx     # Fiche détaillée d'un contribuable (6 onglets)
+├── ContribuableDetail.jsx     # Accueil et rubriques d'un dossier contribuable
 ├── components/                # Composants d'interface des pages
 │   ├── ContribuablesFilters.jsx / ContribuablesTable.jsx
 │   ├── ContribuablesStatistiques.jsx
-│   ├── ContribuableHeader.jsx / ExportFicheButton.jsx / ContribuableOverview.jsx
+│   ├── ContribuableHeader.jsx / ContribuableAccueil.jsx / ContribuableSituation.jsx
+│   ├── ExportFicheButton.jsx / ContribuableOverview.jsx
 │   ├── ClassificationPanel.jsx / DeclarationHistory.jsx / RelancePanel.jsx
 │   ├── RecoupementsPanel.jsx / DroitCommunicationPanel.jsx
 │   ├── LienAccesModal.jsx      # émission du lien du portail contribuable
@@ -58,13 +59,14 @@ Les données viennent de `buildStatistiques(contribuables)` ([`utils/statistique
 
 **VSP / CSP n'existe pas en base.** La procédure est *déduite* côté frontend par `isVSP(declaration)` : une déclaration est tenue pour VSP (vérification sur place) si elle porte une `date_notification_primitive` ou une `date_notification_definitive`, ou si `montant_redressement > 0` ; toutes les autres sont suivies en CSP (contrôle sur pièces). La ventilation « nature d'impôt » reprend `regime_fiscal` du contribuable : `IS` et `IR` forment leur propre catégorie, tout le reste (`RS`, `RNS`, valeur absente) est agrégé sous `TVA`. Cette déduction est volontairement sans migration de schéma ; si la base stocke un jour le type de contrôle, c'est dans ce module qu'il faut remplacer la règle.
 
-## ContribuableDetail.jsx — la fiche
+## ContribuableDetail.jsx — l'accueil et les rubriques du dossier
 
-Le composant est monté par six routes déclarées dans `App.jsx` ; l'onglet actif est déduit du chemin par `getActiveTab` :
+Le composant est monté par sept routes déclarées dans `App.jsx` ; la rubrique active est déduite du chemin par `getActiveTab` :
 
 | Route | Onglet |
 | --- | --- |
-| `/contribuables/:id` | Synthèse (`overview`) |
+| `/contribuables/:id` | Accueil (`home`) |
+| `/contribuables/:id/synthese` | Synthèse (`overview`) |
 | `/contribuables/:id/classification` | Nature d'impôt |
 | `/contribuables/:id/declarations` | Déclarations |
 | `/contribuables/:id/recoupements` | Recoupements |
@@ -80,14 +82,15 @@ Trois pages s'ajoutent sous le même préfixe `/contribuables/:id` mais rendent 
 | `/contribuables/:id/recoupements/nouveau` | `pages/RecoupementCreate.jsx` | enregistrement d'un recoupement |
 | `/contribuables/:id/droits-communication/nouveau` | `pages/DroitCommunicationCreate.jsx` | enregistrement d'un droit de communication |
 
-Chaque page d'enregistrement charge le contribuable par `getContribuableById(id)`, réutilise le formulaire partagé, valide, poste via l'API puis revient sur l'onglet de liste ; elle se termine par un lien « ⚖️ Retour à la confrontation ». L'accès à la confrontation depuis la fiche reste unique : le bouton « ⚖️ Ouvrir la confrontation » n'apparaît que sur l'onglet Synthèse, et les onglets Déclarations, Recoupements et Droits de communication portent leur propre bouton de retour.
+L'Accueil est la page d'entrée plein écran du dossier. Elle affiche la situation enregistrée et des cartes qui ouvrent directement chacune des six rubriques ; la Synthèse conserve les graphiques historiques sous `/synthese`. Le bouton « ⚖️ Ouvrir la confrontation » est proposé depuis l'Accueil. Chaque page d'enregistrement charge le contribuable par `getContribuableById(id)`, réutilise le formulaire partagé, valide, poste via l'API puis revient à la rubrique de liste ; elle se termine par un lien « ⚖️ Retour à la confrontation ».
 
-`ContribuableHeader` affiche l'e-mail du dossier sur sa ligne d'identification (`NIF : … · n année(s) suivie(s) · E-mail : …`, `N/A` quand le champ est vide). Tout rôle opérationnel qui ouvre la fiche le voit donc sans quitter la Synthèse : `GET /api/contribuables` renvoie déjà `email` et l'export Excel du registre le contenait déjà, aucune autorité supplémentaire n'est impliquée.
+`ContribuableHeader` affiche l'e-mail du dossier sur sa ligne d'identification (`NIF : … · n année(s) suivie(s) · E-mail : …`, `N/A` quand le champ est vide). Tout rôle opérationnel qui ouvre la fiche le voit donc depuis l'Accueil comme depuis les autres rubriques : `GET /api/contribuables` renvoie déjà `email` et l'export Excel du registre le contenait déjà, aucune autorité supplémentaire n'est impliquée.
 
 `DroitCommunicationCreate` applique la règle « un seul droit de communication par contribuable et par année civile » : la page charge les droits déjà enregistrés du dossier, et si l'année de la `date_demande` saisie est déjà couverte, elle affiche un message d'avertissement et désactive l'envoi. Le contrôle reste aussi côté serveur (`409`, voir [`ROUTES_AND_API.md`](../../../../ROUTES_AND_API.md)) : l'avertissement de la page est une anticipation de confort, pas la garantie.
 
-Contenu des onglets :
+Contenu des rubriques :
 
+- **Accueil** : statut du dernier contrôle enregistré, TVA payée, écart à examiner, relances émises, repère de pénalités non liquidées et cartes de navigation vers les rubriques ;
 - **Synthèse** : TVA payée cumulée, dernière déclaration enregistrée, graphiques `ContribVolumeChart` et `ContribComparisonChart` ;
 - **Nature d'impôt** : catégorie déduite du dernier chiffre d'affaires déclaré (`getCaReference` + `getFicheCategorie(categorie, ca)`), nature d'impôt du dossier confrontée à celle de la catégorie, pénalités et amendes ;
 - **Déclarations** : historique cliquable (vers `/suivi/:id`) et barre d'actions « + Ajouter une déclaration » / retour confrontation ;

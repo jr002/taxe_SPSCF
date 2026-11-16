@@ -1,23 +1,41 @@
 import { ContribComparisonChart, ContribVolumeChart } from '@/components/charts';
-import { AideTerme } from '@/frontofficeagent/aide';
-import { formatAriary } from '@/utils';
+import { formatAriary, toNumber } from '@/utils';
 
-export default function ContribuableOverview({ annualData, curveData, currentRegime, declarations, maxBars, curveMax, totalPaid }) {
-  return <>
-    <div className="declaration-summary">
-      <div>
-        <span><AideTerme id="tva_payee">TVA payée cumulée</AideTerme></span>
-        <strong>{formatAriary(totalPaid)}</strong>
+export default function ContribuableOverview({
+  annualData,
+  curveData,
+  currentRegime,
+  declarations,
+  maxBars,
+  curveMax,
+}) {
+  const declarationsAvecMontant = declarations.filter(
+    (declaration) => declaration.tva_payee !== null
+      && declaration.tva_payee !== undefined
+      && declaration.tva_payee !== '',
+  );
+  const totalPaid = declarationsAvecMontant.reduce(
+    (total, declaration) => total + toNumber(declaration.tva_payee),
+    0,
+  );
+
+  return (
+    <>
+      <div className="declaration-summary">
+        <div>
+          <span>TVA payée cumulée enregistrée</span>
+          <strong>{declarationsAvecMontant.length ? formatAriary(totalPaid) : 'Non renseignée'}</strong>
         </div>
-      <div>
-        <span>Dernière déclaration enregistrée</span>
-        <strong>{declarations[0]?.annee || 'N/A'}</strong>
+        <div>
+          <span>Dernière déclaration · exercices suivis</span>
+          <strong>{declarations[0]?.annee || 'N/A'} · {declarations.length}</strong>
+        </div>
       </div>
-    </div>
-    
-    <div className="contrib-chart-grid">
-      <ContribVolumeChart annualData={annualData} maxBars={maxBars} currentRegime={currentRegime} />
-      <ContribComparisonChart curveData={curveData} curveMax={curveMax} currentRegime={currentRegime} />
-    </div>
-  </>;
+
+      <div className="contrib-chart-grid">
+        <ContribVolumeChart annualData={annualData} maxBars={maxBars} currentRegime={currentRegime} />
+        <ContribComparisonChart curveData={curveData} curveMax={curveMax} currentRegime={currentRegime} />
+      </div>
+    </>
+  );
 }

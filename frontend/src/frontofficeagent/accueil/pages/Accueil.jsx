@@ -6,7 +6,6 @@ import {
   getDeclarationStats,
   getErrorMessage,
   getRelanceStats,
-  getRapprochementStats,
 } from '@/api';
 import useFileTravail from '@/frontofficeagent/file-travail/hooks/useFileTravail';
 import {
@@ -14,7 +13,7 @@ import {
   compterParPriorite,
   libelleEcheance,
 } from '@/frontofficeagent/file-travail/utils/fileTravail.utils';
-import { formatAriary, toNumber } from '@/utils';
+import { formatAriary, formatNumber, toNumber } from '@/utils';
 
 const dateDuJour = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',
@@ -26,16 +25,19 @@ const dateDuJour = new Intl.DateTimeFormat('fr-FR', {
 const statutRelance = (relances, statut) =>
   toNumber(relances?.par_statut?.find((entree) => entree.statut === statut)?.total);
 
+const montantRelanceStatut = (relances, statut) =>
+  toNumber(relances?.par_statut?.find((entree) => entree.statut === statut)?.montant);
+
 /**
  * Accueil agent : un poste de travail, pas une vitrine.
  *
- * La page répond d'abord à « qu'est-ce que je dois traiter ? » (compteurs,
- * priorités, premiers actes de la file), puis offre les accès rapides.
+ * La page met d'abord en évidence les risques, la conformité, les retards et
+ * les défaillances, puis les actes prioritaires et les accès rapides.
  */
 export default function Accueil({ currentUser = null }) {
   const navigate = useNavigate();
   const file = useFileTravail();
-  const [stats, setStats] = useState({ declarations: null, rapprochements: null, relances: null });
+  const [stats, setStats] = useState({ declarations: null, relances: null });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -45,18 +47,17 @@ export default function Accueil({ currentUser = null }) {
     const charger = async () => {
       const resultats = await Promise.allSettled([
         getDeclarationStats(),
-        getRapprochementStats(),
         getRelanceStats(),
       ]);
       if (!monte) return;
       const valeur = (index) => (resultats[index].status === 'fulfilled' ? resultats[index].value : null);
       setStats({
         declarations: valeur(0),
-        rapprochements: valeur(1),
-        relances: valeur(2),
+        relances: valeur(1),
       });
-      if (resultats.every((resultat) => resultat.status === 'rejected')) {
-        setError(getErrorMessage(resultats[0].reason));
+      const echec = resultats.find((resultat) => resultat.status === 'rejected');
+      if (echec) {
+        setError(getErrorMessage(echec.reason));
       }
       setLoading(false);
     };
@@ -67,17 +68,20 @@ export default function Accueil({ currentUser = null }) {
     };
   }, []);
 
-  const { declarations, rapprochements, relances } = stats;
+  const { declarations, relances } = stats;
   const compteurs = useMemo(() => compterParPriorite(file.actes), [file.actes]);
   const prochainsActes = file.actes.slice(0, 5);
 
   const compteursGlobaux = useMemo(() => ({
-    aVerifier: toNumber(rapprochements?.a_verifier) + toNumber(rapprochements?.ecart),
-    relancesSansReponse: statutRelance(relances, 'emise'),
-    montantDu: toNumber(relances?.montant_total_du),
-  }), [rapprochements, relances]);
+    relancesEnCours: statutRelance(relances, 'emise'),
+    montantRelancesEnCours: montantRelanceStatut(relances, 'emise'),
+  }), [relances]);
 
   const aTraiter = file.actes.length;
+  const declarationsDisponibles = declarations !== null;
+  const relancesDisponibles = relances !== null;
+  const alertes = toNumber(declarations?.alertes);
+  const critiques = toNumber(declarations?.critiques);
   // Même écriture que le profil de la barre : prénom + nom tels qu'en base,
   // l'e-mail en repli quand un des deux manque.
   const identite = currentUser
@@ -118,42 +122,56 @@ export default function Accueil({ currentUser = null }) {
         <p className="status error" role="alert">{error || file.error}</p>
       )}
 
-      <section className="kpis" aria-label="Indicateurs du périmètre">
-        <article>
-          <span>TVA déclarée</span>
-          <strong>{loading ? '—' : formatAriary(declarations?.tva_totale)}</strong>
-          <small>{toNumber(declarations?.total)} déclaration(s) suivie(s)</small>
-        </article>
-        <article>
-          <span>Écart de TVA</span>
-          <strong>{loading ? '—' : formatAriary(declarations?.ecart_total)}</strong>
-          <small>TVA théorique − TVA payée</small>
-        </article>
-        <article>
-          <span>Rapprochements à traiter</span>
-          <strong>{loading ? '—' : compteursGlobaux.aVerifier}</strong>
-          <small>{toNumber(rapprochements?.actifs)} rapprochement(s) actif(s)</small>
-        </article>
-        <article>
-          <span>Relances sans réponse</span>
-          <strong>{loading ? '—' : compteursGlobaux.relancesSansReponse}</strong>
-          <small>{formatAriary(compteursGlobaux.montantDu)} de montant dû</small>
-        </article>
-      </section>
-
-      <section className="workbench-grid" aria-label="Priorités">
-        <Link className="workbench-card workbench-card-alert" to="/file-de-travail?priorite=1">
-          <span className="workbench-card-count">{file.loading ? '—' : compteurs[1]}</span>
-          <strong>Actes en retard</strong>
-          <small>Un délai est échu : la suite de la procédure doit être engagée.</small>
-          <span className="workbench-card-link">Ouvrir la file de travail →</span>
-        </Link>
-        <Link className="workbench-card" to="/file-de-travail?priorite=2">
-          <span className="workbench-card-count">{file.loading ? '—' : compteurs[2]}</span>
-          <strong>À traiter cette semaine</strong>
-          <small>Échéance proche ou écart confirmé : à préparer avant la fin de la semaine.</small>
-          <span className="workbench-card-link">Voir les actes concernés →</span>
-        </Link>
+      <section className="workbench-priorites" aria-labelledby="workbench-priorites-title">
+        <header className="workbench-priorites-header">
+          <div>
+            <p className="eyebrow">Vue prioritaire du périmètre</p>
+            <h2 id="workbench-priorites-title">Analyse des risques et suivi</h2>
+          </div>
+          <Link to="/decisionnel">Statistiques détaillées →</Link>
+        </header>
+        <div className="workbench-grid" aria-label="Risques, conformité, retards et défaillances">
+          <Link className="workbench-card workbench-card-alert" to="/suivi">
+            <span className="workbench-card-count">
+              {loading || !declarationsDisponibles ? '—' : formatNumber(alertes + critiques)}
+            </span>
+            <strong>Déclarations à risque</strong>
+            <small>
+              {loading || !declarationsDisponibles
+                ? 'Alertes et dossiers critiques'
+                : `${formatNumber(alertes)} alertes · ${formatNumber(critiques)} critiques`}
+            </small>
+            <span className="workbench-card-link">Ouvrir le suivi fiscal →</span>
+          </Link>
+          <Link className="workbench-card workbench-card-conformity" to="/suivi">
+            <span className="workbench-card-count">
+              {loading || !declarationsDisponibles ? '—' : formatNumber(toNumber(declarations?.conformes))}
+            </span>
+            <strong>Déclarations conformes</strong>
+            <small>Déclarations enregistrées sans alerte ni statut critique.</small>
+            <span className="workbench-card-link">Consulter les dossiers →</span>
+          </Link>
+          <Link className="workbench-card workbench-card-delay" to="/file-de-travail?priorite=1">
+            <span className="workbench-card-count">
+              {file.loading ? '—' : formatNumber(compteurs[1])}
+            </span>
+            <strong>Actes en retard</strong>
+            <small>Une échéance est dépassée : une action est attendue.</small>
+            <span className="workbench-card-link">Traiter les retards →</span>
+          </Link>
+          <Link className="workbench-card workbench-card-default" to="/relance">
+            <span className="workbench-card-count">
+              {loading || !relancesDisponibles ? '—' : formatNumber(compteursGlobaux.relancesEnCours)}
+            </span>
+            <strong>Relances en cours</strong>
+            <small>
+              {loading || !relancesDisponibles
+                ? 'Défaillances à suivre'
+                : `Défaillances à suivre · montant des relances : ${formatAriary(compteursGlobaux.montantRelancesEnCours)}`}
+            </small>
+            <span className="workbench-card-link">Ouvrir les relances →</span>
+          </Link>
+        </div>
       </section>
 
       <section className="panel workbench-panel">

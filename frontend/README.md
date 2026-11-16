@@ -94,6 +94,7 @@ contribuable n'a pas de session agent, et le réseau du navigateur ne montre ni
 | `/entreprises/nouveau/form` | `FormInformation` | protégé |
 | `/decisionnel` | `TableauDecisionnel` | protégé |
 | `/suivi` et `/suivi/:id` | `SuiviFiscal`, `DeclarationDetail` | protégé |
+| `/file-de-travail` | `FileTravail` — onglet de l’espace Dossiers | protégé |
 | `/contribuables` | `Contribuables` — vue Registre | protégé |
 | `/contribuables?vue=statistique` | `Contribuables` — vue Statistique (camemberts et histogrammes VSP / CSP, IS / IR / TVA) | protégé |
 | `/contribuables/:id` | `ContribuableDetail` — onglet Synthèse | protégé |
@@ -103,7 +104,7 @@ contribuable n'a pas de session agent, et le réseau du navigateur ne montre ni
 | `/unites-operationnelles` | `UnitesOperationnelles` — cartographie institutionnelle et registre des centres fusionnés | protégé |
 | `/unites-operationnelles/:type/:nom` | `UniteOperationnelleDetail` — fiche de l'unité et dossiers rattachés | protégé |
 | `/register`, `/centres-fiscaux`, `/centres/:id`, `/centres-fiscaux/:type/:index` | redirections vers `/unites-operationnelles` (écrans dédoublés fusionnés) | protégé |
-| `/relance` | `RelanceFiscale` | protégé — entrée « Relances » du `Header` |
+| `/relance` | `RelanceFiscale` — onglet de l’espace Dossiers | protégé |
 | toute autre URL | redirection vers `/` | — |
 
 Les routes protégées partagent un même layout (`<Outlet />`) qui rend

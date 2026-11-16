@@ -2,15 +2,12 @@ import { Link, useLocation } from 'react-router-dom';
 import { ongletsDeSection } from '@/data/navigationAgent.data';
 
 /**
- * Onglets d'un domaine fiscal, construits depuis le registre de navigation :
- * l'onglet et la barre latérale affichent le même nom pour le même écran, et le
- * groupe « Dossier fiscal » entraîne avec lui l'écran qui le prolonge
- * (`Relance fiscale`).
+ * Accès secondaires du groupe Dossiers, construits depuis le registre de
+ * navigation pour conserver un seul nom par écran.
  *
- * Prop `section` : id du groupe du registre (`suivi` par défaut, `contribuables`
- * pour le registre des redevables).
+ * Prop `section` : id du groupe du registre (`dossiers` par défaut).
  */
-export default function DossierFiscalNavigation({ section = 'suivi' }) {
+export default function DossierFiscalNavigation({ section = 'dossiers' }) {
   const { pathname } = useLocation();
   const { ariaLabel, liens } = ongletsDeSection(section);
 

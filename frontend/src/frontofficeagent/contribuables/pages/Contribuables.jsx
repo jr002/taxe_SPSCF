@@ -61,8 +61,8 @@ export default function Contribuables() {
   const hasPagination = list.filteredContribuables.length > list.pageSize;
 
   return (
-    <section className="page">
-      <DossierFiscalNavigation section="contribuables" />
+    <section className="page contribuables-page">
+      <DossierFiscalNavigation section="dossiers" />
 
       <div className="page-heading">
         <p className="eyebrow">Registre fiscal</p>

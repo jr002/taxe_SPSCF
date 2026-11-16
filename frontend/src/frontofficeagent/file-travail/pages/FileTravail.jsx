@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { DataTable } from '@/components/common';
+import { DataTable, DossierFiscalNavigation } from '@/components/common';
 import useFileTravail from '@/frontofficeagent/file-travail/hooks/useFileTravail';
 import {
   CATEGORIES,
@@ -55,6 +55,7 @@ export default function FileTravail() {
 
   return (
     <section className="page file-travail-page">
+      <DossierFiscalNavigation />
       <div className="page-heading">
         <p className="eyebrow">Pilotage quotidien</p>
         <h1>File de travail</h1>

@@ -4,7 +4,8 @@ import { AideTerme, BoutonAide } from '@/frontofficeagent/aide';
 import ExportFicheButton from '@/frontofficeagent/contribuables/components/ExportFicheButton';
 
 const tabs = [
-  ['overview', 'Synthèse', ''],
+  ['home', 'Accueil', ''],
+  ['overview', 'Synthèse', '/synthese'],
   ['classification', 'Nature d’impôt', '/classification'],
   ['declarations', 'Déclarations', '/declarations'],
   ['recoupements', 'Recoupements', '/recoupements'],
@@ -48,6 +49,7 @@ function getOperationalUnit(contribuable) {
 
 export default function ContribuableHeader({ activeTab, contribuable, declarationsCount, exportDisabled, exportLabel, exportTitle, fiche, id, onExport, onImporter, onPartager, onOuvrirAide }) {
   const operationalUnit = getOperationalUnit(contribuable);
+  const ecranAide = activeTab === 'home' ? 'overview' : activeTab;
 
   return <>
     <Link className="detail-back-link" to="/contribuables">← Retour aux contribuables</Link>
@@ -55,35 +57,6 @@ export default function ContribuableHeader({ activeTab, contribuable, declaratio
       <p className="eyebrow">Fiche contribuable</p>
       <div className="contribuable-heading-row">
         <h1>{contribuable.raison_sociale || 'Contribuable'}<AideTerme id="categorie"><span className="categorie-badge-inline" style={{ background: fiche.background, color: fiche.couleur }}>{fiche.label}</span></AideTerme></h1>
-        <div className="contribuable-heading-actions">
-          <BoutonAide ecran={activeTab} onOuvrir={onOuvrirAide} />
-          <button
-            type="button"
-            className="secondary"
-            onClick={onPartager}
-            title="Émettre un lien de consultation en lecture seule pour ce contribuable"
-          >
-            Lien contribuable
-          </button>
-          {onImporter && ['overview', 'declarations'].includes(activeTab) && (
-            <button
-              type="button"
-              className="secondary"
-              onClick={onImporter}
-              title="Alimenter les déclarations TVA de ce dossier à partir d'un fichier Excel ou CSV"
-            >
-              Importer Excel
-            </button>
-          )}
-          {!['recoupements', 'droits'].includes(activeTab) && (
-            <ExportFicheButton
-              disabled={exportDisabled}
-              label={exportLabel}
-              onExport={onExport}
-              title={exportTitle}
-            />
-          )}
-        </div>
       </div>
       <p>
         <AideTerme id="nif">NIF</AideTerme> : {contribuable.nif || 'N/A'} · {declarationsCount} année(s) suivie(s) · E-mail : {contribuable.email || 'N/A'}
@@ -101,7 +74,39 @@ export default function ContribuableHeader({ activeTab, contribuable, declaratio
       </div>
     </div>
     <nav className="contribuable-tabs" aria-label="Sections de la fiche contribuable">
-      {tabs.map(([tab, label, suffix]) => <Link className={activeTab === tab ? 'active' : ''} key={tab} to={`/contribuables/${id}${suffix}`}>{label}</Link>)}
+      {tabs.map(([tab, label, suffix]) => <Link className={activeTab === tab ? 'active' : ''} aria-current={activeTab === tab ? 'page' : undefined} key={tab} to={`/contribuables/${id}${suffix}`}>{label}</Link>)}
     </nav>
+    {/* Les actions dépendent de l'onglet (import, export) : placées dans le
+        titre, leur nombre changeait sa hauteur et décalait la barre d'onglets
+        de 55 à 110 px. Sous la barre, elles ne déplacent plus la navigation. */}
+    <div className="contribuable-heading-actions">
+      <BoutonAide ecran={ecranAide} onOuvrir={onOuvrirAide} />
+      <button
+        type="button"
+        className="secondary"
+        onClick={onPartager}
+        title="Émettre un lien de consultation en lecture seule pour ce contribuable"
+      >
+        Lien contribuable
+      </button>
+      {onImporter && ['overview', 'declarations'].includes(activeTab) && (
+        <button
+          type="button"
+          className="secondary"
+          onClick={onImporter}
+          title="Alimenter les déclarations TVA de ce dossier à partir d'un fichier Excel ou CSV"
+        >
+          Importer Excel
+        </button>
+      )}
+      {!['home', 'recoupements', 'droits'].includes(activeTab) && (
+        <ExportFicheButton
+          disabled={exportDisabled}
+          label={exportLabel}
+          onExport={onExport}
+          title={exportTitle}
+        />
+      )}
+    </div>
   </>;
 }

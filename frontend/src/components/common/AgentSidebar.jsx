@@ -16,14 +16,14 @@ export default function AgentSidebar({ isChefCentre = false }) {
   const liens = entreesRail(isChefCentre);
 
   return (
-    <aside id="agent-navigation" className="agent-sidebar" aria-label="Navigation de l’espace agent">
+    <aside id="agent-navigation" className="agent-sidebar" aria-label="Navigation principale de l’espace agent">
       <div className="agent-sidebar-heading">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z" />
         </svg>
-        <strong>Modules fiscaux</strong>
+        <strong>Espace agent</strong>
       </div>
-      <nav aria-label="Modules du frontoffice agent">
+      <nav aria-label="Espaces du front-office">
         {liens.map((lien) => {
           const actif = lien.id === groupe?.id;
           const nom = actif && ecran.id !== lien.id ? `${lien.label} — ${ecran.label}` : lien.label;

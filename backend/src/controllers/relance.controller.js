@@ -81,7 +81,9 @@ class RelanceController {
   // Relances d'un contribuable
   static async findByContribuable(req, res) {
     try {
-      const { id_contribuable } = req.params;
+      // Deux routes mènent ici : `/relances/contribuable/:id_contribuable` et
+      // `/contribuables/:id/relances`.
+      const id_contribuable = req.params.id_contribuable || req.params.id;
       const relances = await RelanceModel.findByContribuable(id_contribuable);
 
       res.json({

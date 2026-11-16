@@ -67,7 +67,7 @@ export const TERMES = {
   tva_payee: {
     terme: 'TVA payée',
     sens:
-      'Le montant réellement versé, tel qu’enregistré dans la déclaration. La colonne « TVA payée cumulée » additionne ces montants sur toutes les années du dossier.',
+      'Le montant déclaré et enregistré comme réellement versé. Dans les statistiques, le total additionne ces montants sur toutes les déclarations du périmètre.',
   },
   derniere_annee: {
     terme: 'Dernière année',
@@ -480,9 +480,9 @@ export const AIDES = {
         termes: ['fenetre_exercices', 'perimetre_statistiques'],
       },
       {
-        titre: 'Les quatre cartes',
+        titre: 'Les cinq cartes',
         texte:
-          'Le nombre de lignes de déclaration, le nombre de lignes dont le statut appelle un examen, l’écart agrégé entre le théorique attendu et le réellement payé, et ce théorique attendu. Les montants se lisent en notation compacte (k, M, Md Ar) ; le détail d’une ligne se lit dans son dossier.',
+          'Le nombre de lignes de déclaration, le total de TVA déclarée et enregistrée comme payée, le nombre de lignes dont le statut appelle un examen, l’écart agrégé entre le théorique attendu et le réellement payé, puis le théorique attendu. Les montants se lisent en notation compacte (k, M, Md Ar) ; le détail d’une ligne se lit dans son dossier.',
         termes: [
           'declaration_enregistree',
           'lignes_a_examiner',

@@ -35,8 +35,10 @@ Point d'entrée de l'interface React (React 19 + Vite, routage `react-router-dom
 | `/register`, `/centres-fiscaux`, `/centres/:id`, `/centres-fiscaux/:type/:index` | redirection vers `/unites-operationnelles` |
 | `/suivi` | `SuiviFiscal` |
 | `/suivi/:id` | `DeclarationDetail` |
+| `/file-de-travail` | `FileTravail` (onglet de l’espace Dossiers) |
 | `/contribuables` | `Contribuables` — vue « Registre » ou « Statistique » (`?vue=statistique`) ; rôles opérationnels |
-| `/contribuables/:id` | `ContribuableDetail` |
+| `/contribuables/:id` | `ContribuableDetail` — accueil plein écran du dossier |
+| `/contribuables/:id/synthese` | `ContribuableDetail` — synthèse historique |
 | `/contribuables/:id/classification` | `ContribuableDetail` |
 | `/contribuables/:id/declarations` | `ContribuableDetail` |
 | `/contribuables/:id/declarations/nouveau` | `DeclarationCreate` |
@@ -46,7 +48,7 @@ Point d'entrée de l'interface React (React 19 + Vite, routage `react-router-dom
 | `/contribuables/:id/droits-communication/nouveau` | `DroitCommunicationCreate` |
 | `/contribuables/:id/relances` | `ContribuableDetail` |
 | `/contribuables/:id/confrontation` | `Confrontation` |
-| `/relance` | `RelanceFiscale` (entrée « Relances » du `Header`) |
+| `/relance` | `RelanceFiscale` (onglet de l’espace Dossiers) |
 | `/admin` | `AdminDashboard` (tableau de bord des comptes, administrateurs) |
 | `/admin/utilisateurs` | `AdminUtilisateurs` (gestion des utilisateurs, administrateurs) |
 | `/admin/roles` | `AdminRoles` (rôles et périmètre par centre, administrateurs) |
@@ -62,7 +64,7 @@ d'une même route de mise en page qui rend [`Header`](components/common/index.js
 puis `<main className="app-main"><Outlet /></main>` ; sans session valide, elle
 redirige vers `/`.
 
-Les onze routes `/contribuables…` passent en plus par
+Les douze routes `/contribuables…` passent en plus par
 [`EspaceOperateurs`](components/common/EspaceOperateurs.jsx) (exporté par le barrel
 `components/common/index.js`) : le registre et ses fiches appartiennent à l'espace
 des rôles opérationnels, et un compte `admin` qui les atteint — même en tapant

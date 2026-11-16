@@ -2,11 +2,9 @@
  * Registre unique des écrans du frontoffice agent.
  *
  * Chaque écran y tient une seule fois son nom, son chemin, son icône et le groupe
- * auquel il appartient. `AgentSidebar` n'affiche que les entrées `rail`, mais
- * l'état actif se résout sur l'ensemble du registre : un écran sans entrée visible
- * (`/relance`, `/collecte`, `/entreprises/nouveau`) allume le groupe dont il
- * relève au lieu de laisser la barre éteinte. `DossierFiscalNavigation` reprend
- * les mêmes libellés, ainsi un écran ne se présente plus sous trois noms.
+ * auquel il appartient. `AgentSidebar` affiche les cinq espaces principaux ; les
+ * pages de dossier restent accessibles par les onglets de `DossierFiscalNavigation`.
+ * L'état actif se résout sur tout le registre, y compris les écrans secondaires.
  *
  * Champ `chemin` : adresse de l'écran. `alias` : autres préfixes qui désignent le
  * même écran. `section` : id du groupe, et donc de l'entrée de rail allumée.
@@ -22,10 +20,26 @@ export const ECRANS_AGENT = [
     rail: true,
   },
   {
-    id: 'file',
-    chemin: '/file-de-travail',
-    label: 'File de travail',
-    icone: ['M3 7h18v14H3z', 'M8 7V4h8v3', 'M3 12h18'],
+    id: 'dossiers',
+    chemin: '/contribuables',
+    label: 'Dossiers',
+    icone: [
+      'M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2',
+      'M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
+      'M20 21v-2a4 4 0 0 0-3-3.87',
+      'M16 3.13a4 4 0 0 1 0 7.75',
+    ],
+    rail: true,
+  },
+  { id: 'suivi', chemin: '/suivi', label: 'Suivi fiscal', section: 'dossiers' },
+  { id: 'file', chemin: '/file-de-travail', label: 'File de travail', section: 'dossiers' },
+  { id: 'relance', chemin: '/relance', label: 'Relances', section: 'dossiers' },
+  { id: 'entreprise', chemin: '/entreprises/nouveau', label: 'Nouveau contribuable', section: 'dossiers' },
+  {
+    id: 'collecte',
+    chemin: '/collecte',
+    label: 'Contrôle',
+    icone: ['M4 4h16v16H4z', 'm8 12 2.5 2.5L16 9'],
     rail: true,
   },
   {
@@ -36,31 +50,9 @@ export const ECRANS_AGENT = [
     rail: true,
   },
   {
-    id: 'suivi',
-    chemin: '/suivi',
-    label: 'Dossier fiscal',
-    icone: ['M3 4.5h5.5l1.8 2.2H21V20.5H3z', 'M8 13h8'],
-    rail: true,
-  },
-  { id: 'relance', chemin: '/relance', label: 'Relance fiscale', section: 'suivi' },
-  {
-    id: 'contribuables',
-    chemin: '/contribuables',
-    label: 'Contribuables',
-    icone: [
-      'M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2',
-      'M10 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8',
-      'M20 21v-2a4 4 0 0 0-3-3.87',
-      'M16 3.13a4 4 0 0 1 0 7.75',
-    ],
-    rail: true,
-  },
-  { id: 'collecte', chemin: '/collecte', label: 'Collecte TVA', section: 'contribuables' },
-  { id: 'entreprise', chemin: '/entreprises', label: 'Nouvelle entreprise', section: 'contribuables' },
-  {
     id: 'unites',
     chemin: '/unites-operationnelles',
-    label: 'Unités opérationnelles',
+    label: 'Organisation',
     icone: ['M3 21h18', 'M5 21V7l7-4 7 4v14', 'M9 10h.01', 'M15 10h.01', 'M9 14h.01', 'M15 14h.01', 'M10 21v-4h4v4'],
     alias: ['/centres', '/centres-fiscaux', '/register'],
     rail: true,
@@ -82,12 +74,15 @@ export const ECRANS_AGENT = [
 ];
 
 /**
- * Groupes d'écrans annoncés par les onglets d'un domaine, dans l'ordre de lecture.
+ * Pages secondaires du groupe Dossiers, dans l'ordre du parcours habituel.
  * Les libellés viennent du registre : l'onglet et la barre disent le même nom.
  */
 export const SECTIONS_AGENT = [
-  { id: 'suivi', ariaLabel: 'Pages du dossier fiscal', ecrans: ['suivi', 'relance'] },
-  { id: 'contribuables', ariaLabel: 'Collecte et registre des contribuables', ecrans: ['collecte', 'contribuables'] },
+  {
+    id: 'dossiers',
+    ariaLabel: 'Navigation des dossiers fiscaux',
+    ecrans: ['dossiers', 'suivi', 'file', 'relance', 'entreprise'],
+  },
 ];
 
 /** Sous-modules de saisie de la collecte, tels que les nomme l'en-tête. */

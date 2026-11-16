@@ -89,7 +89,7 @@ export default function TableauDecisionnel() {
 
       {/* Cartes KPI : le `small` reprend les champs déjà renvoyés par le serveur
           que l'écran taisait, pour que chaque chiffre se lise avec sa composition. */}
-      <div className="kpis">
+      <div className="kpis decisionnel-kpis">
         <article>
           <span>
             <AideTerme id="declaration_enregistree">Déclarations enregistrées</AideTerme>
@@ -103,6 +103,13 @@ export default function TableauDecisionnel() {
         </article>
         <article>
           <span>
+              <AideTerme id="tva_payee">TVA déclarée (enregistrée)</AideTerme>
+          </span>
+          <strong>{formatCompact(tvaPayeeTotale)} Ar</strong>
+          <small>Total des montants déclarés et enregistrés comme TVA payée.</small>
+        </article>
+        <article>
+          <span>
             <AideTerme id="lignes_a_examiner">Lignes à examiner</AideTerme>
           </span>
           <strong>{formatNumber(alertes + critiques)}</strong>
@@ -113,12 +120,16 @@ export default function TableauDecisionnel() {
         </article>
         <article>
           <span>
-            <AideTerme id="ecart_total">Écart théorique − payée</AideTerme>
+            <AideTerme id="ecart_total">Écart de TVA</AideTerme>
           </span>
           <strong>{formatCompact(ecartTotal)} Ar</strong>
           <small>
-            TVA payée enregistrée : {formatCompact(tvaPayeeTotale)} Ar ·{' '}
-            {ecartTotal < 0 ? 'le versé dépasse la référence' : 'le versé reste en deçà'}
+            TVA théorique − TVA déclarée ·{' '}
+            {ecartTotal > 0
+              ? 'le versé reste en deçà de la référence'
+              : ecartTotal < 0
+                ? 'le versé dépasse la référence'
+                : 'le versé égale la référence'}
           </small>
         </article>
         <article>
