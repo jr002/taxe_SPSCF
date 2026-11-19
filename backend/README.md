@@ -36,6 +36,7 @@ DB_PASSWORD=<mot_de_passe_postgresql>
 DATABASE_URL="postgresql://postgres:<mot_de_passe_postgresql>@localhost:5432/taxe_verification?schema=public"
 
 JWT_SECRET=<secret-aleatoire-long-et-prive>
+CORS_ORIGIN=http://localhost:5173
 ```
 
 Remarques sur ces variables :
@@ -49,10 +50,12 @@ Remarques sur ces variables :
   utilise la valeur de repli `development-only-change-this-secret`. En
   production (`NODE_ENV=production`), son absence fait échouer la signature et
   la vérification des jetons.
-- `CORS_ORIGIN` est encore présent dans certains `.env` et exposé par
-  [`src/config/env.js`](src/config/env.js) (`config.cors.origin`), mais il n'est
-  utilisé par aucune couche de l'application : la liste des origines autorisées
-  est codée en dur dans [`src/app.js`](src/app.js) (voir § 7).
+- `CORS_ORIGIN` indique l'origine du frontend autorisée par l'API. Plusieurs
+  origines peuvent être séparées par des virgules. En production, renseignez
+  l'URL exacte du frontend Vercel (sans chemin), par exemple
+  `https://mon-projet.vercel.app`.
+- En production, le cookie de session est configuré avec `SameSite=None` et
+  `Secure` pour permettre les requêtes authentifiées entre Vercel et Render.
 
 La base indiquée par `DATABASE_URL` doit exister avant le démarrage de l'API.
 

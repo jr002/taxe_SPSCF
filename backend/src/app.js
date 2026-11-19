@@ -27,7 +27,7 @@ const errorHandler = require('./middlewares/error.middleware');
 const { swaggerSpec, swaggerUi } = require('./config/swagger');
 
 const app = express();
-const allowedOrigins = [
+const allowedOrigins = new Set([
   'http://localhost:3000',
   'http://localhost:5173',
   'http://localhost:5174',
@@ -36,13 +36,14 @@ const allowedOrigins = [
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5174',
   'http://127.0.0.1:5175',
-];
+  ...config.cors.origin.split(',').map((origin) => origin.trim()).filter(Boolean),
+]);
 
 // Middlewares
 app.use(helmet());
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
+    if (!origin || allowedOrigins.has(origin)) {
       callback(null, true);
       return;
     }
