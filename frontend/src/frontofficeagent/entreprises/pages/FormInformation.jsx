@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createContribuable, getErrorMessage } from '@/api';
 import { DossierFiscalNavigation } from '@/components/common';
@@ -49,6 +49,12 @@ export default function FormInformation() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState('');
+  const feedbackRef = useRef(null);
+
+  // Le retour se rend en haut du formulaire, loin du bouton d'envoi : le ramener à l'écran.
+  useEffect(() => {
+    if (feedbackRef.current) feedbackRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [submitError, submitSuccess]);
   const navigate = useNavigate();
 
   const handleInputChange = (e) => {
@@ -237,12 +243,12 @@ export default function FormInformation() {
       </h2>
 
       {submitError && (
-        <p className="error form-submit-message" role="alert">
+        <p ref={feedbackRef} className="error form-submit-message" role="alert">
           {submitError}
         </p>
       )}
       {submitSuccess && (
-        <p className="success form-submit-message" role="status">
+        <p ref={feedbackRef} className="success form-submit-message" role="status">
           {submitSuccess}
         </p>
       )}

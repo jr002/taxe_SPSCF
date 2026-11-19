@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import {
   getDeclarationById,
@@ -66,6 +66,12 @@ export default function DeclarationDetail() {
   const [error, setError] = useState('');
   const [actionSuccess, setActionSuccess] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
+  const feedbackRef = useRef(null);
+
+  // Le retour se rend en haut de page, loin des actes de procédure : le ramener à l'écran.
+  useEffect(() => {
+    if (feedbackRef.current) feedbackRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [error, actionSuccess]);
 
   // États pour les formulaires d'actions
   const [showPrimitiveForm, setShowPrimitiveForm] = useState(false);
@@ -372,12 +378,12 @@ export default function DeclarationDetail() {
       </div>
 
       {actionSuccess && (
-        <div className="form-submit-message success" role="status" style={{ marginBottom: '1.25rem' }}>
+        <div ref={feedbackRef} className="form-submit-message success" role="status" style={{ marginBottom: '1.25rem' }}>
           ✓ {actionSuccess}
         </div>
       )}
       {error && (
-        <div className="form-submit-message error" role="alert" style={{ marginBottom: '1.25rem' }}>
+        <div ref={feedbackRef} className="form-submit-message error" role="alert" style={{ marginBottom: '1.25rem' }}>
           ⚠️ {error}
         </div>
       )}

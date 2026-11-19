@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import { getErrorMessage } from '@/api';
 import CollecterDeductible from '@/frontofficeagent/collecte/components/CollecterDeductible.jsx';
@@ -17,6 +17,12 @@ import { enregistrerCollecte } from '@/frontofficeagent/collecte/utils/enregistr
 export default function Collecte({ currentModule }) {
   const [message, setMessage] = useState({ tone: '', text: '' });
   const [saving, setSaving] = useState(false);
+  const feedbackRef = useRef(null);
+
+  // Le retour se rend au-dessus du module, loin du bouton d'envoi : le ramener à l'écran.
+  useEffect(() => {
+    if (feedbackRef.current) feedbackRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [message]);
 
   const handleCollect = async (collecte) => {
     setSaving(true);
@@ -55,6 +61,7 @@ export default function Collecte({ currentModule }) {
 
       {message.text && (
         <p
+          ref={feedbackRef}
           className={`${message.tone} form-submit-message collecte-message`}
           role={message.tone === 'success' ? 'status' : 'alert'}
         >

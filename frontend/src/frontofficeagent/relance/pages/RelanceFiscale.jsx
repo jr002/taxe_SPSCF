@@ -286,6 +286,8 @@ export default function RelanceFiscale() {
   // ─── Rendu ────────────────────────────────────────────────────────────────
   return (
     <div className="relance-page page">
+      <DossierFiscalNavigation />
+
       {/* En-tête */}
       <div className="page-heading">
         <p className="eyebrow">DGI · Recouvrement fiscal</p>
@@ -296,8 +298,6 @@ export default function RelanceFiscale() {
           et émettre les rappels à l'ordre, mises en demeure et régularisations.
         </p>
       </div>
-
-      <DossierFiscalNavigation />
 
       {/* KPI Cards */}
       <RelanceKPICards stats={stats} />

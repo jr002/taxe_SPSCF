@@ -5,8 +5,10 @@ import { ExcelImportModal } from '@/components/forms';
 
 import {
   createRelance,
+  getApercuConfrontation,
   getContribuableById,
   getErrorMessage,
+  getRapprochementStats,
   getRelancesByContribuable,
   updateRelance,
 } from '@/api';
@@ -88,6 +90,7 @@ export default function ContribuableDetail() {
   const [importOuverte, setImportOuverte] = useState(false);
   const [bilanImport, setBilanImport] = useState('');
   const [currentTimestamp] = useState(() => Date.now());
+  const [confrontation, setConfrontation] = useState({ stats: null, apercu: null, loading: true, error: '' });
 
   const activeTab = getActiveTab(location.pathname);
 
@@ -137,6 +140,29 @@ export default function ContribuableDetail() {
       isMounted = false;
     };
   }, [id]);
+
+  // La conformité recoupée et l'écart général viennent du moteur de confrontation
+  // (rapprochements enregistrés), jamais du statut déclaratif saisi au suivi.
+  const rechargerConfrontation = useCallback(async () => {
+    try {
+      const [stats, apercu] = await Promise.all([
+        getRapprochementStats({ id_contribuable: id }),
+        getApercuConfrontation(id),
+      ]);
+      setConfrontation({ stats, apercu, loading: false, error: '' });
+    } catch (requestError) {
+      setConfrontation({ stats: null, apercu: null, loading: false, error: getErrorMessage(requestError) });
+    }
+  }, [id]);
+
+  useEffect(() => {
+    const loadConfrontation = async () => {
+      setConfrontation((previous) => ({ ...previous, loading: true, error: '' }));
+      await rechargerConfrontation();
+    };
+
+    void loadConfrontation();
+  }, [rechargerConfrontation]);
 
   const currentRegime = contribuable ? getRegime(contribuable) : 'IS';
   const reference = useMemo(() => getCaReference(declarations), [declarations]);
@@ -436,6 +462,7 @@ export default function ContribuableDetail() {
             reference={reference}
             relances={relances}
             contribuable={contribuable}
+            confrontation={confrontation}
           />
         )}
 
@@ -515,6 +542,7 @@ export default function ContribuableDetail() {
         onSuccess={(bilan) => {
           setBilanImport(bilan || 'Déclarations du dossier enregistrées.');
           void rechargerFiche();
+          void rechargerConfrontation();
         }}
       />
     </>

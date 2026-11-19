@@ -194,6 +194,8 @@ export default function SuiviFiscal() {
 
   return (
     <section className="page dossier-fiscal-page">
+      <DossierFiscalNavigation />
+
       <div className="page-heading">
         <p className="eyebrow">Contrôle fiscal</p>
         <h1>Dossier fiscal</h1>
@@ -202,8 +204,6 @@ export default function SuiviFiscal() {
           puis ouvrez un dossier de contrôle pour engager la procédure.
         </p>
       </div>
-
-      <DossierFiscalNavigation />
 
       <div className="kpis">
         <article>

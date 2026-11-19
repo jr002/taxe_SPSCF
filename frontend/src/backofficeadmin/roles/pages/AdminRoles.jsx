@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { getAgents, getCentres, getErrorMessage, updateAgentCentre, updateAgentRole } from '@/api';
 import { AccesRefuse, ModaleConfirmation, Pagination } from '@/components/common';
 import { useTablePagination, useFiltresUrl } from '@/hooks';
@@ -124,6 +124,13 @@ export default function AdminRoles({ currentUser }) {
     onPageChange: (valeur) => patch({ page: valeur <= 1 ? '' : valeur }),
   });
 
+  const feedbackRef = useRef(null);
+
+  // Le retour se rend en haut de page, loin des contrôles de rôle du tableau : le ramener à l'écran.
+  useEffect(() => {
+    if (feedbackRef.current) feedbackRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [error, success]);
+
   if (!isAdmin) {
     return (
       <AccesRefuse
@@ -146,9 +153,9 @@ export default function AdminRoles({ currentUser }) {
         </p>
       </div>
 
-      {error && <p className="error" role="alert">{error}</p>}
+      {error && <p ref={feedbackRef} className="error" role="alert">{error}</p>}
       {success && (
-        <p className="success form-submit-message" role="status">
+        <p ref={feedbackRef} className="success form-submit-message" role="status">
           {success}
         </p>
       )}

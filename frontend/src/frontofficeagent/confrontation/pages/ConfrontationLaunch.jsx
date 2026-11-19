@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 import { buildPeriodOptions, formatAriary, formatDateTime, sourceLabel } from '@/frontofficeagent/confrontation/utils/confrontation.utils.js';
@@ -78,6 +79,15 @@ export default function ConfrontationLaunch({
   const statusCount = (statut) => results.filter((row) => row.statut === statut).length;
   const aTraiter = statusCount('a_verifier') + statusCount('ecart');
   const statutCible = statusCount('a_verifier') > 0 ? 'a_verifier' : 'ecart';
+
+  const errorRef = useRef(null);
+  const resultRef = useRef(null);
+
+  // Le retour se rend sous le bouton, hors écran : le ramener dans le champ de vision.
+  useEffect(() => {
+    const node = errorRef.current || resultRef.current;
+    if (node) node.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [error, result]);
 
   const anneesTexte = annees.length ? annees.map((entree) => entree.annee).join(' · ') : '—';
   const sourcesTexte = sources.length
@@ -294,10 +304,10 @@ export default function ConfrontationLaunch({
         </div>
       </div>
 
-      {error && <p className="form-submit-message error" role="alert">{error}</p>}
+      {error && <p ref={errorRef} className="form-submit-message error" role="alert">{error}</p>}
 
       {result && (
-        <div className={`result-card ${total > 0 ? 'success' : 'alert'}`} role="status">
+        <div ref={resultRef} className={`result-card ${total > 0 ? 'success' : 'alert'}`} role="status">
           <div>
             <p className="eyebrow subtle">Résultat de la confrontation</p>
             <h3>{total > 0 ? 'Comparaison terminée' : 'Aucun rapprochement trouvé'}</h3>

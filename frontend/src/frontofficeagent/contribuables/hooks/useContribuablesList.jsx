@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { getContribuables, getErrorMessage } from '@/api';
+import { getContribuables, getErrorMessage, getRapprochements } from '@/api';
 import { getCategorie } from '@/frontofficeagent/contribuables/utils/classificationCgi.utils.js';
+import { aggregateRapprochementsParContribuable } from '@/frontofficeagent/confrontation/utils/conformiteRecoupee.utils.js';
 import { readSearchParam, updateSearchParams } from '@/utils';
 
 const PAGE_SIZE = 15;
@@ -13,6 +14,7 @@ const PAGE_SIZE = 15;
  */
 export default function useContribuablesList() {
   const [contribuables, setContribuables] = useState([]);
+  const [rapprochements, setRapprochements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchParams, setSearchParams] = useSearchParams();
@@ -29,8 +31,16 @@ export default function useContribuablesList() {
     setLoading(true);
     setError('');
     try {
-      const result = await getContribuables({ limit: 10000 });
-      setContribuables(result.data || result);
+      // Les rapprochements sont déjà filtrés par le périmètre de l'agent côté
+      // serveur : une seule lecture suffit à déduire la conformité recoupée et
+      // l'écart général de chaque dossier, sans recalculer le moteur.
+      const [contribResult, rapResult] = await Promise.all([
+        getContribuables({ limit: 10000 }),
+        getRapprochements({ limit: 10000 }),
+      ]);
+      setContribuables(contribResult.data || contribResult);
+      const rapRows = rapResult?.rapprochements || rapResult?.data || rapResult || [];
+      setRapprochements(Array.isArray(rapRows) ? rapRows : []);
     } catch (requestError) {
       setError(getErrorMessage(requestError));
     } finally {
@@ -52,6 +62,11 @@ export default function useContribuablesList() {
       categorie: getCategorie(contribuable),
     })),
     [contribuables]
+  );
+
+  const confrontationParContribuable = useMemo(
+    () => aggregateRapprochementsParContribuable(rapprochements),
+    [rapprochements]
   );
 
   const counts = useMemo(() => {
@@ -101,6 +116,7 @@ export default function useContribuablesList() {
 
   return {
     allContribuables,
+    confrontationParContribuable,
     counts,
     currentPage: safePage,
     error,

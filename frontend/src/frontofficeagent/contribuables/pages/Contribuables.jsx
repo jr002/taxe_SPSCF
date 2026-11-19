@@ -97,7 +97,10 @@ export default function Contribuables() {
       {list.loading ? (
         <p className="status" role="status">Chargement des contribuables...</p>
       ) : isStatistique ? (
-        <ContribuablesStatistiques contribuables={list.allContribuables} />
+        <ContribuablesStatistiques
+          contribuables={list.allContribuables}
+          confrontationParContribuable={list.confrontationParContribuable}
+        />
       ) : (
         <>
           <ContribuablesFilters
@@ -121,6 +124,7 @@ export default function Contribuables() {
           <ContribuablesTable
             allCount={list.allContribuables.length}
             contribuables={list.paginatedContribuables}
+            confrontationParContribuable={list.confrontationParContribuable}
             onOpenDetail={openDetail}
           />
 

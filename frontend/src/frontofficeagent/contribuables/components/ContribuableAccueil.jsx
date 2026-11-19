@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 
 import ContribuableSituation from '@/frontofficeagent/contribuables/components/ContribuableSituation';
+import ContribuableConformite from '@/frontofficeagent/contribuables/components/ContribuableConformite';
 
 const rubriques = [
   {
@@ -47,23 +48,17 @@ export default function ContribuableAccueil({
   idContribuable,
   reference,
   relances,
-  contribuable,
+  confrontation,
 }) {
   return (
     <div className="contribuable-accueil">
-      <header className="contribuable-accueil-intro">
-        <div>
-          <p className="eyebrow">Espace dossier</p>
-          <p>Consultez la situation fiscale puis accédez directement aux rubriques du dossier.</p>
-        </div>
-        <Link
-          className="primary contribuable-accueil-confrontation"
-          to={`/contribuables/${idContribuable}/confrontation`}
-          state={{ contribuable }}
-        >
-          Ouvrir la confrontation →
-        </Link>
-      </header>
+      <ContribuableConformite
+        idContribuable={idContribuable}
+        stats={confrontation?.stats}
+        apercu={confrontation?.apercu}
+        loading={confrontation?.loading}
+        error={confrontation?.error}
+      />
 
       <ContribuableSituation
         declarations={declarations}

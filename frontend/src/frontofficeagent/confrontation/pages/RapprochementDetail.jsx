@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 
 import { ModaleConfirmation } from '@/components/common';
@@ -39,6 +40,13 @@ export default function RapprochementDetail({
   onMotifChange,
   onConfirm,
 }) {
+  const feedbackRef = useRef(null);
+
+  // Le retour se rend au-dessus des panneaux, loin des boutons d'action : le ramener à l'écran.
+  useEffect(() => {
+    if (feedbackRef.current) feedbackRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [success]);
+
   if (loading) return <p className="status" role="status">Chargement…</p>;
   if (error) return <p className="empty error" role="alert">{error}</p>;
   if (!data) {
@@ -91,7 +99,7 @@ export default function RapprochementDetail({
         <p>{phrase}</p>
       </div>
 
-      {success && <p className="success form-submit-message" role="status">{success}</p>}
+      {success && <p ref={feedbackRef} className="success form-submit-message" role="status">{success}</p>}
 
       <div className="comparison-grid">
         <article className="comparison-panel">

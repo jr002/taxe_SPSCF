@@ -144,6 +144,21 @@ export const TERMES = {
     sens:
       'Le module qui compare les chiffres déclarés et les chiffres recoupés et produit les lignes de rapprochement. La TVA y est affichée à titre informatif : la confrontation raisonne en chiffre d’affaires.',
   },
+  conformite_recoupee: {
+    terme: 'Conformité recoupée',
+    sens:
+      'État du dossier déduit des rapprochements actifs de la confrontation, jamais du statut déclaratif saisi au suivi. « Non recoupé » tant qu’aucune confrontation n’existe — le dossier n’est pas présumé conforme ; « conforme (recoupé) » quand aucune divergence active ne subsiste.',
+  },
+  ecart_general: {
+    terme: 'Écart général',
+    sens:
+      'CA déclaré confronté − montant recoupé TTC, sommé sur les rapprochements actifs. Positif, le déclaré dépasse le recoupé (« déclaré plus ») : c’est un ordre de grandeur en chiffre d’affaires, pas la TVA, et jamais une créance tant qu’une notification définitive n’est pas émise.',
+  },
+  couverture: {
+    terme: 'Couverture',
+    sens:
+      'Part des déclarations du dossier déjà rapprochées à un recoupement (déclarations confrontées ÷ déclarations enregistrées). Une couverture faible signale une matière recoupée incomplète, pas une conformité.',
+  },
   relance: {
     terme: 'Relance',
     sens:
@@ -255,8 +270,8 @@ export const AIDES = {
       {
         titre: 'Ce que montre chaque ligne',
         texte:
-          'Raison sociale et NIF, dernière année déclarée, nombre d’années suivies, et la TVA réellement payée sur toutes ces années. La ligne s’ouvre sur la fiche du contribuable, au clavier comme à la souris.',
-        termes: ['nif', 'tva_payee', 'derniere_annee', 'annees_suivies', 'categorie'],
+          'Raison sociale et NIF, conformité recoupée et écart général du dossier, dernière année déclarée, nombre d’années suivies, et la TVA réellement payée sur toutes ces années. La ligne s’ouvre sur la fiche du contribuable, au clavier comme à la souris.',
+        termes: ['nif', 'conformite_recoupee', 'ecart_general', 'tva_payee', 'derniere_annee', 'annees_suivies', 'categorie'],
       },
       {
         titre: 'Filtrer et retrouver',
@@ -267,15 +282,22 @@ export const AIDES = {
       {
         titre: 'Vue Statistique',
         texte:
-          'Le second onglet agrège le registre en partitions VSP / CSP et par nature d’impôt. Les camemberts portent des tableaux alternatifs : les chiffres sont lisibles sans le graphique.',
+          'Le second onglet ouvre sur la conformité recoupée du portefeuille — répartition des dossiers et écart général cumulé — puis agrège le registre en partitions VSP / CSP et par nature d’impôt. Les camemberts portent des légendes chiffrées : les valeurs sont lisibles sans le graphique.',
+        termes: ['conformite_recoupee', 'ecart_general'],
       },
     ],
   },
   overview: {
     titre: 'Lire la synthèse du dossier',
     intro:
-      'La synthèse répond en trois secondes : combien ce contribuable a payé, sur quelles années, et si ses paiements suivent la TVA attendue.',
+      'L’accueil du dossier ouvre sur l’écart recoupement / déclaration et la conformité recoupée, puis répond en trois secondes : combien ce contribuable a payé, sur quelles années, et si ses paiements suivent la TVA attendue.',
     rubriques: [
+      {
+        titre: 'La conformité recoupée',
+        texte:
+          'À l’accueil du dossier, le panneau de tête compare le CA déclaré confronté au montant recoupé TTC et en tire l’écart général et l’état du dossier. Tant qu’aucune confrontation active n’existe, le dossier est « non recoupé » : on montre la matière disponible, jamais un écart inventé. La couverture dit quelle part des déclarations est déjà rapprochée.',
+        termes: ['conformite_recoupee', 'ecart_general', 'couverture', 'recoupement'],
+      },
       {
         titre: 'Les deux chiffres',
         texte:
