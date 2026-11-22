@@ -58,6 +58,14 @@ export const ECRANS_AGENT = [
     rail: true,
   },
   {
+    id: 'previsions',
+    chemin: '/previsions',
+    label: 'Prévision',
+    icone: ['M4 19V5', 'M4 19h16', 'M8 15v-3', 'M12 15V8', 'M16 15v-5', 'm7 7 4-3 5 2'],
+    chefCentre: true,
+    rail: true,
+  },
+  {
     id: 'equipe',
     chemin: '/admin/utilisateurs',
     label: 'Mon équipe',

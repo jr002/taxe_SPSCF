@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import logoDgi from '@/assets/logodgi.jpg';
 import { DataTable } from '@/components/common';
@@ -14,6 +14,8 @@ import {
   libelleEcheance,
 } from '@/frontofficeagent/file-travail/utils/fileTravail.utils';
 import { formatAriary, formatNumber, toNumber } from '@/utils';
+
+const PrevisionAccueil = lazy(() => import('@/frontofficeagent/previsions/components/PrevisionAccueil'));
 
 const dateDuJour = new Intl.DateTimeFormat('fr-FR', {
   weekday: 'long',
@@ -120,6 +122,12 @@ export default function Accueil({ currentUser = null }) {
 
       {(error || file.error) && (
         <p className="status error" role="alert">{error || file.error}</p>
+      )}
+
+      {currentUser?.role === 'chef_centre' && (
+        <Suspense fallback={null}>
+          <PrevisionAccueil />
+        </Suspense>
       )}
 
       <section className="workbench-priorites" aria-labelledby="workbench-priorites-title">

@@ -493,6 +493,30 @@ const rapprochementValidators = [
     .isInt().withMessage('ID contrôle invalide')
 ];
 
+const previsionValidators = [
+  body('annee')
+    .notEmpty().withMessage('L’année de la prévision est obligatoire')
+    .isInt({ min: 2000, max: 2100 }).withMessage('Année invalide : comprise entre 2000 et 2100'),
+  body('montant_prevu')
+    .notEmpty().withMessage('Le montant prévisionnel est obligatoire')
+    .isFloat({ gt: 0, max: MONTANT_MAX }).withMessage('Montant prévisionnel invalide : positif, en ariary, dans la plage numeric(15,2)'),
+  body('observation')
+    .optional({ values: 'falsy' })
+    .isLength({ max: 255 }).withMessage('L’observation ne doit pas dépasser 255 caractères'),
+];
+
+const previsionUpdateValidators = [
+  body('annee')
+    .optional({ values: 'falsy' })
+    .isInt({ min: 2000, max: 2100 }).withMessage('Année invalide : comprise entre 2000 et 2100'),
+  body('montant_prevu')
+    .optional({ values: 'falsy' })
+    .isFloat({ gt: 0, max: MONTANT_MAX }).withMessage('Montant prévisionnel invalide : positif, en ariary, dans la plage numeric(15,2)'),
+  body('observation')
+    .optional({ values: 'falsy' })
+    .isLength({ max: 255 }).withMessage('L’observation ne doit pas dépasser 255 caractères'),
+];
+
 module.exports = {
   validate,
   contribuableValidators,
@@ -511,5 +535,7 @@ module.exports = {
   relanceValidators,
   relanceUpdateValidators,
   rapprochementValidators,
-  rapprochementStatutValidators
+  rapprochementStatutValidators,
+  previsionValidators,
+  previsionUpdateValidators
 };

@@ -41,6 +41,7 @@ const PhaseClassement = lazy(() => import('@/frontofficeagent/entreprises/pages/
 const FormInformation = lazy(() => import('@/frontofficeagent/entreprises/pages/FormInformation'));
 const FileTravail = lazy(() => import('@/frontofficeagent/file-travail/pages/FileTravail'));
 const RelanceFiscale = lazy(() => import('@/frontofficeagent/relance/pages/RelanceFiscale'));
+const Previsions = lazy(() => import('@/frontofficeagent/previsions/pages/Previsions'));
 const SuiviFiscal = lazy(() => import('@/frontofficeagent/suivi-fiscal/pages/SuiviFiscal'));
 const DeclarationDetail = lazy(() => import('@/frontofficeagent/suivi-fiscal/pages/DeclarationDetail'));
 
@@ -205,6 +206,7 @@ export default function App() {
           <Route path="/contribuables/:id/relances" element={<EspaceOperateurs currentUser={currentUser}><ContribuableDetail /></EspaceOperateurs>} />
           <Route path="/contribuables/:id/confrontation" element={<EspaceOperateurs currentUser={currentUser}><Confrontation currentUser={currentUser} /></EspaceOperateurs>} />
           <Route path="/relance" element={<RelanceFiscale />} />
+          <Route path="/previsions" element={<Previsions currentUser={currentUser} />} />
           <Route path="/admin" element={<AdminAccueil currentUser={currentUser} />} />
           <Route path="/admin/tableau-de-bord" element={<AdminDashboard currentUser={currentUser} />} />
           <Route path="/admin/utilisateurs" element={<AdminUtilisateurs currentUser={currentUser} />} />

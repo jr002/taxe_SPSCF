@@ -17,6 +17,7 @@ export * from '@/api/droits-communication';
 export * from '@/api/rapprochements';
 export * from '@/api/etats-contribuable';
 export * from '@/api/relances';
+export * from '@/api/previsions';
 export * from '@/api/centres';
 export * from '@/api/agents';
 export * from '@/api/acces-contribuable';

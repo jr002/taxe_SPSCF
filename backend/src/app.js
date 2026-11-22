@@ -18,6 +18,7 @@ const agentRoutes = require('./routes/agent.routes');
 const rapprochementRoutes = require('./routes/rapprochement.routes');
 const etatContribuableRoutes = require('./routes/etat-contribuable.routes');
 const relanceRoutes = require('./routes/relance.routes');
+const previsionRoutes = require('./routes/prevision.routes');
 const accesContribuableRoutes = require('./routes/acces-contribuable.routes');
 const { authenticate } = require('./middlewares/auth.middleware');
 const { enforceDataScope } = require('./middlewares/data-scope.middleware');
@@ -79,6 +80,7 @@ app.use('/api/agents', agentRoutes);
 app.use('/api/rapprochements', rapprochementRoutes);
 app.use('/api/etat-contribuable', etatContribuableRoutes);
 app.use('/api/relances', relanceRoutes);
+app.use('/api/previsions', previsionRoutes);
 app.get('/api-docs/swagger.json', (req, res) => {
   res.json(swaggerSpec);
 });

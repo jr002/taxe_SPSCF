@@ -24,6 +24,7 @@ model agents {
   relances          relances[]
   droits_communication droits_communication[]
   acces_contribuable acces_contribuable[]
+  previsions        previsions[]
   centres           centres?            @relation(fields: [id_centre], references: [id_centre], onUpdate: NoAction)
 
   @@index([email], map: "idx_agents_email")
@@ -147,6 +148,7 @@ model centres {
   telephone_centre  String?         @db.VarChar(30)
   contribuables     contribuables[]
   agents            agents[]
+  previsions        previsions[]
 
   @@index([type_centre], map: "idx_centres_type")
 }
@@ -273,4 +275,20 @@ model historique_utilisateurs {
   @@index([id_agent_cible], map: "idx_historique_cible")
   @@index([type_action], map: "idx_historique_action")
   @@index([date_action], map: "idx_historique_date")
+}
+
+model previsions {
+  id_prevision      Int       @id @default(autoincrement())
+  id_centre         Int
+  id_agent          Int?
+  annee             Int
+  montant_prevu     Decimal   @db.Decimal(15, 2)
+  observation       String?   @db.VarChar(255)
+  date_creation     DateTime? @default(now()) @db.Timestamp(6)
+  date_modification DateTime? @db.Timestamp(6)
+  centres           centres   @relation(fields: [id_centre], references: [id_centre], onDelete: Cascade, onUpdate: NoAction)
+  agents            agents?   @relation(fields: [id_agent], references: [id_agent], onDelete: SetNull, onUpdate: NoAction)
+
+  @@unique([id_centre, annee], map: "previsions_centre_annee_key")
+  @@index([id_centre], map: "idx_previsions_centre")
 }
