@@ -92,6 +92,43 @@ pnpm --filter backend exec prisma generate
 Relancez `pnpm --filter backend run prisma:generate` après chaque modification de
 [`schema.prisma`](schema.prisma), avant de démarrer l'API.
 
+## Base Neon neuve
+
+Le dépôt contient des migrations Prisma historiques et des scripts SQL manuels
+qui ont divergé. Pour cette raison, `prisma migrate deploy` seul ne construit
+pas le schéma complet de l'application sur une nouvelle base.
+
+Pour une base Neon **entièrement vide**, depuis la racine du dépôt, initialisez
+le schéma courant avec :
+
+```powershell
+$secureUrl = Read-Host "URL de connexion directe Neon (saisie masquée)" -AsSecureString
+$pointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureUrl)
+try {
+  $env:DATABASE_URL = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($pointer)
+  pnpm --filter backend run db:bootstrap
+} finally {
+  Remove-Item Env:DATABASE_URL -ErrorAction SilentlyContinue
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer)
+}
+```
+
+Le script demande de saisir le nom de la base pour confirmation. Il refuse les
+hôtes qui ne sont pas Neon et toute base `public` déjà peuplée. Il crée les
+tables depuis `schema.prisma`, ajoute les contraintes métier non représentables
+dans Prisma, crée le centre `SSIF` et marque les migrations historiques comme
+baseline. En cas d'interruption, son marqueur privé permet de reprendre
+l'initialisation ; après réussite, ce marqueur est supprimé.
+
+N'exécutez cette commande **qu'une seule fois sur la nouvelle base Neon vide**.
+Ne cliquez pas sur « Create table » dans Neon et ne lancez pas `db:bootstrap`
+sur une base qui contient des données. La connexion doit être la chaîne directe
+de Neon (pooling désactivé) et ne doit pas être partagée ou committée.
+
+Après l'initialisation, configurez le même `DATABASE_URL` dans les variables du
+backend Render. Pour les déploiements suivants, utilisez
+`pnpm --filter backend run prisma:deploy` ; ne relancez pas le bootstrap.
+
 ## Migrations Prisma
 
 Le dossier [`migrations/`](migrations/) contient les migrations versionnées :
@@ -101,29 +138,37 @@ Le dossier [`migrations/`](migrations/) contient les migrations versionnées :
 | [`0_init/migration.sql`](migrations/0_init/migration.sql) | migration initiale (baseline) correspondant aux modèles `agents`, `controles`, `declarations`, `recoupements`, `contribuables` et `centres` |
 | [`20260922120000_add_relances/migration.sql`](migrations/20260922120000_add_relances/migration.sql) | création de la table `relances`, de ses clés étrangères et de ses index |
 | [`20261013110000_add_json_fiscal_centre_ref/migration.sql`](migrations/20261013110000_add_json_fiscal_centre_ref/migration.sql) | ajout du rattachement fiscal textuel `centre_fiscal_ref` |
+| [`20261122230000_add_previsions/migration.sql`](migrations/20261122230000_add_previsions/migration.sql) | création idempotente des prévisions annuelles de recette |
 
-- **Si la base PostgreSQL est déjà existante et à jour**, marquez la migration
-  initiale comme déjà appliquée sans réexécuter le SQL :
+- **Si la base PostgreSQL existante a déjà exactement le schéma de `0_init`**,
+  marquez la migration initiale comme déjà appliquée sans réexécuter le SQL :
   ```bash
   pnpm --filter backend exec prisma migrate resolve --applied 0_init
   ```
 
-- **Si vous partez d'une base vide**, appliquez les migrations directement :
+- Pour une base vide destinée à ce dépôt, utilisez la procédure Neon ci-dessus.
+  N'appliquez pas les seules migrations historiques directement : elles ne
+  créent pas tous les modèles actuellement présents dans `schema.prisma`.
+
+- `prisma migrate deploy` applique seulement les migrations Prisma enregistrées
+  et ne lance pas `backend/migrations/00N-*.sql`.
+
+Pour une base dont l'historique Prisma est déjà cohérent, vous pouvez appliquer
+les migrations enregistrées :
   ```bash
   pnpm --filter backend exec prisma migrate deploy
-  # ou pour le développement
-  pnpm --filter backend exec prisma migrate dev
   ```
 
 ### Dérive entre `prisma/migrations/` et `migrations/*.sql`
 
 Deux systèmes de migration coexistent et ont **divergé** :
 
-- [`migrations/`](migrations/) (ici) : 3 migrations enregistrées auprès de
+- [`migrations/`](migrations/) (ici) : 4 migrations enregistrées auprès de
   Prisma (`0_init`, `20260922120000_add_relances`,
-  `20261013110000_add_json_fiscal_centre_ref`) ;
+  `20261013110000_add_json_fiscal_centre_ref`,
+  `20261122230000_add_previsions`) ;
 - [`../migrations/`](../migrations/) : scripts SQL manuels `00N-*.sql`
-  (`001` à `010`), dont `005-droits-communication.sql` qui crée la table
+  (`001` à `011`), dont `005-droits-communication.sql` qui crée la table
   `droits_communication` du module Droits de communication,
   `006-roles-centre-affectation.sql` qui ajoute `agents.id_centre` (clé étrangère
   vers `centres` en `ON DELETE SET NULL`, index `idx_agents_centre`) et convertit

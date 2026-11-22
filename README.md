@@ -61,9 +61,16 @@ Documentation transverse :
    pnpm run setup:project
    ```
 
-   Cette commande applique les migrations aux bases neuves. Si vous restaurez
-   une base déjà créée sans historique Prisma, suivez d'abord les instructions
-   de baseline dans [`backend/prisma/README.md`](backend/prisma/README.md).
+   Pour une base locale dont l'historique Prisma est cohérent, cette commande
+   applique les migrations enregistrées. Si vous restaurez une base déjà créée
+   sans historique Prisma, suivez d'abord les instructions de baseline dans
+   [`backend/prisma/README.md`](backend/prisma/README.md).
+
+   **Pour une nouvelle base Neon de déploiement**, n'exécutez pas cette commande
+   de préparation locale : le dépôt contient des migrations historiques qui ne
+   décrivent pas seules tout le schéma actuel. Suivez la procédure « Base Neon
+   neuve » de [`backend/prisma/README.md`](backend/prisma/README.md), puis
+   configurez `DATABASE_URL` sur Render.
 
    Attention : le backend contient deux systèmes de migration qui ont divergé
    (`backend/prisma/migrations/` et les scripts additifs `backend/migrations/00N-*.sql`).
