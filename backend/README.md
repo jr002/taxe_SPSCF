@@ -85,6 +85,12 @@ schéma se trouvent dans [`prisma/migrations/`](prisma/migrations/) et
 s'appliquent avec `pnpm --filter backend run prisma:deploy` (voir
 [`prisma/README.md`](prisma/README.md)).
 
+Après les migrations, `prisma:deploy` synchronise de façon additive les unités
+DGE, SRE et centres fiscaux de [`../unitefiscal.json`](../unitefiscal.json)
+dans `centres`. Cette étape est rejouable et conserve les centres déjà présents ;
+les codes `REF-…` créés pour ces unités sont des identifiants internes, pas des
+numéros officiels.
+
 **Les scripts de [`seeds/`](seeds/) ne sont pas des migrations.** Ils insèrent
 de la matière de démonstration, ne touchent aucune structure et se relancent à
 l'infini puisqu'ils commencent par purger les lignes qu'ils ont créées.
@@ -572,13 +578,14 @@ pnpm --filter backend run prisma:generate
 | `pnpm run setup:project` (racine) | installe les dépendances, applique les migrations et génère Prisma |
 | `pnpm --filter backend run prisma:generate` | génère le client Prisma |
 | `pnpm --filter backend run prisma:migrate` | crée/applique une migration en développement |
-| `pnpm --filter backend run prisma:deploy` | applique les migrations puis génère Prisma |
+| `pnpm --filter backend run prisma:deploy` | applique les migrations, génère Prisma puis synchronise les unités fiscales manquantes |
+| `pnpm --filter backend run db:seed-centres` | synchronise à nouveau les unités fiscales sans doublons |
 | `pnpm --filter backend run prisma:studio` | ouvre Prisma Studio |
 | `pnpm --filter backend run agent:create` | crée un compte agent à partir des variables `AGENT_*` |
 | `pnpm --filter backend run dev` | lance le serveur avec nodemon |
 | `pnpm --filter backend start` | lance le serveur en mode normal |
 | `pnpm test` (racine) | lance les tests du backend depuis la racine |
-| `pnpm --filter backend run test` | suite de tests du moteur de rapprochement (35 tests, runner Node intégré) |
+| `pnpm --filter backend run test` | suite de tests backend (runner Node intégré) |
 | `pnpm --filter backend run test:watch` | relance la suite à chaque sauvegarde |
 
 ## Tests

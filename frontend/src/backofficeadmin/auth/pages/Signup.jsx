@@ -33,8 +33,7 @@ export default function Signup() {
         };
     }, []);
 
-    // 107 centres : le regroupement par type garde la liste lisible une fois le
-    // menu déroulant ouvert.
+    // Le regroupement par type garde la liste lisible dans le menu déroulant.
     const groupesCentres = centres.reduce((groupes, centre) => {
         const groupe = groupes.find((entree) => entree.type === centre.type_centre);
         if (groupe) groupe.centres.push(centre);
